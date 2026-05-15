@@ -1285,7 +1285,7 @@ export default {
 .info-item span { display: block; font-size: 13px; color: #1a233a; font-weight: 500; } /* Valor numérico/texto da métrica na etapa */
 .stage-actions { display: flex; gap: 12px; } /* Container para os botões Editar/Duplicar/Excluir da etapa */
 .btn-stage-action { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; display: flex; align-items: center; gap: 6px; } /* Estilo dos botões de ação do card da etapa */
-.btn-stage-action.btn-danger { color: #ef4444; border-color: #fca5a5; } /* Estilo de erro/vermelho para o botão Excluir etapa */
+.btn-stage-action.btn-danger { color: #ffffff; border-color: #b9ceec; } /* Estilo de erro/vermelho para o botão Excluir etapa */
 .stage-list-actions { display: flex; gap: 12px; margin-top: 8px; margin-bottom: 40px; } /* Ações globais no rodapé da lista de etapas */
 .btn-action-outline { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 16px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; } /* Botão vazado para adicionar nova etapa */
 .btn-action-outline:hover { background: #f9fafb; border-color: #9ca3af; } /* Efeito hover no botão vazado */
