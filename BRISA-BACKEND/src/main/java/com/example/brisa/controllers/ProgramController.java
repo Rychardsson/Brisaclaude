@@ -4,6 +4,7 @@ import com.example.brisa.dtos.program.ProgramClassCreateRequestDTO;
 import com.example.brisa.dtos.program.ProgramClassCreateResponseDTO;
 import com.example.brisa.dtos.program.ProgramClassTemplateDTO;
 import com.example.brisa.dtos.program.ProgramOverviewResponseDTO;
+import com.example.brisa.dtos.imports.SpreadsheetImportResponseDTO;
 import com.example.brisa.models.ProgramModel;
 import com.example.brisa.services.LogHelper;
 import com.example.brisa.services.ProgramIntegrationService;
@@ -23,10 +24,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -36,6 +37,7 @@ public class ProgramController {
 
     private final ProgramService programService;
     private final ProgramIntegrationService programIntegrationService;
+    private final com.example.brisa.services.SpreadsheetImportService spreadsheetImportService;
     private final LogHelper logHelper;
 
     @GetMapping
@@ -66,9 +68,36 @@ public class ProgramController {
     }
 
     @PostMapping("/import/excel")
-    public ResponseEntity<Map<String, String>> importProgramsFromExcel() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-            .body(Map.of("message", "Importacao de programas ainda nao foi integrada no backend."));
+    public ResponseEntity<SpreadsheetImportResponseDTO> importProgramsFromExcel(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request
+    ) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String fileName = file.getOriginalFilename();
+        if (fileName == null || (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls"))) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            SpreadsheetImportResponseDTO response = spreadsheetImportService.importProgramsFromExcel(file);
+
+            try {
+                UUID userId = getUserId();
+                logHelper.logImport("Program",
+                        response.getSuccessfullyInserted() + response.getUpdated(),
+                        response.getAlreadyExists() + response.getErrors().size(),
+                        userId,
+                        request);
+            } catch (Exception ignored) {
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (Exception ignored) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping

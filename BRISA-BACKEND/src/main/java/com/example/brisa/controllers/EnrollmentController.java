@@ -1,18 +1,20 @@
 package com.example.brisa.controllers;
 
+import com.example.brisa.dtos.imports.SpreadsheetImportResponseDTO;
 import com.example.brisa.models.EnrollmentModel;
 import com.example.brisa.services.EnrollmentService;
 import com.example.brisa.services.LogHelper;
+import com.example.brisa.services.SpreadsheetImportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -21,6 +23,7 @@ import java.util.UUID;
 public class EnrollmentController {
     
     private final EnrollmentService enrollmentService;
+    private final SpreadsheetImportService spreadsheetImportService;
     private final LogHelper logHelper;
 
     @GetMapping
@@ -48,9 +51,36 @@ public class EnrollmentController {
     }
 
     @PostMapping("/import/excel")
-    public ResponseEntity<Map<String, String>> importEnrollmentsFromExcel() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-            .body(Map.of("message", "Importacao de matriculas ainda nao foi integrada no backend."));
+    public ResponseEntity<SpreadsheetImportResponseDTO> importEnrollmentsFromExcel(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request
+    ) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String fileName = file.getOriginalFilename();
+        if (fileName == null || (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls"))) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            SpreadsheetImportResponseDTO response = spreadsheetImportService.importEnrollmentsFromExcel(file);
+
+            try {
+                UUID userId = getUserId();
+                logHelper.logImport("Enrollment",
+                        response.getSuccessfullyInserted() + response.getUpdated(),
+                        response.getAlreadyExists() + response.getErrors().size(),
+                        userId,
+                        request);
+            } catch (Exception ignored) {
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (Exception ignored) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping

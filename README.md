@@ -1,33 +1,73 @@
-# Brisa Claude
+# Brisa-ONE
 
-Este repositorio esta organizado em tres pastas principais:
+Workspace principal do projeto BRISA, organizado em tres frentes:
 
-- `BRISA-FRONTEND`: aplicacao Vue que consome a API oficial do projeto.
-- `BRISA-BACKEND`: API Spring Boot responsavel por autenticacao, cadastros, importacoes e analytics.
-- `Brisa ONE`: bundle React derivado do Figma, usado como referencia visual e prototipo isolado.
+- `BRISA-FRONTEND`: aplicacao Vue 3 + Vite que consome a API oficial.
+- `BRISA-BACKEND`: API Spring Boot responsavel por autenticacao, cadastros, imports, logs e modulos analiticos.
+- `Brisa ONE`: bundle React derivado do Figma, usado como prototipo visual isolado.
 
-## Como as partes se conectam
+## Estrutura do repositorio
 
-- O frontend principal usa `VITE_API_BASE_URL` para falar com o backend.
-- O backend expoe seus endpoints em `/api/*`.
-- O prototipo `Brisa ONE` nao faz parte da stack oficial em runtime; ele serve como referencia de interface.
+```text
+Brisa-ONE/
+|-- BRISA-FRONTEND/
+|-- BRISA-BACKEND/
+`-- Brisa ONE/
+```
 
-## Subida local recomendada
+## O que faz parte da stack oficial
+
+A stack oficial em runtime e:
+
+- `BRISA-FRONTEND`
+- `BRISA-BACKEND`
+
+O diretorio `Brisa ONE` nao participa da navegacao oficial do sistema. Ele serve como referencia visual e prototipo separado.
+
+## Integracao atual
+
+Hoje o frontend principal e o backend estao integrados nos fluxos abaixo:
+
+- autenticacao JWT
+- dashboard
+- painel administrativo
+- carreira
+- usuarios
+- cursos
+- pessoas
+- programas e turmas
+- imports de:
+  - pessoas
+  - programas
+  - turmas
+  - matriculas
+  - instituicoes
+
+## Subida local
 
 ### 1. Backend
+
+Por padrao, o backend sobe com PostgreSQL em:
+
+- banco: `jdbc:postgresql://localhost:5432/brisa`
+- porta HTTP: `8082`
+
+Subida:
 
 ```powershell
 cd BRISA-BACKEND
 .\mvnw.cmd spring-boot:run
 ```
 
-Se voce quiser usar PostgreSQL, sobrescreva as variaveis:
+Se precisar sobrescrever configuracoes locais:
 
 ```powershell
+$env:SERVER_PORT='8082'
 $env:SPRING_DATASOURCE_URL='jdbc:postgresql://localhost:5432/brisa'
 $env:SPRING_DATASOURCE_USERNAME='postgres'
 $env:SPRING_DATASOURCE_PASSWORD='sua-senha'
 $env:SPRING_DATASOURCE_DRIVER_CLASS_NAME='org.postgresql.Driver'
+$env:SPRING_JPA_HIBERNATE_DDL_AUTO='update'
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -39,13 +79,17 @@ npm install
 npm run dev
 ```
 
-Opcionalmente, copie `.env.example` para `.env` e ajuste a API:
+Arquivo de ambiente de exemplo:
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:8082/api
 ```
 
-### 3. Prototipo Brisa ONE
+O exemplo esta em [BRISA-FRONTEND/.env.example](C:/Users/ResTIC16/Documents/GitHub/Brisa-ONE/BRISA-FRONTEND/.env.example).
+
+### 3. Prototipo visual
+
+Opcional:
 
 ```powershell
 cd "Brisa ONE"
@@ -53,15 +97,33 @@ npm install
 npm run dev
 ```
 
-## Usuarios seed
+## Comandos uteis
 
-Quando o banco estiver vazio, o backend cria:
+### Backend
 
-- `admin` / `admin12345`
-- `user` / `user12345`
+```powershell
+cd BRISA-BACKEND
+.\mvnw.cmd test
+.\mvnw.cmd clean install
+```
+
+### Frontend principal
+
+```powershell
+cd BRISA-FRONTEND
+npm run build
+```
+
+
+## Convencoes importantes
+
+- A API oficial expoe endpoints em `/api/*`.
+- O frontend principal centraliza chamadas em `src/services/api.js`.
+- Rotas protegidas no frontend usam `meta.requiresAuth`.
+- O backend usa logs de auditoria para operacoes de create, update, delete e import.
 
 ## Observacoes
 
-- `Dashboard`, `Painel` e `Carreira` pertencem ao `BRISA-FRONTEND`.
-- O backend agora mantem o padrao `/api/users`, alinhado ao consumo do frontend.
-- O servico de logs do frontend foi corrigido para nao duplicar `/api`.
+- O repositorio principal agora se chama `Brisa-ONE`.
+- O fork ainda pode continuar com outro nome sem impactar o funcionamento local.
+- Se voce alterar porta ou URL da API, alinhe `VITE_API_BASE_URL` no frontend.

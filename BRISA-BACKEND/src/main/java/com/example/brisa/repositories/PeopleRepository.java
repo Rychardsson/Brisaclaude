@@ -8,6 +8,7 @@ import com.example.brisa.models.PeopleModel;
 public interface PeopleRepository extends JpaRepository<PeopleModel, Long> {
     
     Optional<PeopleModel> findByEmail(String email);
+    Optional<PeopleModel> findByEmailIgnoreCase(String email);
 
     Optional<PeopleModel> findByCpf(String cpf);
     

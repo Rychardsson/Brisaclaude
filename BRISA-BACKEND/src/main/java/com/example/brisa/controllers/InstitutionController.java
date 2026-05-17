@@ -1,19 +1,21 @@
 package com.example.brisa.controllers;
 
+import com.example.brisa.dtos.imports.SpreadsheetImportResponseDTO;
 import com.example.brisa.dtos.institution.InstitutionRequestDTO;
 import com.example.brisa.dtos.institution.InstitutionResponseDTO;
 import com.example.brisa.services.InstitutionService;
 import com.example.brisa.services.LogHelper;
+import com.example.brisa.services.SpreadsheetImportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -25,6 +27,9 @@ public class InstitutionController {
     
     @Autowired
     private LogHelper logHelper;
+
+    @Autowired
+    private SpreadsheetImportService spreadsheetImportService;
 
     @GetMapping
     public ResponseEntity<List<InstitutionResponseDTO>> getAllInstitutions() {
@@ -39,9 +44,36 @@ public class InstitutionController {
     }
 
     @PostMapping("/import/excel")
-    public ResponseEntity<Map<String, String>> importInstitutionsFromExcel() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-            .body(Map.of("message", "Importacao de instituicoes ainda nao foi integrada no backend."));
+    public ResponseEntity<SpreadsheetImportResponseDTO> importInstitutionsFromExcel(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request
+    ) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String fileName = file.getOriginalFilename();
+        if (fileName == null || (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls"))) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            SpreadsheetImportResponseDTO response = spreadsheetImportService.importInstitutionsFromExcel(file);
+
+            try {
+                UUID userId = getUserId();
+                logHelper.logImport("Institution",
+                        response.getSuccessfullyInserted() + response.getUpdated(),
+                        response.getAlreadyExists() + response.getErrors().size(),
+                        userId,
+                        request);
+            } catch (Exception ignored) {
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (Exception ignored) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping

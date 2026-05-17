@@ -1,10 +1,10 @@
-# Copilot Instructions for Brisaclaude
+# Copilot Instructions for Brisa-ONE
 
 ## Repository shape
 
 This repository is a multi-project workspace:
 
-- `BRISA-BACKEND`: Spring Boot 3.1.1 API (Java 21, Maven, PostgreSQL, JWT auth)
+- `BRISA-BACKEND`: Spring Boot 3.1.1 API (Java 21, Maven, local H2 by default, JWT auth)
 - `BRISA-FRONTEND`: Vue 3 + Vite SPA that consumes the backend API
 - `Brisa ONE`: separate React + Vite bundle (Figma/Make export), not wired into `BRISA-FRONTEND`
 
@@ -19,7 +19,7 @@ When implementing features, confirm which project is in scope before editing.
 - Full test suite: `.\mvnw.cmd test`
 - Single test class: `.\mvnw.cmd -Dtest=AuthApplicationTests test`
 - Single test method: `.\mvnw.cmd -Dtest=AuthApplicationTests#contextLoads test`
-- API runs on port `8082` by default.
+- API runs on port `8083` by default.
 
 ### BRISA-FRONTEND (`BRISA-FRONTEND`)
 
@@ -57,7 +57,7 @@ When implementing features, confirm which project is in scope before editing.
 
 - Vue app entry: `src/main.js` -> `App.vue` -> `router/index.js`.
 - Route protection is meta-driven (`meta.requiresAuth`) and enforced in a global `beforeEach` guard.
-- API access is centralized in `src/services/api.js` (`http://localhost:8082/api`) with Axios request interceptor that injects JWT from `localStorage`.
+- API access is centralized in `src/services/api.js`, driven by `VITE_API_BASE_URL` and defaulting to `http://localhost:8083/api`, with an Axios request interceptor that injects JWT from `localStorage`.
 - Feature services (`peopleService`, `programService`, etc.) wrap API endpoints and are the boundary for view components.
 - Program registration is a large wizard-style flow under `src/views/ProgramRegistration/`.
 - `authService` persists both `token` and serialized `user` in `localStorage`.

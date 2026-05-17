@@ -15,6 +15,7 @@ public interface EnrollmentRepository extends JpaRepository<EnrollmentModel, Lon
     List<EnrollmentModel> findByPeopleId(Long peopleId);
 
     Optional<EnrollmentModel> findByPeopleIdAndClassModelId(Long peopleId, Long classId);
+    Optional<EnrollmentModel> findByPeopleIdAndClassModelIdAndAcademicRoleId(Long peopleId, Long classId, Long academicRoleId);
 
     @Query("""
         SELECT DISTINCT e

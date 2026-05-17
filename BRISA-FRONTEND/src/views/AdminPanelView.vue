@@ -1307,11 +1307,19 @@ function mapImportLog(log) {
   const successCount = Number(parsedDetails.successCount || 0);
   const errorCount = Number(parsedDetails.errorCount || 0);
   const action = String(log.action || '');
+  const typeLabelMap = {
+    PEOPLE_IMPORT: 'Pessoas',
+    STAGE_CANDIDATES_IMPORT: 'Candidatos da etapa',
+    PROGRAM_IMPORT: 'Programas',
+    CLASS_IMPORT: 'Turmas',
+    ENROLLMENT_IMPORT: 'Matrículas',
+    INSTITUTION_IMPORT: 'Instituições'
+  };
 
   return {
     id: `log-${log.id}`,
     sourceLabel: 'Logs do sistema',
-    typeLabel: action === 'STAGE_CANDIDATES_IMPORT' ? 'Candidatos da etapa' : 'Pessoas',
+    typeLabel: typeLabelMap[action] || 'Importação',
     fileName: 'Registro automático',
     createdAt: log.createdAt,
     status: errorCount > 0 ? 'warning' : 'success',

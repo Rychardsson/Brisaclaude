@@ -172,6 +172,10 @@ public class LogHelper {
     private LogAction getImportAction(String entityType) {
         return switch (entityType.toLowerCase()) {
             case "people" -> LogAction.PEOPLE_IMPORT;
+            case "program" -> LogAction.PROGRAM_IMPORT;
+            case "class" -> LogAction.CLASS_IMPORT;
+            case "enrollment" -> LogAction.ENROLLMENT_IMPORT;
+            case "institution" -> LogAction.INSTITUTION_IMPORT;
             case "stagecandidate", "stage_candidate" -> LogAction.STAGE_CANDIDATES_IMPORT;
             default -> LogAction.SYSTEM_INFO;
         };
