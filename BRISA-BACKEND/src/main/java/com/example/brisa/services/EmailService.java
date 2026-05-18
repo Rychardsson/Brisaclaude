@@ -1,12 +1,12 @@
 package com.example.brisa.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -21,17 +21,35 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Value("${spring.mail.from:}")
+    private String fromAddress;
+
+    @Value("${spring.mail.username:}")
+    private String username;
+
     @Async
     public void sendEmail(String to, String subject, String htmlContent) throws MessagingException {
+        sendEmailSync(to, subject, htmlContent);
+    }
+
+    public void sendEmailSync(String to, String subject, String htmlContent) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
+        String sender = resolveSenderAddress();
+        if (!sender.isBlank()) {
+            helper.setFrom(sender);
+        }
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(htmlContent, true);
 
         mailSender.send(message);
         System.out.println("Email enviado com sucesso para " + to);
+    }
+
+    public boolean isMailConfigured() {
+        return !resolveSenderAddress().isBlank();
     }
 
     public String loadEmailTemplateVerification(String username, String verificationUrl) throws IOException {
@@ -45,12 +63,24 @@ public class EmailService {
         return htmlContent.replace("${username}", username)
                          .replace("${verificationUrl}", verificationUrl);
     }
-     public String loadResetPasswordTemplate(String username, String resetLink) throws IOException {
+    public String loadResetPasswordTemplate(String username, String resetLink) throws IOException {
         ClassPathResource resource = new ClassPathResource("templates/email/reset-password.html");
         String htmlContent = new String(Files.readAllBytes(Path.of(resource.getURI())));
 
         return htmlContent.replace("${username}", username)
                          .replace("${resetLink}", resetLink)
                          .replace("${oceanBackgroundUrl}", "https://example.com/ocean-background.jpg");
+    }
+
+    private String resolveSenderAddress() {
+        if (fromAddress != null && !fromAddress.trim().isEmpty()) {
+            return fromAddress.trim();
+        }
+
+        if (username != null && !username.trim().isEmpty()) {
+            return username.trim();
+        }
+
+        return "";
     }
 }

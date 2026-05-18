@@ -67,9 +67,14 @@ public class CareerController {
             @RequestBody CareerAutomationSettingsRequestDTO request,
             HttpServletRequest httpRequest
     ) {
-        CareerAutomationSettingsResponseDTO response = careerService.registerAutomationTest(request, getUserId(), httpRequest);
+        CareerAutomationSettingsResponseDTO response = careerService.registerAutomationTest(
+                request,
+                getUserId(),
+                getUserEmail(),
+                httpRequest
+        );
         return ResponseEntity.ok(Map.of(
-                "message", "Teste de automacao registrado com sucesso.",
+                "message", "E-mail de teste enviado com sucesso.",
                 "settings", response
         ));
     }
@@ -79,6 +84,17 @@ public class CareerController {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.getPrincipal() instanceof UserModel user) {
                 return user.getId();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private String getUserEmail() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof UserModel user) {
+                return user.getEmail();
             }
         } catch (Exception ignored) {
         }
