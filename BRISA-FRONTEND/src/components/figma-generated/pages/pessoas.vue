@@ -93,66 +93,124 @@
       </section>
 
       <section class="table-card">
-        <div class="tabs-bar">
-          <button
-            v-for="tab in tabs"
-            :key="tab.value"
-            type="button"
-            class="tab-item"
-            :class="{ active: activeTab === tab.value }"
-            @click="activeTab = tab.value"
-          >
-            {{ tab.label }}
-            <span class="tab-count">{{ formatNumber(tab.count) }}</span>
-          </button>
-        </div>
-
-        <div class="filters-row">
-          <div class="search-box">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-            </svg>
-            <input
-              v-model="searchTerm"
-              type="text"
-              class="search-input"
-              placeholder="Buscar por nome, CPF, e-mail ou identificador..."
-            />
-          </div>
-
-          <div class="filters-actions">
-            <button type="button" class="filters-button" @click="showAdvancedFilters = !showAdvancedFilters">
-              Filtros avançados
-              <span class="filters-badge">{{ advancedFiltersCount }}</span>
-            </button>
-
-            <button type="button" class="search-button" @click="runSearch">
-              Pesquisar
+        <!-- Section 1: Tabs -->
+        <div class="tabs-section">
+          <div class="tabs-bar">
+            <button
+              v-for="tab in tabs"
+              :key="tab.value"
+              type="button"
+              class="tab-item"
+              :class="{ active: activeTab === tab.value }"
+              @click="activeTab = tab.value"
+            >
+              {{ tab.label }}
+              <span class="tab-count">{{ formatNumber(tab.count) }}</span>
             </button>
           </div>
         </div>
 
-        <div v-if="showAdvancedFilters" class="advanced-filters">
-          <label class="filter-check">
-            <input v-model="advancedFilters.hasCpf" type="checkbox" />
-            <span>Somente com CPF</span>
-          </label>
-          <label class="filter-check">
-            <input v-model="advancedFilters.hasEmail" type="checkbox" />
-            <span>Somente com e-mail</span>
-          </label>
-          <label class="filter-check">
-            <input v-model="advancedFilters.completeOnly" type="checkbox" />
-            <span>Somente perfis completos</span>
-          </label>
-          <label class="filter-check">
-            <input v-model="advancedFilters.recentOnly" type="checkbox" />
-            <span>Somente recentes (30d)</span>
-          </label>
+        <!-- Section 2: Search Bar -->
+        <div class="search-section">
+          <div class="filters-row">
+            <div class="search-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <input
+                v-model="searchTerm"
+                type="text"
+                class="search-input"
+                placeholder="Buscar por nome, CPF, e-mail ou identificador..."
+              />
+            </div>
+
+            <div class="filters-actions">
+              <button type="button" class="filters-button" @click="showAdvancedFilters = !showAdvancedFilters">
+                Filtros avançados
+                <span class="filters-badge">{{ advancedFiltersCount }}</span>
+              </button>
+
+              <button type="button" class="search-button" @click="runSearch">
+                Pesquisar
+              </button>
+            </div>
+          </div>
+
+          <div v-if="showAdvancedFilters" class="advanced-filters">
+            <div class="filters-grid">
+              <!-- Row 1: Programa, Etapa, Status, Cota -->
+              <div class="filter-group">
+                <label>Programa</label>
+                <select v-model="advancedFilters.programa">
+                  <option value="">Todos</option>
+                  <option v-for="prog in programOptions" :key="prog.id" :value="prog.id">
+                    {{ prog.name || prog.label }}
+                  </option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Etapa</label>
+                <select v-model="advancedFilters.etapa">
+                  <option value="">Todas</option>
+                  <option v-for="stage in stageOptions" :key="stage.id" :value="stage.id">
+                    {{ stage.name || stage.label }}
+                  </option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Status</label>
+                <select v-model="advancedFilters.status">
+                  <option value="">Todos</option>
+                  <option v-for="status in statusOptions" :key="status" :value="status">
+                    {{ status }}
+                  </option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Cota</label>
+                <select v-model="advancedFilters.cota">
+                  <option value="">Todas</option>
+                  <option v-for="quota in quotaOptions" :key="quota" :value="quota">
+                    {{ quota }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Row 2: Gênero, Estado, Cidade, Instituição -->
+              <div class="filter-group">
+                <label>Gênero</label>
+                <select v-model="advancedFilters.genero">
+                  <option value="">Todos</option>
+                  <option v-for="gender in genderOptions" :key="gender" :value="gender">
+                    {{ gender }}
+                  </option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Estado de residência</label>
+                <select v-model="advancedFilters.estado">
+                  <option value="">Todos</option>
+                  <option v-for="state in stateOptions" :key="state" :value="state">
+                    {{ state }}
+                  </option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Cidade de residência</label>
+                <input v-model="advancedFilters.cidade" type="text" placeholder="Digite a cidade" />
+              </div>
+              <div class="filter-group">
+                <label>Instituição</label>
+                <input v-model="advancedFilters.instituicao" type="text" placeholder="Digite a instituição" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="table-toolbar">
+        <!-- Section 3: Columns & Table -->
+        <div class="table-section">
           <div ref="columnsControlRef" class="columns-control">
             <button
               type="button"
@@ -173,34 +231,33 @@
               </label>
             </div>
           </div>
-        </div>
 
-        <div v-if="loading" class="state-row">
-          <div class="spinner"></div>
-          <span>Carregando pessoas...</span>
-        </div>
-
-        <div v-else-if="error" class="state-row state-row-error">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <span>{{ error }}</span>
-        </div>
-
-        <div v-else-if="filteredPeople.length === 0" class="state-row state-row-empty">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          <div>
-            <strong>Nenhuma pessoa encontrada</strong>
-            <p>Altere a busca ou os filtros para exibir registros.</p>
+          <div v-if="loading" class="state-row">
+            <div class="spinner"></div>
+            <span>Carregando pessoas...</span>
           </div>
-        </div>
 
-        <div v-else class="table-scroll">
+          <div v-else-if="error" class="state-row state-row-error">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>{{ error }}</span>
+          </div>
+
+          <div v-else-if="filteredPeople.length === 0" class="state-row state-row-empty">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <div>
+              <strong>Nenhuma pessoa encontrada</strong>
+              <p>Altere a busca ou os filtros para exibir registros.</p>
+            </div>
+          </div>
+
+          <div v-else class="table-scroll">
           <table class="people-table">
             <thead>
               <tr>
@@ -333,6 +390,7 @@
 
             <button type="button" class="page-btn" :disabled="currentPage === totalPages" @click="nextPage">Próximo</button>
           </div>
+        </div>
         </div>
       </section>
     </div>
@@ -824,10 +882,14 @@ const fallbackStateOptions = [
   'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 const advancedFilters = ref({
-  hasCpf: false,
-  hasEmail: false,
-  completeOnly: false,
-  recentOnly: false
+  programa: '',
+  etapa: '',
+  status: '',
+  cota: '',
+  genero: '',
+  estado: '',
+  cidade: '',
+  instituicao: ''
 });
 
 const showUploadModal = ref(false);
@@ -1955,7 +2017,21 @@ onBeforeUnmount(() => {
 
 .table-card {
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
+}
+
+.tabs-section {
+  border-bottom: 1px solid #e2eaf2;
+}
+
+.search-section {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2eaf2;
+  padding: 16px 14px;
+}
+
+.table-section {
+  padding: 14px 18px;
 }
 
 .tabs-bar {
@@ -1997,15 +2073,15 @@ onBeforeUnmount(() => {
 
 .filters-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  padding: 12px 14px 14px;
 }
 
 .search-box {
   position: relative;
   flex: 1;
   min-width: 0;
+  max-width: 100%;
 }
 
 .filters-actions {
@@ -2022,18 +2098,21 @@ onBeforeUnmount(() => {
   transform: translateY(-50%);
   color: #97a4b6;
   pointer-events: none;
+  width: 18px;
+  height: 18px;
 }
 
 .search-input {
   width: 100%;
   box-sizing: border-box;
-  height: 40px;
+  height: 48px;
   border-radius: 12px;
   border: 1px solid #d9e2ec;
   background: #fff;
   padding: 0 14px 0 44px;
   color: #13233f;
   outline: none;
+  font-size: 14px;
 }
 
 .search-input:focus {
@@ -2042,7 +2121,7 @@ onBeforeUnmount(() => {
 }
 
 .filters-button {
-  height: 40px;
+  height: 48px;
   border-radius: 12px;
   padding: 0 14px;
   border: 1px solid #d8e1eb;
@@ -2065,10 +2144,11 @@ onBeforeUnmount(() => {
   position: relative;
   display: inline-flex;
   flex-direction: column;
+  padding-bottom: 10px;
 }
 
 .search-button {
-  height: 40px;
+  height: 48px;
   border-radius: 12px;
   padding: 0 18px;
   border: 1px solid #14b8a6;
@@ -2113,13 +2193,15 @@ onBeforeUnmount(() => {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  z-index: 20;
-  min-width: 256px;
+  z-index: 1000;
+  width: 260px;
+  max-height: 400px;
   padding: 10px 0;
   border-radius: 11px;
   border: 1px solid #d8e1eb;
   background: #fff;
   box-shadow: 0 14px 26px rgba(15, 23, 42, 0.12);
+  overflow-y: auto;
 }
 
 .columns-option {
@@ -2181,18 +2263,46 @@ onBeforeUnmount(() => {
 }
 
 .advanced-filters {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
   padding: 0 14px 14px;
 }
 
-
-.table-toolbar {
-  display: flex;
-  align-items: center;
-  padding: 0 18px 10px;
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #405069;
+}
+
+.filter-group select,
+.filter-group input {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid #d9e2ec;
+  background: #fff;
+  padding: 0 12px;
+  color: #13233f;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.10);
+}
+
 
 .filter-check {
   border: 1px solid #e0e8f1;
@@ -2222,6 +2332,7 @@ onBeforeUnmount(() => {
 
 .table-scroll {
   overflow-x: auto;
+  overflow-y: visible;
 }
 
 .people-table {

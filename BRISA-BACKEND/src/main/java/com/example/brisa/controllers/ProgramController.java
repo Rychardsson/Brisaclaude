@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -62,6 +63,12 @@ public class ProgramController {
     @GetMapping("/{id}")
     public ResponseEntity<ProgramModel> getProgramById(@PathVariable Long id) {
         return ResponseEntity.ok(programService.findById(id));
+    }
+
+    @PostMapping("/import/excel")
+    public ResponseEntity<Map<String, String>> importProgramsFromExcel() {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+            .body(Map.of("message", "Importacao de programas ainda nao foi integrada no backend."));
     }
 
     @PostMapping

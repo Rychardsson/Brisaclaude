@@ -1,10 +1,14 @@
 package com.example.brisa.models;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -49,6 +53,16 @@ public class ProjectGroupModel {
     private String repositoryLink; // link do repositório do projeto
 
     @OneToMany(mappedBy = "projectGroup")
-    private Set<PeopleProjectGroupModel> members =  new HashSet<>(); // membros do grupo de projeto
+    private Set<PeopleProjectGroupModel> members = new HashSet<>(); // membros do grupo de projeto
+
+    @Column(name = "weekly_meeting_day")
+    @Enumerated(EnumType.ORDINAL)
+    private DayOfWeek weeklyMeetingDay; // dia da semana para reuniões (MONDAY, TUESDAY, etc)
+
+    @Column(name = "first_meeting_date")
+    private LocalDate firstMeetingDate; // data da primeira reunião
+
+    @OneToMany(mappedBy = "projectGroup")
+    private Set<ProjectGroupMeetingModel> meetings = new HashSet<>(); // reuniões semanais do grupo
 
 }

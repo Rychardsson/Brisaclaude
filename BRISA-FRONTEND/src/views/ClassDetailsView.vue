@@ -28,10 +28,10 @@
           </div>
 
           <div class="hero-main">
-            <h1>{{ classData.program?.name || 'Programa sem nome' }}</h1>
+            <h1>Turma {{ classData.code || '-' }}</h1>
 
             <div class="badge-row">
-              <span class="badge badge-teal">Turma {{ classData.code || '-' }}</span>
+              <span class="badge badge-teal">{{ classData.program?.name || 'Programa' }}</span>
               <span class="badge" :class="statusBadgeClass">{{ classStatusLabel }}</span>
               <span class="badge badge-purple">Etapa: {{ currentStageLabel }}</span>
             </div>
@@ -570,6 +570,7 @@
             </div>
           </div>
 
+          <template v-if="etapasSubTab === 'nivelamento'">
           <!-- Seção Cursos do Nivelamento -->
           <article class="panel">
            <div class="panel-head">
@@ -580,7 +581,16 @@
            <div class="courses-list">
              <div v-if="!courseItems || courseItems.length === 0" class="no-data">Nenhum curso encontrado para o nivelamento.</div>
 
-             <div v-for="course in courseItems" :key="course?.id" class="course-card-new">
+             <div
+               v-for="course in courseItems"
+               :key="course?.id"
+               class="course-card-new"
+               role="button"
+               tabindex="0"
+               @click="openCourseDetails(course)"
+               @keydown.enter.prevent="openCourseDetails(course)"
+               @keydown.space.prevent="openCourseDetails(course)"
+             >
                <div class="course-left-new">
                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="course-icon">
                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -593,7 +603,7 @@
 
                <div class="course-right-new">
                  <div class="course-stats-new">
-                   <div class="course-stats-text">{{ 0 }} concluídos · {{ 0 }} pendentes</div>
+                   <div class="course-stats-text">{{ course?.completedCount || 0 }} concluídos · {{ course?.pendingCount || 0 }} pendentes</div>
                    <div class="progress-container">
                      <div class="progress-bar">
                        <div class="progress-fill" :style="{ width: (course?.completionPct || 0) + '%', backgroundColor: getCompletionColor(course?.completionPct || 0) }"></div>
@@ -692,6 +702,192 @@
              </table>
            </div>
           </article>
+          </template>
+
+          <div v-else class="imersao-section">
+            <div class="imersao-metrics-grid">
+              <div v-for="metric in imersaoMetricsCards" :key="metric.label" class="imersao-metric-card">
+                <span class="imersao-metric-label">{{ metric.label }}</span>
+                <strong :class="metric.valueClass || ''">{{ metric.value }}</strong>
+                <small v-if="metric.support">{{ metric.support }}</small>
+              </div>
+            </div>
+
+            <div class="imersao-actions">
+              <button type="button" class="btn-outline" @click="showImportImersaoModal = true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 5 17 10" />
+                  <line x1="12" y1="5" x2="12" y2="17" />
+                </svg>
+                <span>Importar alunos da imersão</span>
+              </button>
+
+              <button type="button" class="btn-outline" @click="showSubmitNotasImersaoModal = true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 5 17 10" />
+                  <line x1="12" y1="5" x2="12" y2="17" />
+                </svg>
+                <span>Submeter notas</span>
+              </button>
+
+              <button type="button" class="btn-outline" @click="showAtualizarPresencaImersaoModal = true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 12a9 9 0 1 0 3-6.7" />
+                  <polyline points="3 3 3 9 9 9" />
+                </svg>
+                <span>Atualizar presença</span>
+              </button>
+
+              <button type="button" class="btn-primary" @click="showGroupCreateModal = true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <line x1="19" y1="8" x2="19" y2="14" />
+                  <line x1="22" y1="11" x2="16" y2="11" />
+                </svg>
+                <span>Cadastrar grupo</span>
+              </button>
+            </div>
+
+            <div class="imersao-groups-list">
+              <div v-for="group in imersaoGroups" :key="group.id" class="imersao-group-item">
+                <button type="button" class="imersao-group-card" @click="toggleImersaoGroup(group.id)">
+                  <div class="imersao-group-main">
+                    <div class="imersao-group-title">
+                      <strong>{{ group.name }}</strong>
+                      <span class="imersao-group-status" :class="group.statusClass">{{ group.status }}</span>
+                    </div>
+                    <div class="imersao-group-sub">
+                      <span>Orientador:</span>
+                      <strong>{{ group.mentor }}</strong>
+                    </div>
+                  </div>
+
+                  <div class="imersao-group-project">
+                    <span>Projeto:</span>
+                    <strong>{{ group.project }}</strong>
+                  </div>
+
+                  <div class="imersao-group-students">
+                    <span>Alunos:</span>
+                    <strong>{{ group.students }}</strong>
+                  </div>
+
+                  <div class="imersao-group-avg">
+                    <span>Média parcial:</span>
+                    <strong class="teal">{{ group.partialAverage }}</strong>
+                    <span>Final:</span>
+                    <strong class="teal">{{ group.finalAverage }}</strong>
+                  </div>
+
+                  <div class="imersao-group-arrow" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline v-if="imersaoExpandedGroupId === group.id" points="6 9 12 15 18 9" />
+                      <polyline v-else points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                </button>
+
+                <div v-if="imersaoExpandedGroupId === group.id" class="imersao-group-expanded">
+                  <div class="imersao-group-tabs">
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'resumo' }" @click="setImersaoGroupTab(group.id, 'resumo')">Resumo</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'parcial' }" @click="setImersaoGroupTab(group.id, 'parcial')">Avaliação Parcial</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'final' }" @click="setImersaoGroupTab(group.id, 'final')">Avaliação Final</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'presenca' }" @click="setImersaoGroupTab(group.id, 'presenca')">Presença</button>
+                  </div>
+
+                  <div v-if="getImersaoGroupTab(group.id) === 'resumo'" class="imersao-group-panel">
+                    <div class="imersao-group-meta">
+                      <p><strong>Projeto:</strong> {{ group.project }}</p>
+                      <p><strong>Empresa parceira:</strong> {{ group.partnerCompany }}</p>
+                      <p class="muted">Última atualização de notas: {{ group.lastGradesUpdate }}</p>
+                    </div>
+                    <table class="imersao-group-table">
+                      <thead>
+                        <tr>
+                          <th>Aluno</th>
+                          <th>Média Parcial</th>
+                          <th>Média Final</th>
+                          <th>Situação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="student in group.studentsDetails" :key="student.id">
+                          <td>{{ student.name }}</td>
+                          <td :class="{ 'warning-strong': Number(student.partial) < 4 }">{{ student.partial }}</td>
+                          <td :class="{ 'warning-strong': Number(student.final) < 4 }">{{ student.final }}</td>
+                          <td><span class="imersao-situation-pill" :class="student.situationClass">{{ student.situation }}</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div v-else-if="getImersaoGroupTab(group.id) === 'parcial'" class="imersao-group-panel">
+                    <table class="imersao-group-table">
+                      <thead>
+                        <tr>
+                          <th>Aluno</th>
+                          <th>Nota parcial</th>
+                          <th>Observação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="student in group.studentsDetails" :key="`p-${student.id}`">
+                          <td>{{ student.name }}</td>
+                          <td :class="{ 'warning-strong': Number(student.partial) < 4 }">{{ student.partial }}</td>
+                          <td>{{ Number(student.partial) < 4 ? 'Acompanhamento necessário' : 'Desempenho esperado' }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div v-else-if="getImersaoGroupTab(group.id) === 'final'" class="imersao-group-panel">
+                    <table class="imersao-group-table">
+                      <thead>
+                        <tr>
+                          <th>Aluno</th>
+                          <th>Nota final</th>
+                          <th>Situação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="student in group.studentsDetails" :key="`f-${student.id}`">
+                          <td>{{ student.name }}</td>
+                          <td :class="{ 'warning-strong': Number(student.final) < 4 }">{{ student.final }}</td>
+                          <td><span class="imersao-situation-pill" :class="student.situationClass">{{ student.situation }}</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div v-else class="imersao-group-panel">
+                    <table class="imersao-group-table">
+                      <thead>
+                        <tr>
+                          <th>Aluno</th>
+                          <th>Última reunião</th>
+                          <th>Presença</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="student in group.studentsDetails" :key="`a-${student.id}`">
+                          <td>{{ student.name }}</td>
+                          <td>{{ group.lastMeetingDate }}</td>
+                          <td>
+                            <span class="imersao-situation-pill" :class="student.attendedLastMeeting ? 'status-regular' : 'status-warning'">
+                              {{ student.attendedLastMeeting ? 'Presente' : 'Ausente' }}
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
     </template>
@@ -1192,6 +1388,184 @@
       </div>
     </div>
 
+    <!-- Modal: Import Students from Imersão -->
+    <div v-if="showImportImersaoModal" class="modal-overlay" @click="showImportImersaoModal = false">
+      <div class="modal modal-large" @click.stop>
+        <div class="modal-header">
+          <h2>Importar alunos da imersão</h2>
+          <button type="button" class="modal-close" @click="showImportImersaoModal = false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-content import-imersao-modal">
+          <input
+            type="file"
+            ref="fileInputImportImersao"
+            style="display: none"
+            accept=".xlsx,.xls,.csv"
+          />
+
+          <div class="file-upload-area" @click="$refs.fileInputImportImersao?.click()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 5 17 10" />
+              <line x1="12" y1="5" x2="12" y2="17" />
+            </svg>
+            <p>Envie a planilha com os alunos da imersão</p>
+            <small>Formatos aceitos: .xlsx, .xls, .csv</small>
+          </div>
+
+          <div class="info-box info-yellow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <div>
+              <strong>Validação automática de conflitos</strong>
+              <p>O sistema verificará se algum aluno já está vinculado a outro programa vigente.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions-footer import-imersao-footer">
+          <button type="button" class="btn-outline" @click="showImportImersaoModal = false">Cancelar</button>
+          <button type="button" class="btn-primary">Importar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Submit Imersão Grades -->
+    <div v-if="showSubmitNotasImersaoModal" class="modal-overlay" @click="showSubmitNotasImersaoModal = false">
+      <div class="modal modal-large" @click.stop>
+        <div class="modal-header">
+          <h2>Submeter notas</h2>
+          <button type="button" class="modal-close" @click="showSubmitNotasImersaoModal = false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-content submit-imersao-notas-modal">
+          <div class="submit-imersao-type-label">Tipo de avaliação</div>
+
+          <div class="submit-imersao-type-tabs">
+            <button
+              type="button"
+              class="submit-imersao-type-btn"
+              :class="{ active: tipoAvaliacaoImersao === 'parcial' }"
+              @click="tipoAvaliacaoImersao = 'parcial'"
+            >
+              Avaliação Parcial
+            </button>
+            <button
+              type="button"
+              class="submit-imersao-type-btn"
+              :class="{ active: tipoAvaliacaoImersao === 'final' }"
+              @click="tipoAvaliacaoImersao = 'final'"
+            >
+              Avaliação Final
+            </button>
+          </div>
+
+          <input
+            type="file"
+            ref="fileInputSubmitNotasImersao"
+            style="display: none"
+            accept=".xlsx,.xls,.csv"
+          />
+
+          <div class="file-upload-area" @click="$refs.fileInputSubmitNotasImersao?.click()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 5 17 10" />
+              <line x1="12" y1="5" x2="12" y2="17" />
+            </svg>
+            <p>Envie a planilha de notas</p>
+            <small>Formatos aceitos: .xlsx, .xls, .csv</small>
+          </div>
+        </div>
+
+        <div class="modal-actions-footer submit-imersao-notas-footer">
+          <button type="button" class="btn-outline" @click="showSubmitNotasImersaoModal = false">Cancelar</button>
+          <button type="button" class="btn-primary">Submeter notas</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Update Attendance (Imersão) -->
+    <div v-if="showAtualizarPresencaImersaoModal" class="modal-overlay" @click="showAtualizarPresencaImersaoModal = false">
+      <div class="modal modal-large" @click.stop>
+        <div class="modal-header">
+          <h2>Atualizar presença</h2>
+          <button type="button" class="modal-close" @click="showAtualizarPresencaImersaoModal = false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-content update-presenca-imersao-modal">
+          <div class="presenca-filters-grid">
+            <div class="presenca-field">
+              <label for="presenca-grupo">Grupo</label>
+              <select id="presenca-grupo" v-model="imersaoPresencaForm.groupId" class="field">
+                <option v-for="group in imersaoPresencaGroups" :key="group.id" :value="group.id">{{ group.name }}</option>
+              </select>
+            </div>
+
+            <div class="presenca-field">
+              <label for="presenca-reuniao">Reunião semanal</label>
+              <select id="presenca-reuniao" v-model="imersaoPresencaForm.meetingDate" class="field">
+                <option v-for="meeting in presencaMeetingOptions" :key="meeting.value" :value="meeting.value">{{ meeting.label }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="presenca-list-head">
+            <strong>Alunos do grupo</strong>
+            <span>Marque presença ou ausência na data selecionada.</span>
+          </div>
+
+          <div class="presenca-list">
+            <div v-for="student in presencaRows" :key="student.id" class="presenca-row">
+              <div class="presenca-student-name">{{ student.name }}</div>
+              <div class="presenca-actions">
+                <button
+                  type="button"
+                  class="presenca-action-btn"
+                  :class="{ active: student.present }"
+                  @click="setPresenceValue(student.id, true)"
+                >
+                  Presente
+                </button>
+                <button
+                  type="button"
+                  class="presenca-action-btn presenca-action-btn--danger"
+                  :class="{ active: student.present === false }"
+                  @click="setPresenceValue(student.id, false)"
+                >
+                  Ausente
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions-footer update-presenca-footer">
+          <button type="button" class="btn-outline" @click="showAtualizarPresencaImersaoModal = false">Cancelar</button>
+          <button type="button" class="btn-primary">Salvar presença</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal: Send Message -->
     <div v-if="showSendMessageModal" class="modal-overlay" @click="showSendMessageModal = false">
       <div class="modal modal-large" @click.stop>
@@ -1262,6 +1636,72 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showCourseDetailsModal && selectedCourseItem" class="modal-overlay" @click="closeCourseDetailsModal">
+      <div class="modal modal-large course-details-modal" @click.stop>
+        <div class="modal-header">
+          <div>
+            <h2>{{ selectedCourseItem?.name || 'Detalhes do curso' }}</h2>
+            <div class="course-details-badges">
+              <span v-if="selectedCourseItem?.required" class="course-badge course-badge-required">Obrigatório</span>
+              <span v-if="selectedCourseItem?.knowledgeArea" class="course-badge">{{ selectedCourseItem.knowledgeArea }}</span>
+            </div>
+          </div>
+          <button type="button" class="modal-close" @click="closeCourseDetailsModal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-content course-details-content">
+          <div class="course-detail-stats">
+            <div class="course-detail-stat">
+              <div class="course-detail-label">Carga horária</div>
+              <div class="course-detail-value">{{ selectedCourseItem?.workloadHours ? `${selectedCourseItem.workloadHours}h` : '--' }}</div>
+            </div>
+            <div class="course-detail-stat">
+              <div class="course-detail-label">Média de conclusão</div>
+              <div class="course-detail-value teal">{{ selectedCourseItem?.completionPct || 0 }}%</div>
+            </div>
+            <div class="course-detail-stat">
+              <div class="course-detail-label">Concluídos</div>
+              <div class="course-detail-value">{{ selectedCourseItem?.completedCount || 0 }}</div>
+            </div>
+            <div class="course-detail-stat">
+              <div class="course-detail-label">Pendentes</div>
+              <div class="course-detail-value amber">{{ selectedCourseItem?.pendingCount || 0 }}</div>
+            </div>
+          </div>
+
+          <div class="alert-banner alert-warning">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <div class="alert-copy">
+              <strong>Alunos com pendência</strong>
+              <p>{{ selectedCourseItem?.pendingCount || 0 }} alunos ainda não concluíram este curso</p>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-outline" @click="closeCourseDetailsModal">Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Create Group -->
+    <GroupCreateModal 
+      v-if="classId"
+      :is-open="showGroupCreateModal"
+      :class-id="classId"
+      @close="showGroupCreateModal = false"
+      @group-created="onGroupCreated"
+    />
   </div>
 </template>
 
@@ -1273,7 +1713,9 @@ import { enrollmentService } from '@/services/enrollmentService';
 import { peopleService } from '@/services/peopleService';
 import { stageService } from '@/services/stageService';
 import { courseService } from '@/services/courseService';
+import { groupService } from '@/services/groupService';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import GroupCreateModal from '@/components/GroupCreateModal.vue';
 
 const cycle = ['Inscrição', 'Seleção', 'Nivelamento', 'Imersão', 'Encerrado'];
 const overviewCycle = ['Inscrição', 'Processo Seletivo', 'Nivelamento', 'Prova', 'Imersão', 'Avaliação Final', 'Encerramento'];
@@ -1406,7 +1848,7 @@ const selectionQuotaLabels = [
 
 export default {
   name: 'ClassDetailsView',
-  components: { ConfirmDialog },
+  components: { ConfirmDialog, GroupCreateModal },
   setup() {
     const route = useRoute();
     const router = useRouter();
@@ -1440,7 +1882,14 @@ export default {
     const showUpdateSelectionModal = ref(false);
     const showSubmitCoursesModal = ref(false);
     const showSubmitProvaNotasModal = ref(false);
+    const showImportImersaoModal = ref(false);
+    const showSubmitNotasImersaoModal = ref(false);
+    const showAtualizarPresencaImersaoModal = ref(false);
+    const tipoAvaliacaoImersao = ref('parcial');
     const showSendMessageModal = ref(false);
+    const showCourseDetailsModal = ref(false);
+    const selectedCourseItem = ref(null);
+    const showGroupCreateModal = ref(false);
     const selectedUpdateAction = ref(null);
     const registeringCandidate = ref(false);
     const registrationError = ref('');
@@ -1460,6 +1909,167 @@ export default {
       convokeCount: '',
       convokeDate: '',
       notes: '',
+    });
+    const imersaoMetricsCards = ref([
+      { label: 'Total de grupos', value: '10', valueClass: '' },
+      { label: 'Total de alunos', value: '50', valueClass: 'teal-strong' },
+      { label: 'Alunos ativos', value: '44', valueClass: 'teal-strong' },
+      { label: 'Nota de corte parcial', value: '3,75', valueClass: 'warning-strong' },
+      { label: 'Nota de corte final', value: '75% da maior', valueClass: 'warning-strong' },
+      { label: 'Alunos em risco', value: '3', valueClass: 'danger-strong' },
+    ]);
+    const imersaoGroups = ref([
+      {
+        id: 1,
+        name: 'Grupo 03',
+        status: 'OK',
+        statusClass: 'is-ok',
+        mentor: 'Prof. João Silva',
+        project: 'Plataforma de Gestão Acadêmica',
+        partnerCompany: 'BRISA',
+        lastGradesUpdate: '25/04/2026',
+        lastMeetingDate: '24/04/2026',
+        students: 5,
+        partialAverage: '7.8',
+        finalAverage: '8.4',
+        studentsDetails: [
+          { id: 'g03-1', name: 'João Silva', partial: '4.2', final: '4.5', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
+          { id: 'g03-2', name: 'Maria Santos', partial: '3.8', final: '4.1', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
+          { id: 'g03-3', name: 'Carlos Oliveira', partial: '4.5', final: '4.7', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
+          { id: 'g03-4', name: 'Ana Costa', partial: '4.0', final: '4.3', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
+          { id: 'g03-5', name: 'Pedro Lima', partial: '3.5', final: '3.8', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: false },
+        ],
+      },
+      {
+        id: 2,
+        name: 'Grupo 07',
+        status: 'OK',
+        statusClass: 'is-ok',
+        mentor: 'Prof. Maria Santos',
+        project: 'Sistema de Controle de Estoque',
+        partnerCompany: 'BRISA',
+        lastGradesUpdate: '25/04/2026',
+        lastMeetingDate: '24/04/2026',
+        students: 4,
+        partialAverage: '8.2',
+        finalAverage: '8.9',
+        studentsDetails: [
+          { id: 'g07-1', name: 'Fernanda Lima', partial: '4.4', final: '4.8', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
+          { id: 'g07-2', name: 'Gustavo Rocha', partial: '4.1', final: '4.6', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
+          { id: 'g07-3', name: 'Helena Costa', partial: '3.9', final: '4.4', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
+          { id: 'g07-4', name: 'Igor Nascimento', partial: '4.0', final: '4.5', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
+        ],
+      },
+      {
+        id: 3,
+        name: 'Grupo 12',
+        status: 'Atenção',
+        statusClass: 'is-warning',
+        mentor: 'Prof. Carlos Oliveira',
+        project: 'App de Mobilidade Urbana',
+        partnerCompany: 'BRISA',
+        lastGradesUpdate: '25/04/2026',
+        lastMeetingDate: '24/04/2026',
+        students: 5,
+        partialAverage: '6.5',
+        finalAverage: '7.2',
+        studentsDetails: [
+          { id: 'g12-1', name: 'João Victor Melo', partial: '3.6', final: '3.9', situation: 'Atenção', situationClass: 'status-warning', attendedLastMeeting: false },
+          { id: 'g12-2', name: 'Karina Souza', partial: '3.8', final: '4.0', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
+          { id: 'g12-3', name: 'Lucas Monteiro', partial: '4.0', final: '4.1', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
+          { id: 'g12-4', name: 'Mariana Lopes', partial: '3.7', final: '3.9', situation: 'Atenção', situationClass: 'status-warning', attendedLastMeeting: false },
+          { id: 'g12-5', name: 'Nicolas Barros', partial: '3.5', final: '3.8', situation: 'Atenção', situationClass: 'status-warning', attendedLastMeeting: true },
+        ],
+      },
+    ]);
+    const imersaoExpandedGroupId = ref(1);
+    const imersaoGroupTabs = ref({
+      1: 'resumo',
+      2: 'resumo',
+      3: 'resumo',
+    });
+    const toggleImersaoGroup = (groupId) => {
+      imersaoExpandedGroupId.value = imersaoExpandedGroupId.value === groupId ? null : groupId;
+    };
+    const setImersaoGroupTab = (groupId, tabId) => {
+      imersaoGroupTabs.value[groupId] = tabId;
+    };
+    const getImersaoGroupTab = (groupId) => imersaoGroupTabs.value[groupId] || 'resumo';
+    const imersaoPresencaGroups = ref([
+      {
+        id: 'grupo-03',
+        name: 'Grupo 03',
+        meetings: [
+          { value: '2026-03-03', label: '03/03/2026' },
+          { value: '2026-03-10', label: '10/03/2026' },
+          { value: '2026-03-17', label: '17/03/2026' },
+        ],
+        students: [
+          { id: 'g03-s1', name: 'Ana Beatriz Santos' },
+          { id: 'g03-s2', name: 'Bruno Almeida' },
+          { id: 'g03-s3', name: 'Camila Ferreira' },
+          { id: 'g03-s4', name: 'Diego Araújo' },
+          { id: 'g03-s5', name: 'Ester Oliveira' },
+        ],
+      },
+      {
+        id: 'grupo-07',
+        name: 'Grupo 07',
+        meetings: [
+          { value: '2026-03-04', label: '04/03/2026' },
+          { value: '2026-03-11', label: '11/03/2026' },
+          { value: '2026-03-18', label: '18/03/2026' },
+        ],
+        students: [
+          { id: 'g07-s1', name: 'Fernanda Lima' },
+          { id: 'g07-s2', name: 'Gustavo Rocha' },
+          { id: 'g07-s3', name: 'Helena Costa' },
+          { id: 'g07-s4', name: 'Igor Nascimento' },
+        ],
+      },
+      {
+        id: 'grupo-12',
+        name: 'Grupo 12',
+        meetings: [
+          { value: '2026-03-05', label: '05/03/2026' },
+          { value: '2026-03-12', label: '12/03/2026' },
+          { value: '2026-03-19', label: '19/03/2026' },
+        ],
+        students: [
+          { id: 'g12-s1', name: 'João Victor Melo' },
+          { id: 'g12-s2', name: 'Karina Souza' },
+          { id: 'g12-s3', name: 'Lucas Monteiro' },
+          { id: 'g12-s4', name: 'Mariana Lopes' },
+          { id: 'g12-s5', name: 'Nicolas Barros' },
+        ],
+      },
+    ]);
+    const imersaoPresencaForm = ref({
+      groupId: 'grupo-03',
+      meetingDate: '2026-03-03',
+    });
+    const presencaDraft = ref({});
+    const selectedPresencaGroup = computed(() => imersaoPresencaGroups.value.find((group) => group.id === imersaoPresencaForm.value.groupId) || null);
+    const presencaMeetingOptions = computed(() => selectedPresencaGroup.value?.meetings || []);
+    const getPresenceValue = (groupId, meetingDate, studentId) => {
+      const value = presencaDraft.value?.[groupId]?.[meetingDate]?.[studentId];
+      return typeof value === 'boolean' ? value : true;
+    };
+    const setPresenceValue = (studentId, present) => {
+      const { groupId, meetingDate } = imersaoPresencaForm.value;
+      if (!groupId || !meetingDate) return;
+      if (!presencaDraft.value[groupId]) presencaDraft.value[groupId] = {};
+      if (!presencaDraft.value[groupId][meetingDate]) presencaDraft.value[groupId][meetingDate] = {};
+      presencaDraft.value[groupId][meetingDate][studentId] = present;
+    };
+    const presencaRows = computed(() => {
+      const group = selectedPresencaGroup.value;
+      if (!group) return [];
+      const meetingDate = imersaoPresencaForm.value.meetingDate;
+      return group.students.map((student) => ({
+        ...student,
+        present: getPresenceValue(group.id, meetingDate, student.id),
+      }));
     });
 
     const programId = computed(() => route.params.programId);
@@ -1933,6 +2543,8 @@ export default {
         const notStarted = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('não iniciado') || p.status === 'não iniciado').length;
         const inProgress = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('em andamento') || p.status === 'em andamento').length;
         const completed = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('concluído') || p.status === 'concluído').length;
+        const pending = Math.max(total - completed, 0);
+        const workloadHours = Number(course.workloadHours || course.workload || course.hourLoad || course.cargaHoraria || 0);
         const avgCompletion = courseProgressions.length ? Math.round((courseProgressions.reduce((acc, p) => acc + Number(p.completionPercentage || p.completionPct || p.completion || 0), 0)) / total) : 0; // eslint-disable-line
         return {
           id: course.id,
@@ -1943,6 +2555,9 @@ export default {
           pctNotStarted: Math.round((notStarted / total) * 100),
           pctInProgress: Math.round((inProgress / total) * 100),
           pctCompleted: Math.round((completed / total) * 100),
+          completedCount: completed,
+          pendingCount: pending,
+          workloadHours,
           assigned: assignedIdsIncludes(assignments.value, course.id),
         };
       });
@@ -2015,9 +2630,19 @@ export default {
         const goToCourse = (course) => {
           router.push({ name: 'ClassCourses', params: { programId: programId.value, classId: classId.value }, query: { courseId: course.id } });
         };
+        const openCourseDetails = (course) => {
+          selectedCourseItem.value = course;
+          showCourseDetailsModal.value = true;
+        };
+        const closeCourseDetailsModal = () => {
+          showCourseDetailsModal.value = false;
+          selectedCourseItem.value = null;
+        };
 
         // Load nivelamento data when Etapas tab is opened
         const etapasSubTab = ref('nivelamento');
+        // When false, keep frontend mocks for imersaoGroups instead of replacing them with API results
+        const useRealImersaoGroups = ref(false);
         const lastEmailInfo = computed(() => {
           const info = classData.value?.lastEmailSent;
           if (info && info.date) {
@@ -2030,6 +2655,52 @@ export default {
         watch(() => activeTab.value, (tab) => {
           if (tab === 'etapas') loadNivelamentoData();
         });
+
+        // Load imersao groups when sub-tab switches to 'imersao'
+        const loadImersaoGroups = async () => {
+          try {
+            const res = await groupService.getGroupsByClass(classId.value);
+            const groups = (res && res.data && (Array.isArray(res.data) ? res.data : res.data.groups)) || res.data || res || [];
+            imersaoGroups.value = (groups || []).map((g) => ({
+              id: g.id,
+              name: g.projectTheme || g.name || '-',
+              status: g.status || 'Ativo',
+              statusClass: (g.status === 'Atenção') ? 'is-warning' : 'is-ok',
+              mentor: g.leaderName || g.leader || '-',
+              project: g.projectTheme || g.project || '-',
+              partnerCompany: g.projectCompanyName || g.projectCompany || '',
+              lastGradesUpdate: g.lastGradesUpdate || '-',
+              lastMeetingDate: g.lastMeetingDate || '-',
+              students: g.memberCount ?? (g.members?.length ?? 0),
+              partialAverage: g.partialAverage ?? '-',
+              finalAverage: g.finalAverage ?? '-',
+              studentsDetails: (g.members || g.studentDetails || []).map((m) => ({
+                id: m.id,
+                name: m.name,
+                partial: m.partial ?? '-',
+                final: m.final ?? '-',
+                situation: m.situation || 'Regular',
+                situationClass: (m.situation === 'Atenção') ? 'status-warning' : 'status-regular',
+                attendedLastMeeting: !!m.attendedLastMeeting,
+              })),
+            }));
+            // update metrics
+            imersaoMetricsCards.value[0].value = String(imersaoGroups.value.length || 0);
+            imersaoMetricsCards.value[1].value = String(imersaoGroups.value.reduce((s, g) => s + (g.students || 0), 0));
+          } catch (err) {
+            console.error('Erro ao carregar grupos:', err);
+          }
+        };
+
+        watch(() => etapasSubTab.value, (tab) => {
+          if (tab === 'imersao' && useRealImersaoGroups.value) loadImersaoGroups();
+        });
+
+        // Manual trigger to refresh groups from API when needed
+        const refreshImersaoGroupsFromApi = async () => {
+          useRealImersaoGroups.value = true;
+          await loadImersaoGroups();
+        };
 
     // Expose to template
     
@@ -2367,6 +3038,14 @@ export default {
       return new Date(date).toLocaleDateString('pt-BR');
     };
 
+    const onGroupCreated = (group) => {
+      // Atualizar lista de grupos se necessário
+      // ou apenas fechar o modal (que já é feito pelo evento close)
+      console.log('Grupo criado:', group);
+      // Recarregar dados se necessário
+      loadClassDetails();
+    };
+
     const goBack = () => router.back();
 
     onMounted(() => {
@@ -2391,9 +3070,18 @@ export default {
     watch(selectionProcessTotalPages, (total) => {
       if (selectionProcessPage.value > total) selectionProcessPage.value = total;
     });
+    watch(
+      () => imersaoPresencaForm.value.groupId,
+      (groupId) => {
+        const group = imersaoPresencaGroups.value.find((item) => item.id === groupId);
+        imersaoPresencaForm.value.meetingDate = group?.meetings?.[0]?.value || '';
+      }
+    );
 
     return {
       activeTab,
+      programId,
+      classId,
       classData,
       cityDistribution,
       classPeopleNextPage,
@@ -2492,7 +3180,14 @@ export default {
       showUpdateSelectionModal,
       showSubmitCoursesModal,
       showSubmitProvaNotasModal,
+      showImportImersaoModal,
+      showSubmitNotasImersaoModal,
+      showAtualizarPresencaImersaoModal,
+      tipoAvaliacaoImersao,
       showSendMessageModal,
+      showCourseDetailsModal,
+      selectedCourseItem,
+      showGroupCreateModal,
       showEditStageModal,
       stageBucket,
       stageError,
@@ -2506,6 +3201,17 @@ export default {
       updatingStage,
       selectedUpdateAction,
       waitlistForm,
+      imersaoMetricsCards,
+      imersaoGroups,
+      imersaoExpandedGroupId,
+      toggleImersaoGroup,
+      setImersaoGroupTab,
+      getImersaoGroupTab,
+      imersaoPresencaGroups,
+      imersaoPresencaForm,
+      presencaMeetingOptions,
+      presencaRows,
+      setPresenceValue,
       viewPerson,
       // Nivelamento / Etapas helpers
       courses,
@@ -2518,6 +3224,9 @@ export default {
       assignCourse,
       removeCourse,
       goToCourse,
+      openCourseDetails,
+      closeCourseDetailsModal,
+      onGroupCreated,
     };
   },
 };
@@ -4205,6 +4914,196 @@ export default {
   line-height: 1.5;
 }
 
+.modal.modal-large .modal-content.import-imersao-modal {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 1 1 auto;
+  align-self: stretch;
+}
+
+.modal.modal-large .import-imersao-modal {
+  display: block;
+  gap: 14px;
+}
+
+.modal.modal-large .import-imersao-modal > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal.modal-large .import-imersao-modal .file-upload-area {
+  margin-bottom: 14px;
+}
+
+.import-imersao-footer {
+  background: var(--slate-50);
+  border-top: 1px solid var(--slate-200);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal.modal-large .modal-content.submit-imersao-notas-modal {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 1 1 auto;
+  align-self: stretch;
+}
+
+.modal.modal-large .submit-imersao-notas-modal > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.submit-imersao-type-label {
+  color: var(--slate-700);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.submit-imersao-type-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.submit-imersao-type-btn {
+  height: 40px;
+  border: 1px solid var(--slate-200);
+  background: #fff;
+  color: var(--slate-700);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.submit-imersao-type-btn.active {
+  border-color: var(--teal-500);
+  color: #0f766e;
+  background: #ecfeff;
+}
+
+.submit-imersao-notas-modal .file-upload-area {
+  margin-bottom: 0;
+}
+
+.submit-imersao-notas-footer {
+  background: var(--slate-50);
+  border-top: 1px solid var(--slate-200);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal.modal-large .modal-content.update-presenca-imersao-modal {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 1 1 auto;
+  align-self: stretch;
+}
+
+.presenca-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.presenca-field label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--slate-700);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.presenca-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.presenca-list-head strong {
+  color: var(--brand-900);
+  font-size: 14px;
+}
+
+.presenca-list-head span {
+  color: var(--slate-600);
+  font-size: 12px;
+}
+
+.presenca-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.presenca-row {
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.presenca-student-name {
+  color: var(--brand-900);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.presenca-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.presenca-action-btn {
+  border: 1px solid var(--slate-200);
+  background: #fff;
+  color: var(--slate-700);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  height: 30px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.presenca-action-btn.active {
+  border-color: var(--teal-500);
+  background: #ecfeff;
+  color: #0f766e;
+}
+
+.presenca-action-btn--danger.active {
+  border-color: #fb7185;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.update-presenca-footer {
+  background: var(--slate-50);
+  border-top: 1px solid var(--slate-200);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .modal-desc {
   color: var(--slate-600);
   font-size: 14px;
@@ -4765,6 +5664,271 @@ export default {
 .nivelamento-actions .btn-primary {
   padding: 0 14px;
 }
+
+.danger-strong {
+  color: #dc2626 !important;
+}
+
+.imersao-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.imersao-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.imersao-metric-card {
+  background: var(--slate-100);
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.imersao-metric-label {
+  display: block;
+  color: var(--slate-600);
+  font-size: 12px;
+}
+
+.imersao-metric-card strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--brand-900);
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.imersao-metric-card small {
+  display: block;
+  margin-top: 4px;
+  color: var(--slate-600);
+  font-size: 12px;
+}
+
+.imersao-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.imersao-actions .btn-outline,
+.imersao-actions .btn-primary {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+}
+
+.imersao-actions .btn-primary {
+  padding: 0 14px;
+}
+
+.imersao-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.imersao-group-item {
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.imersao-group-card {
+  width: 100%;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 1.4fr 1.4fr auto 1.1fr auto;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.imersao-group-card:hover {
+  background: #f8fafc;
+}
+
+.imersao-group-main {
+  min-width: 0;
+}
+
+.imersao-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.imersao-group-title strong {
+  color: var(--brand-900);
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.imersao-group-status {
+  border-radius: 8px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.imersao-group-status.is-ok {
+  background: #d1fae5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.imersao-group-status.is-warning {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.imersao-group-sub {
+  margin-top: 8px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.imersao-group-sub span,
+.imersao-group-project span,
+.imersao-group-students span,
+.imersao-group-avg span {
+  color: var(--slate-600);
+  font-size: 14px;
+}
+
+.imersao-group-sub strong,
+.imersao-group-project strong,
+.imersao-group-students strong,
+.imersao-group-avg strong {
+  color: var(--brand-900);
+  font-size: 14px;
+}
+
+.imersao-group-project,
+.imersao-group-students,
+.imersao-group-avg {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.imersao-group-project strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imersao-group-avg strong.teal,
+.imersao-group-students strong {
+  color: var(--teal-600);
+}
+
+.imersao-group-arrow {
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imersao-group-expanded {
+  border-top: 1px solid var(--slate-200);
+  padding: 12px 16px 14px;
+}
+
+.imersao-group-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--slate-200);
+  margin-bottom: 12px;
+}
+
+.imersao-group-tab-btn {
+  border: none;
+  background: transparent;
+  color: var(--slate-700);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 10px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.imersao-group-tab-btn.active {
+  color: var(--teal-600);
+  border-bottom-color: var(--teal-500);
+  font-weight: 600;
+}
+
+.imersao-group-meta p {
+  margin: 0 0 4px;
+  color: var(--slate-700);
+  font-size: 14px;
+}
+
+.imersao-group-meta .muted {
+  margin: 8px 0 10px;
+}
+
+.imersao-group-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.imersao-group-table th,
+.imersao-group-table td {
+  text-align: left;
+  border-top: 1px solid var(--slate-200);
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.imersao-group-table th {
+  color: var(--slate-600);
+  font-weight: 600;
+  border-top: none;
+}
+
+.imersao-situation-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.imersao-situation-pill.status-regular {
+  color: #047857;
+  background: #d1fae5;
+}
+
+.imersao-situation-pill.status-warning {
+  color: #b45309;
+  background: #fef3c7;
+}
 .nivelamento-status-pill {
   margin-left: 4px;
   height: 28px;
@@ -4779,7 +5943,11 @@ export default {
 }
 
 /* Course cards layout */
-.courses-list { space-y: 1rem; }
+.courses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
 .course-card-new {
   width: 100%;
   display: flex;
@@ -4790,7 +5958,6 @@ export default {
   border-radius: 8px;
   transition: all 0.2s;
   text-align: left;
-  margin-bottom: 8px;
   background: #fff;
   cursor: pointer;
 }
@@ -4801,7 +5968,7 @@ export default {
 .course-left-new {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 17px;
   flex: 1;
 }
 .course-icon {
@@ -4862,6 +6029,66 @@ export default {
   font-size: 12px;
   color: var(--slate-400);
   margin-bottom: 8px;
+}
+
+.course-details-modal {
+  width: min(760px, calc(100vw - 32px)) !important;
+  max-width: min(760px, calc(100vw - 32px)) !important;
+}
+
+.modal.modal-large .modal-content.course-details-content {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 1 1 auto;
+  align-self: stretch;
+}
+
+.modal.modal-large .course-details-content > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.course-details-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.course-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.course-detail-stat {
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.course-detail-label {
+  color: var(--slate-600);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.course-detail-value {
+  color: var(--brand-900);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.course-detail-value.teal {
+  color: var(--teal-600);
+}
+
+.course-detail-value.amber {
+  color: #d97706;
 }
 .progress-container {
   display: flex;
@@ -4996,9 +6223,17 @@ export default {
 
 @media (max-width: 1200px) {
   .nivelamento-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .imersao-metrics-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .imersao-group-card { grid-template-columns: 1fr; gap: 8px; }
+  .imersao-group-arrow { display: none; }
 }
 @media (max-width: 760px) {
   .nivelamento-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .imersao-metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .presenca-filters-grid { grid-template-columns: 1fr; }
+  .presenca-row { flex-direction: column; align-items: flex-start; }
+  .imersao-group-tabs { overflow-x: auto; white-space: nowrap; }
+  .imersao-group-table { display: block; overflow-x: auto; }
 }
 
 </style>

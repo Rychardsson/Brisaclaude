@@ -47,9 +47,9 @@
       </article>
 
       <article class="summary-card summary-card-amber">
-        <span class="summary-label">Usuários criados aqui</span>
+        <span class="summary-label">Usuários carregados</span>
         <strong class="summary-value">{{ formatNumber(createdUsers.length) }}</strong>
-        <span class="summary-note">Cadastros manuais nesta sessão/local</span>
+        <span class="summary-note">Lista inicial vinda da API do backoffice</span>
       </article>
 
       <article class="summary-card summary-card-sand">
@@ -760,8 +760,6 @@ import { peopleService } from '@/services/peopleService';
 const router = useRouter();
 
 const ADMIN_IMPORT_HISTORY_KEY = 'admin-panel-import-history';
-const ADMIN_CREATED_USERS_KEY = 'admin-panel-created-users';
-
 const activeTab = ref('imports');
 const toasts = ref([]);
 
@@ -793,7 +791,7 @@ const sessionImportHistory = ref(readStoredList(ADMIN_IMPORT_HISTORY_KEY));
 const remoteImportHistory = ref([]);
 const importHistoryLoading = ref(false);
 
-const createdUsers = ref(readStoredList(ADMIN_CREATED_USERS_KEY));
+const createdUsers = ref([]);
 const usersLoading = ref(false);
 const userError = ref('');
 const userSearch = ref('');
@@ -920,7 +918,7 @@ const globalStatusClass = computed(() => {
 
 onMounted(async () => {
   window.addEventListener('beforeunload', handleBeforeUnload);
-  await Promise.all([loadCourses(), loadImportHistory()]);
+  await Promise.all([loadCourses(), loadImportHistory(), loadUsers()]);
 });
 
 onBeforeUnmount(() => {
@@ -1378,9 +1376,26 @@ function normalizeUserRecord(data) {
   };
 }
 
-function persistCreatedUsers(items) {
-  createdUsers.value = items;
-  writeStoredList(ADMIN_CREATED_USERS_KEY, items);
+async function loadUsers() {
+  usersLoading.value = true;
+  userError.value = '';
+
+  try {
+    const response = await api.get('/users', {
+      params: {
+        limit: 24
+      }
+    });
+
+    createdUsers.value = Array.isArray(response.data)
+      ? response.data.map(normalizeUserRecord)
+      : [];
+  } catch (error) {
+    createdUsers.value = [];
+    userError.value = error.response?.data?.message || error.message || 'Erro ao carregar usuários.';
+  } finally {
+    usersLoading.value = false;
+  }
 }
 
 async function searchUsers() {
@@ -1464,7 +1479,7 @@ async function saveUser() {
     });
 
     const normalized = normalizeUserRecord(response.data);
-    persistCreatedUsers([normalized, ...createdUsers.value].slice(0, 20));
+    await loadUsers();
     pushToast('Usuário criado', `A conta "${normalized.login}" foi cadastrada com sucesso.`, 'success');
     closeUserModal();
   } catch (error) {

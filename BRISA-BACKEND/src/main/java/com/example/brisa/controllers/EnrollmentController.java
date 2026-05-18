@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -44,6 +45,12 @@ public class EnrollmentController {
     public ResponseEntity<List<EnrollmentModel>> getEnrollmentsByPeopleId(@PathVariable Long peopleId) {
         List<EnrollmentModel> enrollments = enrollmentService.findByPeopleId(peopleId);
         return ResponseEntity.ok(enrollments);
+    }
+
+    @PostMapping("/import/excel")
+    public ResponseEntity<Map<String, String>> importEnrollmentsFromExcel() {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+            .body(Map.of("message", "Importacao de matriculas ainda nao foi integrada no backend."));
     }
 
     @PostMapping

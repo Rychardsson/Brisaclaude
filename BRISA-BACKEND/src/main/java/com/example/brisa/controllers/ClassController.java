@@ -45,6 +45,12 @@ public class ClassController {
         return ResponseEntity.ok(classService.getClassesCountByProgram());
     }
 
+    @PostMapping("/import/excel")
+    public ResponseEntity<Map<String, String>> importClassesFromExcel() {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+            .body(Map.of("message", "Importacao de turmas ainda nao foi integrada no backend."));
+    }
+
     @PostMapping
     public ResponseEntity<ClassModel> createClass(
             @RequestBody ClassModel classModel,

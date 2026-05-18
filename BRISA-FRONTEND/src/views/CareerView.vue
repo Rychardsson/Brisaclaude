@@ -13,7 +13,7 @@
           </div>
 
           <div class="top-actions">
-            <button type="button" class="primary-btn" :disabled="!quickFollowUpTarget" @click="openQuickFollowUp">
+            <button type="button" class="primary-btn" :disabled="!quickFollowUpTarget || displayingDemoData" @click="openQuickFollowUp">
               Registrar acompanhamento
             </button>
           </div>
@@ -143,10 +143,11 @@
           <section class="automation-card">
             <div class="automation-header">
               <div>
-                <p class="automation-eyebrow">Mockup de automação</p>
+                <p class="automation-eyebrow">Automação de carreira</p>
                 <h2>Automação de acompanhamento por e-mail</h2>
                 <p>
-                  Proposta visual para disparos semestrais nos marcos de 6, 12, 18 e 24 meses após a conclusão.
+                  As preferências abaixo já são salvas no backend. O disparo automático segue em preparação,
+                  mas o painel já centraliza o escopo, os checkpoints e o histórico recente dessa automação.
                 </p>
               </div>
 
@@ -246,13 +247,13 @@
                 </div>
 
                 <div class="automation-actions">
-                  <button type="button" class="ghost-btn" @click="handleAutomationMockAction('save')">
+                  <button type="button" class="ghost-btn" :disabled="automationSaving" @click="handleAutomationAction('save')">
                     Salvar automação
                   </button>
-                  <button type="button" class="ghost-btn" @click="handleAutomationMockAction('test')">
+                  <button type="button" class="ghost-btn" :disabled="automationSaving" @click="handleAutomationAction('test')">
                     Enviar teste
                   </button>
-                  <button type="button" class="primary-btn" @click="toggleAutomationEnabled">
+                  <button type="button" class="primary-btn" :disabled="automationSaving" @click="toggleAutomationEnabled">
                     {{ automationEnabled ? 'Pausar automação' : 'Ativar automação' }}
                   </button>
                 </div>
@@ -316,11 +317,11 @@
 
                 <div class="automation-subsection">
                   <div class="automation-subheader">
-                    <h4>Histórico simulado</h4>
-                    <span>Visual de referência</span>
+                    <h4>Histórico recente</h4>
+                    <span>{{ automationHistory.length }} registro(s)</span>
                   </div>
 
-                  <div class="automation-history-list">
+                  <div v-if="automationHistory.length" class="automation-history-list">
                     <article
                       v-for="item in automationHistory"
                       :key="item.id"
@@ -336,6 +337,10 @@
                         <small>{{ item.note }}</small>
                       </div>
                     </article>
+                  </div>
+
+                  <div v-else class="empty-inline">
+                    Nenhuma ação de automação foi registrada ainda.
                   </div>
                 </div>
               </article>
@@ -416,6 +421,7 @@
                   :key="row.key"
                   type="button"
                   class="agenda-item"
+                  :disabled="row.isDemo"
                   @click="openFollowUpModal(row)"
                 >
                   <div class="agenda-main">
@@ -497,8 +503,8 @@
                     </div>
                   </td>
                   <td class="actions-cell">
-                    <button type="button" class="text-btn" @click="openFollowUpModal(row)">
-                      Atualizar
+                    <button type="button" class="text-btn" :disabled="row.isDemo" @click="openFollowUpModal(row)">
+                      {{ row.isDemo ? 'Somente exemplo' : 'Atualizar' }}
                     </button>
                     <button type="button" class="text-btn" :disabled="row.isDemo" @click="openPersonProfile(row)">
                       {{ row.isDemo ? 'Somente exemplo' : 'Ver pessoa' }}
@@ -626,11 +632,12 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { careerService } from '@/services/careerService';
 import { classService } from '@/services/classService';
 import { enrollmentService } from '@/services/enrollmentService';
+import { logService } from '@/services/logService';
 import { programService } from '@/services/programService';
 
-const FOLLOW_UP_STORAGE_KEY = 'career-followups-v1';
 const CHECKPOINTS = [6, 12, 18, 24];
 const DEMO_CAREER_SEED = [
   {
@@ -729,12 +736,14 @@ const selectedWindow = ref('ACTIVE_24');
 const programs = ref([]);
 const classes = ref([]);
 const enrollments = ref([]);
-const followUps = ref(readStoredFollowUps());
+const followUps = ref([]);
+const automationLogItems = ref([]);
 
 const followUpModalRow = ref(null);
 const followUpSaving = ref(false);
 const formError = ref('');
 const followUpForm = ref(defaultFollowUpForm());
+const automationSaving = ref(false);
 const automationEnabled = ref(true);
 const automationScopeProgramId = ref('');
 const automationScopeClassId = ref('');
@@ -743,7 +752,7 @@ const automationMessage = ref(
   'Olá! Queremos saber como está sua trajetória profissional após a conclusão do programa. Seu retorno ajuda no acompanhamento dos egressos.'
 );
 const automationCheckpoints = ref([...CHECKPOINTS]);
-const automationActionNote = ref('Mockup de frontend: esta automação ainda não envia e-mails reais.');
+const automationActionNote = ref('Carregando a configuração de automação salva no backend...');
 
 const programOptions = computed(() => {
   const known = new Map();
@@ -832,9 +841,10 @@ const followUpsByKey = computed(() => {
   const grouped = {};
 
   followUps.value.forEach((item) => {
-    if (!item?.key) return;
-    if (!grouped[item.key]) grouped[item.key] = [];
-    grouped[item.key].push(item);
+    const key = resolveFollowUpKey(item);
+    if (!key) return;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(item);
   });
 
   Object.keys(grouped).forEach((key) => {
@@ -1022,33 +1032,7 @@ const nextAutomationBatch = computed(() => {
   };
 });
 
-const automationHistory = computed(() => {
-  const total = Math.max(automationScopedRows.value.length, 3);
-
-  return [
-    {
-      id: 'history-1',
-      title: 'Campanha de 6 meses',
-      dateLabel: formatDate(monthsAgoDate(1)),
-      sentLabel: `${formatNumber(Math.max(1, Math.min(total, total - 1)))} enviados`,
-      note: 'Resumo visual de respostas e pendências.'
-    },
-    {
-      id: 'history-2',
-      title: 'Campanha de 12 meses',
-      dateLabel: formatDate(monthsAgoDate(3)),
-      sentLabel: `${formatNumber(Math.max(1, Math.min(total, total - 2)))} enviados`,
-      note: 'Simulação de auditoria por checkpoint.'
-    },
-    {
-      id: 'history-3',
-      title: 'Campanha de 18 meses',
-      dateLabel: formatDate(monthsAgoDate(5)),
-      sentLabel: `${formatNumber(Math.max(1, Math.min(total, total - 2)))} enviados`,
-      note: 'Exemplo de historico para consulta do backoffice.'
-    }
-  ];
-});
+const automationHistory = computed(() => automationLogItems.value);
 
 const trackedCount = computed(() => filteredCareerRows.value.filter((row) => row.followUps.length > 0).length);
 const employedCount = computed(() => filteredCareerRows.value.filter((row) => row.latestStatus === 'EMPREGADO').length);
@@ -1172,15 +1156,22 @@ async function loadData() {
   errorMessage.value = '';
 
   try {
-    const [programsData, classesData, enrollmentsData] = await Promise.all([
+    const [programsData, classesData, enrollmentsData, followUpsData, automationSettings] = await Promise.all([
       programService.getAll().catch(() => []),
       classService.getAll().catch(() => []),
-      enrollmentService.getAll()
+      enrollmentService.getAll(),
+      careerService.getFollowUps().catch(() => []),
+      careerService.getAutomationSettings().catch(() => null)
     ]);
 
     programs.value = Array.isArray(programsData) ? programsData : [];
     classes.value = Array.isArray(classesData) ? classesData : [];
     enrollments.value = Array.isArray(enrollmentsData) ? enrollmentsData : [];
+    followUps.value = Array.isArray(followUpsData)
+      ? [...followUpsData].sort((left, right) => String(right.surveyDate || '').localeCompare(String(left.surveyDate || '')))
+      : [];
+    hydrateAutomationSettings(automationSettings);
+    await loadAutomationHistory();
   } catch (error) {
     errorMessage.value = error.response?.data?.message || error.message || 'Não foi possível carregar os dados de carreira.';
   } finally {
@@ -1194,11 +1185,12 @@ function openPersonProfile(row) {
 }
 
 function openQuickFollowUp() {
-  if (!quickFollowUpTarget.value) return;
+  if (!quickFollowUpTarget.value || displayingDemoData.value) return;
   openFollowUpModal(quickFollowUpTarget.value);
 }
 
 function openFollowUpModal(row) {
+  if (row?.isDemo) return;
   followUpModalRow.value = row;
   formError.value = '';
   followUpSaving.value = false;
@@ -1219,7 +1211,7 @@ function closeFollowUpModal() {
   followUpSaving.value = false;
 }
 
-function saveFollowUp() {
+async function saveFollowUp() {
   if (!followUpModalRow.value) return;
 
   if (!followUpForm.value.surveyDate || !followUpForm.value.status) {
@@ -1235,25 +1227,28 @@ function saveFollowUp() {
   followUpSaving.value = true;
   formError.value = '';
 
-  const entry = {
-    id: `follow-up-${Date.now()}`,
-    key: followUpModalRow.value.key,
-    enrollmentId: followUpModalRow.value.enrollmentId,
-    peopleId: followUpModalRow.value.personId,
-    classId: followUpModalRow.value.classId,
-    programId: followUpModalRow.value.programId,
-    surveyDate: followUpForm.value.surveyDate,
-    status: followUpForm.value.status,
-    company: followUpForm.value.company.trim(),
-    position: followUpForm.value.position.trim(),
-    notes: followUpForm.value.notes.trim()
-  };
+  try {
+    const entry = await careerService.createFollowUp({
+      enrollmentId: Number(followUpModalRow.value.enrollmentId),
+      peopleId: Number(followUpModalRow.value.personId),
+      classId: Number(followUpModalRow.value.classId),
+      programId: followUpModalRow.value.programId ? Number(followUpModalRow.value.programId) : null,
+      surveyDate: followUpForm.value.surveyDate,
+      status: followUpForm.value.status,
+      company: followUpForm.value.company.trim(),
+      position: followUpForm.value.position.trim(),
+      notes: followUpForm.value.notes.trim()
+    });
 
-  followUps.value = [entry, ...followUps.value]
-    .sort((left, right) => String(right.surveyDate || '').localeCompare(String(left.surveyDate || '')));
+    followUps.value = [entry, ...followUps.value]
+      .sort((left, right) => String(right.surveyDate || '').localeCompare(String(left.surveyDate || '')));
 
-  writeStoredFollowUps(followUps.value);
-  closeFollowUpModal();
+    closeFollowUpModal();
+  } catch (error) {
+    formError.value = error.response?.data?.message || error.message || 'Não foi possível salvar o acompanhamento.';
+  } finally {
+    followUpSaving.value = false;
+  }
 }
 
 function resetFilters() {
@@ -1267,8 +1262,8 @@ function resetFilters() {
 function toggleAutomationEnabled() {
   automationEnabled.value = !automationEnabled.value;
   automationActionNote.value = automationEnabled.value
-    ? 'Mockup atualizado: a automação foi marcada como ativa, mas nenhum e-mail real será enviado.'
-    : 'Mockup atualizado: a automação foi pausada e nenhum e-mail real será enviado.';
+    ? 'Automação marcada como ativa. Salve para persistir essa preferência no backend.'
+    : 'Automação marcada como pausada. Salve para persistir essa preferência no backend.';
 }
 
 function isAutomationCheckpointEnabled(month) {
@@ -1278,22 +1273,35 @@ function isAutomationCheckpointEnabled(month) {
 function toggleAutomationCheckpoint(month) {
   if (isAutomationCheckpointEnabled(month)) {
     automationCheckpoints.value = automationCheckpoints.value.filter((item) => item !== month);
-    automationActionNote.value = `Checkpoint de ${month} meses desativado no mockup.`;
+    automationActionNote.value = `Checkpoint de ${month} meses desativado. Salve para aplicar no backend.`;
     return;
   }
 
   automationCheckpoints.value = [...automationCheckpoints.value, month].sort((left, right) => left - right);
-  automationActionNote.value = `Checkpoint de ${month} meses ativado no mockup.`;
+  automationActionNote.value = `Checkpoint de ${month} meses ativado. Salve para aplicar no backend.`;
 }
 
-function handleAutomationMockAction(action) {
-  if (action === 'save') {
-    automationActionNote.value = 'Mockup salvo visualmente: as preferências foram ajustadas apenas nesta sessão da tela.';
-    return;
-  }
+async function handleAutomationAction(action) {
+  automationSaving.value = true;
 
-  if (action === 'test') {
-    automationActionNote.value = 'Envio de teste simulado: o layout já mostra como a automação apareceria no backoffice.';
+  try {
+    const payload = buildAutomationPayload();
+
+    if (action === 'save') {
+      const response = await careerService.updateAutomationSettings(payload);
+      hydrateAutomationSettings(response);
+      automationActionNote.value = 'Configuração de automação salva com sucesso no backend.';
+    } else if (action === 'test') {
+      const response = await careerService.sendAutomationTest(payload);
+      hydrateAutomationSettings(response?.settings || null);
+      automationActionNote.value = response?.message || 'Teste de automação registrado com sucesso.';
+    }
+
+    await loadAutomationHistory();
+  } catch (error) {
+    automationActionNote.value = error.response?.data?.message || error.message || 'Não foi possível atualizar a automação agora.';
+  } finally {
+    automationSaving.value = false;
   }
 }
 
@@ -1420,6 +1428,16 @@ function buildCareerKey(enrollment) {
     enrollment?.people?.id || 'person',
     enrollment?.classModel?.id || 'class',
     enrollment?.id || 'enrollment'
+  ].join(':');
+}
+
+function resolveFollowUpKey(item) {
+  if (item?.key) return String(item.key);
+
+  return [
+    item?.peopleId || item?.personId || 'person',
+    item?.classId || 'class',
+    item?.enrollmentId || item?.id || 'enrollment'
   ].join(':');
 }
 
@@ -1621,21 +1639,89 @@ function defaultFollowUpForm() {
   };
 }
 
-function readStoredFollowUps() {
-  if (typeof window === 'undefined') return [];
+function buildAutomationPayload() {
+  return {
+    enabled: automationEnabled.value,
+    programId: automationScopeProgramId.value ? Number(automationScopeProgramId.value) : null,
+    classId: automationScopeClassId.value ? Number(automationScopeClassId.value) : null,
+    subject: automationSubject.value.trim(),
+    message: automationMessage.value.trim(),
+    checkpoints: [...automationCheckpoints.value].sort((left, right) => left - right)
+  };
+}
 
+function hydrateAutomationSettings(settings) {
+  if (!settings || typeof settings !== 'object') return;
+
+  automationEnabled.value = Boolean(settings.enabled);
+  automationScopeProgramId.value = settings.programId ? String(settings.programId) : '';
+  automationScopeClassId.value = settings.classId ? String(settings.classId) : '';
+  automationSubject.value = settings.subject || 'Acompanhamento de carreira - BRISA';
+  automationMessage.value = settings.message || '';
+  automationCheckpoints.value = Array.isArray(settings.checkpoints) && settings.checkpoints.length
+    ? [...settings.checkpoints].map((item) => Number(item)).filter(Number.isFinite).sort((left, right) => left - right)
+    : [...CHECKPOINTS];
+
+  automationActionNote.value = settings.updatedAt
+    ? `Configuração sincronizada com o backend em ${formatDateTime(settings.updatedAt)}.`
+    : 'Configuração de automação carregada do backend.';
+}
+
+async function loadAutomationHistory() {
   try {
-    const raw = window.localStorage.getItem(FOLLOW_UP_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    const response = await logService.getLogs({
+      entityType: 'CareerAutomation',
+      page: 0,
+      size: 8,
+      sortBy: 'createdAt',
+      sortDirection: 'DESC'
+    });
+
+    const items = Array.isArray(response?.content) ? response.content : Array.isArray(response) ? response : [];
+    automationLogItems.value = items.map(mapAutomationLog);
   } catch (error) {
-    return [];
+    automationLogItems.value = [];
   }
 }
 
-function writeStoredFollowUps(items) {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(FOLLOW_UP_STORAGE_KEY, JSON.stringify(items));
+function mapAutomationLog(log) {
+  let details = {};
+
+  if (typeof log?.details === 'string') {
+    try {
+      details = JSON.parse(log.details);
+    } catch (error) {
+      details = {};
+    }
+  } else if (log?.details && typeof log.details === 'object') {
+    details = log.details;
+  }
+
+  const operation = String(details.operation || '').toUpperCase();
+  const checkpoints = Array.isArray(details.checkpoints) && details.checkpoints.length
+    ? details.checkpoints.join(', ')
+    : CHECKPOINTS.join(', ');
+
+  return {
+    id: `automation-log-${log.id}`,
+    title: operation === 'TEST' ? 'Teste de automação registrado' : 'Configuração de automação atualizada',
+    dateLabel: formatDateTime(log.createdAt),
+    sentLabel: operation === 'TEST' ? 'Teste salvo' : 'Preferências salvas',
+    note: `${log.description || 'Ação registrada no backoffice.'} Checkpoints: ${checkpoints}.`
+  };
+}
+
+function formatDateTime(value) {
+  const date = parseDateValue(value);
+  if (Number.isNaN(date.getTime())) return '-';
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
 }
 </script>
 

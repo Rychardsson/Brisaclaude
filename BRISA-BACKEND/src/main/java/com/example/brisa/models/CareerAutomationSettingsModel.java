@@ -13,42 +13,37 @@ import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "career_progressions")
-public class CareerProgressionModel {
+@Table(name = "career_automation_settings")
+public class CareerAutomationSettingsModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "people_id")
-    private PeopleModel people;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "enrollment_id")
-    private EnrollmentModel enrollment;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "class_id")
-    private ClassModel classModel;
+    private boolean enabled = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "program_id")
     private ProgramModel program;
 
-    @Column(name = "survey_date")
-    private LocalDate surveyDate;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "class_id")
+    private ClassModel classModel;
 
-    private String status;
-    private String company;
-    private String position;
+    @Column(name = "subject_line", length = 500)
+    private String subject;
 
     @Column(columnDefinition = "TEXT")
-    private String notes;
+    private String message;
+
+    @Column(name = "checkpoints_csv", length = 120)
+    private String checkpointsCsv;
+
+    @Column(name = "last_test_at")
+    private LocalDateTime lastTestAt;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

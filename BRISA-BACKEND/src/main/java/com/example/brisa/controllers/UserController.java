@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.brisa.dtos.user.ProfilePictureDTO;
 import com.example.brisa.dtos.user.UserResponseDTO;
 import com.example.brisa.dtos.user.UserSearchResponseDTO;
+import com.example.brisa.enums.UserRole;
 import com.example.brisa.models.auth.UserModel;
 import com.example.brisa.repositories.UserRepository;
 import com.example.brisa.services.LogHelper;
@@ -23,11 +24,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.data.domain.Sort;
 
 
 
 @RestController
-@RequestMapping("users")
+@RequestMapping("api/users")
 public class UserController {
     @Autowired
     private UserRepository userRepository;
@@ -36,6 +39,37 @@ public class UserController {
     private LogHelper logHelper;
 
     
+    @GetMapping
+    public ResponseEntity<List<UserResponseDTO>> getUsers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) UserRole role,
+            @RequestParam(defaultValue = "20") Integer limit
+    ) {
+        List<UserModel> users = (search != null && !search.trim().isEmpty())
+                ? userRepository.findByLoginContainingIgnoreCase(search.trim())
+                : userRepository.findAll(Sort.by(Sort.Direction.ASC, "login"));
+
+        int safeLimit = Math.max(1, Math.min(limit == null ? 20 : limit, 100));
+
+        List<UserResponseDTO> response = users.stream()
+                .filter(user -> role == null || user.getRole() == role)
+                .limit(safeLimit)
+                .map(user -> new UserResponseDTO(
+                        user.getId(),
+                        user.getLogin(),
+                        user.getEmail(),
+                        user.getRole(),
+                        user.isVerifiedEmail(),
+                        user.getGender(),
+                        user.getDateOfBirth(),
+                        user.isEnabled(),
+                        user.getProfilePicture()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable UUID id) {
         return userRepository.findById(id)

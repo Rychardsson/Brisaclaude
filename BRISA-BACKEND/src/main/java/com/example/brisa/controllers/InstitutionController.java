@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -35,6 +36,12 @@ public class InstitutionController {
     public ResponseEntity<InstitutionResponseDTO> getInstitutionById(@PathVariable Long id) {
         InstitutionResponseDTO institution = institutionService.getInstitutionById(id);
         return ResponseEntity.ok(institution);
+    }
+
+    @PostMapping("/import/excel")
+    public ResponseEntity<Map<String, String>> importInstitutionsFromExcel() {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+            .body(Map.of("message", "Importacao de instituicoes ainda nao foi integrada no backend."));
     }
 
     @PostMapping

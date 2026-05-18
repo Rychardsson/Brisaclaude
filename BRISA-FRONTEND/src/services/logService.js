@@ -26,7 +26,7 @@ export const logService = {
   // Buscar log por ID
   async getById(id) {
     try {
-      const response = await api.get(`/api/logs/${id}`);
+      const response = await api.get(`/logs/${id}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -36,7 +36,7 @@ export const logService = {
   // Buscar logs recentes
   async getRecentLogs(limit = 20) {
     try {
-      const response = await api.get(`/api/logs/recent?limit=${limit}`);
+      const response = await api.get(`/logs/recent?limit=${limit}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -46,7 +46,7 @@ export const logService = {
   // Buscar estatísticas de logs
   async getStats() {
     try {
-      const response = await api.get('/api/logs/stats');
+      const response = await api.get('/logs/stats');
       return response.data;
     } catch (error) {
       throw error;
@@ -56,7 +56,7 @@ export const logService = {
   // Limpar logs antigos
   async cleanupOldLogs(daysToKeep = 90) {
     try {
-      const response = await api.delete(`/api/logs/cleanup?daysToKeep=${daysToKeep}`);
+      const response = await api.delete(`/logs/cleanup?daysToKeep=${daysToKeep}`);
       return response.data;
     } catch (error) {
       throw error;

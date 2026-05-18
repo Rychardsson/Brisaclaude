@@ -5,7 +5,7 @@ import ResetPasswordView from '@/views/ResetPasswordView.vue';
 import HomeView from '@/views/HomeView.vue';
 import DashboardsView from '@/views/DashboardView.vue';
 import PeopleView from '@/views/PeopleView.vue';
-import PersonDetailsView from '@/views/PersonDetailsView.vue';
+import PessoaPerfilView from '@/views/PessoaPerfilView.vue';
 import ProgramsView from '@/views/ProgramsView.vue';
 
 // 👇 ESTA FOI A ÚNICA LINHA ALTERADA 👇
@@ -52,7 +52,7 @@ const routes = [
   {
     path: '/people/:id',
     name: 'PersonDetails',
-    component: PersonDetailsView,
+    component: PessoaPerfilView,
     meta: { requiresAuth: true }
   },
   {
