@@ -503,6 +503,7 @@
           :displayDates="displayDates"
           @go-to-step="goToStep"
           @save-draft="saveDraft"
+          @publish-program="publishProgram"
           @update-status="handleRevisionStatus" 
         /> <div v-if="currentStep < 6" class="form-actions-footer">
            <button v-if="currentStep > 1" class="btn-footer-back" @click="prevStep">Voltar</button>
@@ -576,6 +577,7 @@ import FirstStageProgramRegistrationView from './components/FirstStageProgramReg
 import SecondStageProgramRegistrationView from './components/SecondStageProgramRegistrationView.vue';
 import ThirdStageProgramRegistrationView from './components/ThirdStageProgramRegistrationView.vue';
 import RevisionProgramRegistrationView from './components/RevisionProgramRegistrationView.vue';
+import { programService } from '../../services/programService';
 
 export default {
   // Nome principal do componente pai que engloba toda a tela de cadastro
@@ -600,6 +602,7 @@ export default {
       stepTitles: ['Dados do Programa', 'Estrutura das Etapas', 'Etapa 0 — Inscrição', 'Etapa 1 — Nivelamento', 'Etapa 2 — Imersão', 'Revisão Final'],
       stepDescs: ['Informações gerais', 'Definição do fluxo', 'Formulário e elegibilidade', 'Cursos e avaliação', 'Projetos e benefícios', 'Validar e publicar'],
       
+      programService, // Importa o serviço de programa
       newPartnerName: '', // Armazena temporariamente o texto digitado no input de adicionar parceiro (Aba 1)
       emailTouched: false, // Controla se o usuário já focou no campo de e-mail para ativar a validação de erro (Aba 1)
       
@@ -1202,6 +1205,70 @@ export default {
     isToday(day) { 
       const t = new Date(); 
       return day && t.getFullYear() === this.calendarDate.getFullYear() && t.getMonth() === this.calendarDate.getMonth() && t.getDate() === day; 
+    },
+
+    // Publica o programa após validação final
+    async publishProgram() {
+      console.log('Publicando edital...', this.formData);
+      
+      try {
+        // Validação básica dos campos obrigatórios
+        if (!this.formData.programName || !this.formData.programName.trim()) {
+          alert('Nome do programa é obrigatório.');
+          return;
+        }
+        
+        if (!this.formData.startDate || !this.formData.endDate) {
+          alert('Datas de início e fim são obrigatórias.');
+          return;
+        }
+
+        // PASSO 1: Criar o programa no backend
+        const programData = {
+          name: this.formData.programName.trim(),
+          contractNumber: this.formData.batchName || this.formData.programName,
+          startDate: this.formData.startDate,
+          endDate: this.formData.endDate,
+          targetAudience: this.formData.objective || '',
+          quotaCriteria: JSON.stringify(this.inscriptionForm.quotas),
+          evaluationCriteria: JSON.stringify(this.nivelamentoForm.grading)
+        };
+
+        const programResponse = await this.programService.create(programData);
+        const programId = programResponse.id;
+        
+        console.log('Programa criado com ID:', programId);
+
+        // PASSO 2: Criar a classe/edital a partir do programa
+        const classData = {
+          nomeTurma: this.formData.batchName || this.formData.programName,
+          localidade: this.imersaoForm.local || this.formData.location || '',
+          qtdVagas: this.stageList.reduce((total, stage) => total + parseInt(stage.slots || 0), 0),
+          publicationDate: this.formData.publishDate,
+          applicationStartDate: this.formData.inscStart,
+          applicationEndDate: this.formData.inscEnd,
+          levelingSelectionAnnouncementDate: this.formData.publishDate,
+          levelingStartDate: this.formData.nivStart,
+          levelingEndDate: this.formData.nivEnd,
+          levelingFinalExamDate: this.formData.nivExamDate,
+          immersionStartDate: this.formData.imerStart,
+          immersionEndDate: this.formData.imerEnd,
+          partialEvaluationDate: this.formData.imerStart,
+          finalEvaluationDate: this.formData.imerEnd,
+          certificateIssueDate: this.formData.endDate
+        };
+
+        const classResponse = await this.programService.createClassFromProgram(programId, classData);
+        
+        console.log('Edital (classe) criado com sucesso:', classResponse);
+        
+        alert('Edital publicado com sucesso! 🎉');
+        this.executeRestartRegistration(); // Limpa o formulário após publicação
+      } catch (error) {
+        console.error('Erro ao publicar edital:', error);
+        const errorMsg = error.response?.data?.message || error.message || 'Erro ao publicar o edital';
+        alert('Erro ao publicar: ' + errorMsg);
+      }
     }
   }
 };

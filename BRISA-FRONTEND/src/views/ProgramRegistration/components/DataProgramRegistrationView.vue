@@ -61,11 +61,6 @@
          </div>
        </div>
 
-       <div class="form-group">
-         <label>Site Oficial ou Landing Page</label>
-         <input v-model="formData.officialWebsite" @keydown.enter="$event.target.blur()" type="url" placeholder="Ex: https://www.programa.com.br" class="form-input"/>
-       </div>
-
        <div class="form-group" style="margin-bottom: 0;">
          <label>Empresas ou Instituições Parceiras</label>
          <div class="partner-input-row">

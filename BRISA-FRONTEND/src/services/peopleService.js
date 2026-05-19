@@ -37,6 +37,24 @@ export const peopleService = {
     }
   },
 
+  async createOnly(payload) {
+    try {
+      const response = await api.post('/people/create-only', payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async linkExisting(payload) {
+    try {
+      const response = await api.post('/people/link-existing', payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   async getReferenceData() {
     try {
       const response = await api.get('/people/reference-data');

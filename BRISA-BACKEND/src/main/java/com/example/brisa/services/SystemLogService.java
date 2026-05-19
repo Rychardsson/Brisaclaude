@@ -85,6 +85,49 @@ public class SystemLogService {
     }
 
     /**
+     * Registra um log com dados do request já extraídos (IP e User-Agent como strings)
+     * Evita problemas com request reciclado em operações assíncronas
+     */
+    @Transactional
+    public SystemLogModel createLogWithRequestData(
+            LogAction action,
+            String description,
+            String entityType,
+            String entityId,
+            UUID userId,
+            String ipAddress,
+            String userAgent,
+            Map<String, Object> additionalDetails
+    ) {
+        SystemLogModel log = new SystemLogModel();
+        log.setAction(action);
+        log.setDescription(description);
+        log.setEntityType(entityType);
+        log.setEntityId(entityId);
+        
+        if (userId != null) {
+            userRepository.findById(userId).ifPresent(log::setUser);
+        }
+        
+        if (ipAddress != null && !ipAddress.isEmpty()) {
+            log.setIpAddress(ipAddress);
+        }
+        if (userAgent != null && !userAgent.isEmpty()) {
+            log.setUserAgent(userAgent);
+        }
+        
+        if (additionalDetails != null && !additionalDetails.isEmpty()) {
+            try {
+                log.setDetails(objectMapper.writeValueAsString(additionalDetails));
+            } catch (Exception e) {
+                log.setDetails("Error serializing details: " + e.getMessage());
+            }
+        }
+        
+        return logRepository.save(log);
+    }
+
+    /**
      * Buscar logs com filtros
      */
     public Page<SystemLogDTO> findLogs(SystemLogFilterDTO filter) {

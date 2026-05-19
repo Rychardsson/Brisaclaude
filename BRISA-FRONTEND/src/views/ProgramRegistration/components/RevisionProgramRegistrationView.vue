@@ -218,7 +218,7 @@
           <button class="btn-footer-back" @click="$emit('save-draft')">
              <i class="fa-solid fa-floppy-disk"></i> Salvar Rascunho
           </button>
-          <button class="btn-publish" :disabled="progressPercentage !== 100" :style="progressPercentage !== 100 ? 'opacity: 0.5; cursor: not-allowed;' : ''">
+          <button class="btn-publish" @click="$emit('publish-program')" :disabled="progressPercentage !== 100" :style="progressPercentage !== 100 ? 'opacity: 0.5; cursor: not-allowed;' : ''">
              <i class="fa-solid fa-paper-plane"></i> Publicar Edital
           </button>
        </div>
@@ -293,7 +293,6 @@ export default {
       checkField(this.formData.objective, 'Objetivo do programa não preenchido.', step1Errors);
       checkField(this.formData.location, 'Local de realização não definido.', step1Errors);
       checkField(this.formData.supportEmail, 'E-mail de suporte não configurado.', step1Errors);
-      checkField(this.formData.officialWebsite, 'Site oficial não informado.', step1Errors);
       checkField(this.displayDates.publishDate, 'Data de publicação não definida.', step1Errors);
       checkField(this.displayDates.startDate, 'Data de início do programa não definida.', step1Errors);
       checkField(this.displayDates.endDate, 'Data de fim do programa não definida.', step1Errors);
@@ -319,8 +318,6 @@ export default {
       const step3Errors = [];
       checkField(this.displayDates.inscStart, 'Data de início das inscrições não definida.', step3Errors);
       checkField(this.displayDates.inscEnd, 'Data de fim das inscrições não definida.', step3Errors);
-      checkField(this.inscriptionForm.targetAudience, 'Público-alvo não informado.', step3Errors);
-      checkField(this.inscriptionForm.educationReqs, 'Pré-requisitos de formação não informados.', step3Errors);
       
       const q = this.inscriptionForm.quotas;
       const totalQuotas = Number(q.ampla) + Number(q.pcd) + Number(q.negros) + Number(q.age45);
@@ -354,15 +351,10 @@ export default {
       checkField(this.imersaoForm.cargaHoraria, 'Carga horária da imersão não definida.', step5Errors);
       checkField(this.imersaoForm.duracaoMeses, 'Duração em meses da imersão não informada.', step5Errors);
       checkField(this.imersaoForm.mediaHoras, 'Média de horas semanais não informada.', step5Errors);
-      checkField(this.imersaoForm.local, 'Local da imersão não informado.', step5Errors);
       
-      if (this.imersaoForm.hasProjetos) {
-         checkField(this.imersaoForm.nomeProfessor, 'Nome do professor orientador não preenchido.', step5Errors);
-      }
-      
-      if (this.imersaoForm.presenca.frequenciaSemanal) {
-         checkField(this.imersaoForm.presenca.diaPadrao, 'Dia padrão de frequência presencial não selecionado.', step5Errors);
-         checkField(this.imersaoForm.presenca.horarioPadrao, 'Horário padrão de frequência não definido.', step5Errors);
+      // Validar local apenas se a modalidade não for Online
+      if (this.imersaoForm.modalidade !== 'Online') {
+         checkField(this.imersaoForm.local, 'Local da imersão não informado.', step5Errors);
       }
       
       checkField(this.imersaoForm.presenca.responsavelJustificativa, 'Responsável pela análise de justificativas não informado.', step5Errors);

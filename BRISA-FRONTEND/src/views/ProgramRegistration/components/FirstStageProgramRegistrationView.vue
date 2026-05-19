@@ -89,16 +89,6 @@
           <p>Requisitos e regras de participação</p>
        </div>
        
-       <div class="form-group">
-         <label>Público-Alvo</label>
-         <input v-model="inscriptionForm.targetAudience" type="text" placeholder="Descreva o público-alvo do programa..." class="form-input"/>
-       </div>
-       
-       <div class="form-group">
-         <label>Requisitos de Formação</label>
-         <textarea v-model="inscriptionForm.educationReqs" placeholder="Ex: Ensino médio completo, graduação em andamento..." class="form-textarea" rows="2"></textarea>
-       </div>
-
        <div class="list-item-row toggle-row-simple">
          <span class="list-item-title">Exigir LinkedIn?</span>
          <label class="toggle-switch">
