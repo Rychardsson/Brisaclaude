@@ -771,7 +771,11 @@ export default {
         return;
       }
 
-      router.push({ name: 'ClassCourses', params: { programId: String(pid), classId: String(classId.value) } });
+      router.push({
+        name: 'ClassDetails',
+        params: { programId: String(pid), classId: String(classId.value) },
+        query: { tab: 'etapas', subTab: 'nivelamento' },
+      });
     };
 
     const normalizeName = (str) => (str || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toUpperCase();

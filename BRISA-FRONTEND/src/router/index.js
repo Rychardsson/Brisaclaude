@@ -109,8 +109,17 @@ const routes = [
   {
     path: '/programs/:programId/classes/:classId/courses',
     name: 'ClassCourses',
-    component: () => import('@/views/ClassCoursesView.vue'),
-    meta: { requiresAuth: true }
+    redirect: to => ({
+      name: 'ClassDetails',
+      params: {
+        programId: to.params.programId,
+        classId: to.params.classId
+      },
+      query: {
+        tab: 'etapas',
+        subTab: 'nivelamento'
+      }
+    })
   },
   // ✅ Tela 4 — Detalhes de um Curso
   {

@@ -35,13 +35,6 @@
             </svg>
             Editar perfil
           </button>
-          <button class="btn-outline" aria-label="Mais ações" title="Mais ações">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="1"></circle>
-              <circle cx="19" cy="12" r="1"></circle>
-              <circle cx="5" cy="12" r="1"></circle>
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -96,7 +89,8 @@
 
       <!-- Tabs -->
       <div class="tabs-header">
-        <div class="tabs-container" role="tablist" aria-label="Person profile sections">
+        <div class="tabs-scroll">
+          <div class="tabs-container" role="tablist" aria-label="Person profile sections">
           <button
             v-for="tab in tabs"
             :key="tab.id"
@@ -104,11 +98,12 @@
             :class="['tab-btn', { active: activeTab === tab.id }]"
             role="tab"
             :aria-selected="activeTab === tab.id ? 'true' : 'false'"
-            :id="`tab-${tab.id}`"
-            :aria-controls="`panel-${tab.id}`"
+            :id="`profile-tab-${tab.id}`"
+            :aria-controls="`profile-panel-${tab.id}`"
           >
             {{ tab.label }}
           </button>
+          </div>
         </div>
       </div>
     </header>
@@ -132,7 +127,7 @@
     <!-- Content -->
     <div v-else class="content">
       <!-- Resumo Tab -->
-      <div v-if="activeTab === 'resumo'" class="tab-content" id="panel-resumo" role="tabpanel" aria-labelledby="tab-resumo">
+      <div v-if="activeTab === 'resumo'" class="tab-content" id="profile-panel-resumo" role="tabpanel" aria-labelledby="profile-tab-resumo">
         <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-header">
@@ -196,7 +191,7 @@
       </div>
 
       <!-- Dados Pessoais Tab -->
-      <div v-if="activeTab === 'dados-pessoais'" class="tab-content" id="panel-dados-pessoais" role="tabpanel" aria-labelledby="tab-dados-pessoais">
+      <div v-if="activeTab === 'dados-pessoais'" class="tab-content" id="profile-panel-dados-pessoais" role="tabpanel" aria-labelledby="profile-tab-dados-pessoais">
         <div class="data-card">
           <h3>Informações Pessoais</h3>
           <div class="data-grid">
@@ -237,7 +232,7 @@
       </div>
 
       <!-- Dados Acadêmicos Tab -->
-      <div v-if="activeTab === 'dados-academicos'" class="tab-content" id="panel-dados-academicos" role="tabpanel" aria-labelledby="tab-dados-academicos">
+      <div v-if="activeTab === 'dados-academicos'" class="tab-content" id="profile-panel-dados-academicos" role="tabpanel" aria-labelledby="profile-tab-dados-academicos">
         <div class="data-card">
           <h3>Informações Acadêmicas</h3>
           <div class="data-grid">
@@ -262,11 +257,9 @@
       </div>
 
       <!-- Placeholder para outras abas -->
-      <div v-for="tab in tabs.filter(t => !['resumo', 'dados-pessoais', 'dados-academicos'].includes(t.id))" :key="tab.id">
-        <div v-if="activeTab === tab.id" class="tab-content" :id="`panel-${tab.id}`" role="tabpanel" :aria-labelledby="`tab-${tab.id}`">
-          <div class="empty-state">
-            <p>{{ tab.label }} - Em desenvolvimento</p>
-          </div>
+      <div v-if="isPlaceholderTab" class="tab-content" :id="`profile-panel-${activeTabMeta.id}`" role="tabpanel" :aria-labelledby="`profile-tab-${activeTabMeta.id}`">
+        <div class="profile-empty-state">
+          <p>{{ activeTabMeta.label }} - Em desenvolvimento</p>
         </div>
       </div>
     </div>
@@ -279,7 +272,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { peopleService } from '@/services/peopleService';
 import EditPersonModal from '@/components/EditPersonModal.vue';
@@ -304,9 +297,11 @@ const tabs = [
   { id: 'participacoes', label: 'Participações em Programas' },
   { id: 'desempenho', label: 'Desempenho no Programa' },
   { id: 'acompanhamento', label: 'Carreira' },
-  { id: 'documentos', label: 'Documentos' },
   { id: 'historico', label: 'Histórico' },
 ];
+const placeholderTabIds = ['participacoes', 'desempenho', 'acompanhamento', 'historico'];
+const activeTabMeta = computed(() => tabs.find((tab) => tab.id === activeTab.value));
+const isPlaceholderTab = computed(() => !!activeTabMeta.value && placeholderTabIds.includes(activeTabMeta.value.id));
 
 const loadPerson = async () => {
   try {
@@ -351,11 +346,13 @@ onMounted(() => {
 .pessoa-perfil-view {
   background: #f8fafc;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .header {
   background: white;
   border-bottom: 1px solid #e2eaf2;
+  overflow-x: hidden;
 }
 
 .header-top {
@@ -409,6 +406,9 @@ onMounted(() => {
 .btn-outline:hover {
   background: #f8fafc;
   border-color: #cfd9e6;
+  color: #13233f;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-primary {
@@ -420,6 +420,21 @@ onMounted(() => {
 .btn-primary:hover {
   background: #0d9488;
   border-color: #0d9488;
+  color: #ffffff;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-outline:disabled,
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-outline:disabled:hover {
+  background: #ffffff;
+  border-color: #d8e1eb;
+  color: #9aa8bc;
 }
 
 .btn-close {
@@ -523,22 +538,37 @@ onMounted(() => {
 
 .tabs-header {
   border-top: 1px solid #e2eaf2;
+  overflow-x: hidden;
+}
+
+.tabs-scroll {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
 }
 
 .tabs-container {
   display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  width: max-content;
+  min-width: 100%;
   padding: 0 32px;
 }
 
 .tab-btn {
-  padding: 14px 16px;
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 16px 12px;
   border: none;
   background: none;
   cursor: pointer;
   color: #5f728d;
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.25;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
   white-space: nowrap;
@@ -695,7 +725,7 @@ onMounted(() => {
   color: #13233f;
 }
 
-.empty-state {
+.profile-empty-state {
   background: white;
   border: 1px solid #e2eaf2;
   border-radius: 12px;

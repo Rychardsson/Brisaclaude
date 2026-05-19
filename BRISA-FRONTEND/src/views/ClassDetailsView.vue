@@ -574,8 +574,7 @@
           <!-- Seção Cursos do Nivelamento -->
           <article class="panel">
            <div class="panel-head">
-             <h3>Cursos do Nivelamento</h3>
-             <button v-if="courseItems && courseItems.length" type="button" class="btn-primary" @click="openAddCoursesModal">Gerenciar cursos</button>
+            <h3>Cursos do Nivelamento</h3>
            </div>
 
            <div class="courses-list">
@@ -2628,7 +2627,10 @@ export default {
         };
 
         const goToCourse = (course) => {
-          router.push({ name: 'ClassCourses', params: { programId: programId.value, classId: classId.value }, query: { courseId: course.id } });
+          router.push({
+            name: 'CourseDetails',
+            params: { programId: programId.value, classId: classId.value, courseId: course.id },
+          });
         };
         const openCourseDetails = (course) => {
           selectedCourseItem.value = course;
@@ -2641,6 +2643,19 @@ export default {
 
         // Load nivelamento data when Etapas tab is opened
         const etapasSubTab = ref('nivelamento');
+        const applyTabStateFromQuery = () => {
+          const tab = String(route.query?.tab || '').toLowerCase();
+          const rawSubTab = route.query?.subTab ?? route.query?.etapasSubTab;
+          const subTab = String(rawSubTab || '').toLowerCase();
+
+          if (tab === 'etapas') {
+            activeTab.value = 'etapas';
+          }
+
+          if (subTab === 'nivelamento' || subTab === 'imersao') {
+            etapasSubTab.value = subTab;
+          }
+        };
         // When false, keep frontend mocks for imersaoGroups instead of replacing them with API results
         const useRealImersaoGroups = ref(false);
         const lastEmailInfo = computed(() => {
@@ -2655,6 +2670,13 @@ export default {
         watch(() => activeTab.value, (tab) => {
           if (tab === 'etapas') loadNivelamentoData();
         });
+
+        watch(
+          () => [route.query?.tab, route.query?.subTab, route.query?.etapasSubTab],
+          () => {
+            applyTabStateFromQuery();
+          }
+        );
 
         // Load imersao groups when sub-tab switches to 'imersao'
         const loadImersaoGroups = async () => {
@@ -2927,8 +2949,9 @@ export default {
 
     const goToClassCourses = () => {
       router.push({
-        name: 'ClassCourses',
+        name: 'ClassDetails',
         params: { programId: programId.value, classId: classId.value },
+        query: { tab: 'etapas', subTab: 'nivelamento' },
       });
     };
 
@@ -3049,6 +3072,7 @@ export default {
     const goBack = () => router.back();
 
     onMounted(() => {
+      applyTabStateFromQuery();
       loadClassDetails();
     });
 
