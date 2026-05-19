@@ -12,6 +12,7 @@ import java.util.Optional;
 @Repository
 public interface ClassRepository extends JpaRepository<ClassModel, Long> {
     Optional<ClassModel> findByCode(String code);
+    Optional<ClassModel> findByCodeIgnoreCase(String code);
     boolean existsByCode(String code);
     List<ClassModel> findByProgramId(Long programId);
     long countByProgramId(Long programId);

@@ -11,6 +11,8 @@ import java.util.List;
 @Repository
 public interface ProgramRepository extends JpaRepository<ProgramModel, Long> {
     Optional<ProgramModel> findByCode(String code);
+    Optional<ProgramModel> findByCodeIgnoreCase(String code);
+    Optional<ProgramModel> findByNameIgnoreCase(String name);
     boolean existsByCode(String code);
 
     @Query("""

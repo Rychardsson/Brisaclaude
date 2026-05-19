@@ -20,11 +20,13 @@ public enum LogAction {
     PROGRAM_CREATE,
     PROGRAM_UPDATE,
     PROGRAM_DELETE,
+    PROGRAM_IMPORT,
     
     // Class actions
     CLASS_CREATE,
     CLASS_UPDATE,
     CLASS_DELETE,
+    CLASS_IMPORT,
     
     // Stage actions
     STAGE_CREATE,
@@ -39,11 +41,13 @@ public enum LogAction {
     ENROLLMENT_CREATE,
     ENROLLMENT_UPDATE,
     ENROLLMENT_DELETE,
+    ENROLLMENT_IMPORT,
     
     // Institution actions
     INSTITUTION_CREATE,
     INSTITUTION_UPDATE,
     INSTITUTION_DELETE,
+    INSTITUTION_IMPORT,
     
     // System actions
     SYSTEM_ERROR,

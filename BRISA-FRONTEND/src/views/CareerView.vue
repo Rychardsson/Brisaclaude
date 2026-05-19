@@ -146,8 +146,8 @@
                 <p class="automation-eyebrow">Automação de carreira</p>
                 <h2>Automação de acompanhamento por e-mail</h2>
                 <p>
-                  As preferências abaixo já são salvas no backend. O disparo automático segue em preparação,
-                  mas o painel já centraliza o escopo, os checkpoints e o histórico recente dessa automação.
+                  As preferências abaixo são salvas no backend, e o disparo automático roda em segundo plano
+                  conforme os checkpoints ativos. O painel centraliza o escopo, a prévia e o histórico recente dessa automação.
                 </p>
               </div>
 
@@ -263,7 +263,7 @@
                 <div class="automation-panel-header">
                   <div>
                     <h3>Próximo disparo</h3>
-                    <p>Resumo do envio que a automação faria com a configuração atual.</p>
+                    <p>Resumo do próximo envio previsto com a configuração atual.</p>
                   </div>
                   <span>{{ formatNumber(automationScopedRows.length) }} egressos no escopo</span>
                 </div>
@@ -1701,12 +1701,65 @@ function mapAutomationLog(log) {
   const checkpoints = Array.isArray(details.checkpoints) && details.checkpoints.length
     ? details.checkpoints.join(', ')
     : CHECKPOINTS.join(', ');
+  const sentCount = Number(details.sentCount || 0);
+  const failedCount = Number(details.failedCount || 0);
+  const recipientEmail = details.recipientEmail || details.testRecipient || '';
+
+  if (operation === 'TEST') {
+    return {
+      id: `automation-log-${log.id}`,
+      title: 'E-mail de teste enviado',
+      dateLabel: formatDateTime(log.createdAt),
+      sentLabel: recipientEmail || 'Teste concluído',
+      note: `${log.description || 'Teste disparado pelo backoffice.'} Checkpoints: ${checkpoints}.`
+    };
+  }
+
+  if (operation === 'TEST_FAILED') {
+    return {
+      id: `automation-log-${log.id}`,
+      title: 'Falha no e-mail de teste',
+      dateLabel: formatDateTime(log.createdAt),
+      sentLabel: recipientEmail || 'Teste com falha',
+      note: `${log.description || 'O teste de automação falhou.'} ${details.errorMessage || ''} Checkpoints: ${checkpoints}.`
+    };
+  }
+
+  if (operation === 'SEND') {
+    return {
+      id: `automation-log-${log.id}`,
+      title: 'Disparo automático executado',
+      dateLabel: formatDateTime(log.createdAt),
+      sentLabel: `${sentCount} enviado(s)`,
+      note: `${log.description || 'Envio automático realizado.'} ${failedCount ? `${failedCount} falha(s). ` : ''}Checkpoints: ${checkpoints}.`
+    };
+  }
+
+  if (operation === 'SEND_FAILED') {
+    return {
+      id: `automation-log-${log.id}`,
+      title: 'Falha no disparo automático',
+      dateLabel: formatDateTime(log.createdAt),
+      sentLabel: `${failedCount || 0} falha(s)`,
+      note: `${log.description || 'O envio automático encontrou falhas.'} ${details.errorMessage || ''} Checkpoints: ${checkpoints}.`
+    };
+  }
+
+  if (operation === 'SKIPPED') {
+    return {
+      id: `automation-log-${log.id}`,
+      title: 'Disparo automático adiado',
+      dateLabel: formatDateTime(log.createdAt),
+      sentLabel: 'Aguardando configuração',
+      note: `${log.description || 'A automação não pôde enviar e-mails neste ciclo.'} Checkpoints: ${checkpoints}.`
+    };
+  }
 
   return {
     id: `automation-log-${log.id}`,
-    title: operation === 'TEST' ? 'Teste de automação registrado' : 'Configuração de automação atualizada',
+    title: 'Configuração de automação atualizada',
     dateLabel: formatDateTime(log.createdAt),
-    sentLabel: operation === 'TEST' ? 'Teste salvo' : 'Preferências salvas',
+    sentLabel: 'Preferências salvas',
     note: `${log.description || 'Ação registrada no backoffice.'} Checkpoints: ${checkpoints}.`
   };
 }
