@@ -4,7 +4,7 @@
 
 This repository is a multi-project workspace:
 
-- `BRISA-BACKEND`: Spring Boot 3.1.1 API (Java 21, Maven, local H2 by default, JWT auth)
+- `BRISA-BACKEND`: Spring Boot 3.1.1 API (Java 21, Maven, PostgreSQL by default unless overridden by profile/config, JWT auth)
 - `BRISA-FRONTEND`: Vue 3 + Vite SPA that consumes the backend API
 - `Brisa ONE`: separate React + Vite bundle (Figma/Make export), not wired into `BRISA-FRONTEND`
 
