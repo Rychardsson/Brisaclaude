@@ -1119,15 +1119,19 @@ function openPeople(program) {
 function openClassCourses(program) {
   const classId = resolveClassId(program) || resolveClassIdByCode(program);
   if (classId == null) {
-    errorMessage.value = 'Não foi possível identificar a turma para abrir os cursos.';
+    errorMessage.value = 'Não foi possível identificar a turma para abrir os detalhes.';
     return;
   }
 
   router.push({
-    name: 'ClassCourses',
+    name: 'ClassDetails',
     params: {
       programId: program.programId,
       classId,
+    },
+    query: {
+      tab: 'etapas',
+      subTab: 'nivelamento',
     },
   });
 }
