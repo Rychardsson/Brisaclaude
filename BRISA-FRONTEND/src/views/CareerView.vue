@@ -13,7 +13,7 @@
           </div>
 
           <div class="top-actions">
-            <button type="button" class="primary-btn" :disabled="!quickFollowUpTarget || displayingDemoData" @click="openQuickFollowUp">
+            <button type="button" class="primary-btn" :disabled="!quickFollowUpTarget" @click="openQuickFollowUp">
               Registrar acompanhamento
             </button>
           </div>
@@ -131,12 +131,7 @@
         </div>
 
         <template v-else>
-          <div v-if="displayingDemoData" class="feedback-banner feedback-demo">
-            <strong>Dados de exemplo</strong>
-            <span>{{ demoBannerMessage }}</span>
-          </div>
-
-          <div v-else-if="errorMessage" class="feedback-banner feedback-error">
+          <div v-if="errorMessage" class="feedback-banner feedback-error">
             {{ errorMessage }}
           </div>
 
@@ -868,29 +863,13 @@ const realCareerRows = computed(() => {
     });
 });
 
-const demoCareerRows = computed(() => {
-  const today = new Date();
+const demoCareerRows = computed(() => []);
 
-  return DEMO_CAREER_SEED.map((item) => buildDemoCareerRow(item, followUpsByKey.value, today)).sort((left, right) => {
-    if (left.isDue !== right.isDue) return left.isDue ? -1 : 1;
-    return compareDateValues(right.completionDate, left.completionDate);
-  });
-});
+const displayingDemoData = computed(() => false);
 
-const displayingDemoData = computed(() => !realCareerRows.value.length && demoCareerRows.value.length > 0);
+const demoBannerMessage = computed(() => '');
 
-const demoBannerMessage = computed(() => {
-  if (errorMessage.value) {
-    return 'Os dados reais não puderam ser carregados agora. A tela está exibindo exemplos apenas para visualização.';
-  }
-
-  return 'Ainda não há egressos concluídos disponíveis nesta tela. Por isso, ela está exibindo exemplos apenas para visualização.';
-});
-
-const careerRows = computed(() => {
-  if (realCareerRows.value.length) return realCareerRows.value;
-  return demoCareerRows.value;
-});
+const careerRows = computed(() => realCareerRows.value);
 
 const filteredCareerRows = computed(() => {
   let rows = careerRows.value;
@@ -1185,7 +1164,7 @@ function openPersonProfile(row) {
 }
 
 function openQuickFollowUp() {
-  if (!quickFollowUpTarget.value || displayingDemoData.value) return;
+  if (!quickFollowUpTarget.value) return;
   openFollowUpModal(quickFollowUpTarget.value);
 }
 

@@ -8,6 +8,10 @@
     </div>
 
     <template v-else>
+      <div v-if="loadError" class="error-state">
+        {{ loadError }}
+      </div>
+
       <!-- ===== HEADER ===== -->
       <div class="page-header">
         <button class="btn-back" @click="goBack">
@@ -335,6 +339,7 @@ export default {
 
     const loading = ref(true);
     const details = ref({});
+    const loadError = ref('');
 
     // Tabela
     const searchTerm   = ref('');
@@ -384,7 +389,7 @@ export default {
 
     // ── Computed: estudantes filtrados / ordenados ─────────────────────────
     const filteredStudents = computed(() => {
-      let list = (details.value.students || demoStudents());
+      let list = (details.value.students || []);
 
       if (searchTerm.value) {
         const term = searchTerm.value.toLowerCase();
@@ -468,22 +473,23 @@ export default {
     // ── Carregar dados ────────────────────────────────────────────────────
     const loadData = async () => {
       loading.value = true;
+      loadError.value = '';
       try {
         const data = await courseService.getCourseDetails(courseId.value, classId.value);
         details.value = data || {};
       } catch (err) {
         console.error('Erro ao carregar detalhes do curso:', err);
-        // Fallback demo para desenvolvimento
+        loadError.value = err.response?.data?.message || err.message || 'Nao foi possivel carregar os detalhes reais do curso.';
         details.value = {
-          courseName: 'Engenharia de Software',
-          knowledgeArea: 'Computação',
-          workload: 60,
-          totalStudents: 6,
-          notStarted: 2,
-          inProgress: 2,
-          completed: 2,
-          averageCompletion: 50,
-          students: demoStudents()
+          courseName: '',
+          knowledgeArea: '',
+          workload: 0,
+          totalStudents: 0,
+          notStarted: 0,
+          inProgress: 0,
+          completed: 0,
+          averageCompletion: 0,
+          students: []
         };
       } finally {
         loading.value = false;
@@ -500,8 +506,6 @@ export default {
       alertError.value   = null;
       alertSuccess.value = null;
       try {
-        // POST /api/courses/{courseId}/alert/class/{classId}
-        // (endpoint a ser criado na Tela 5)
         await courseService.sendAlert(courseId.value, classId.value, {
           subject: alertSubject.value,
           message: alertMessage.value,
@@ -522,7 +526,7 @@ export default {
     onMounted(loadData);
 
     return {
-      loading, details, donut,
+      loading, details, donut, loadError,
       searchTerm, filterStatus, sortKey, sortDesc,
       filteredStudents, pendingCount,
       showAlertModal, alertSubject, alertMessage, sendingAlert, alertError, alertSuccess,
@@ -548,6 +552,16 @@ export default {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   padding: 80px; gap: 16px; color: #666;
+}
+.error-state {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid #f3c2ba;
+  border-radius: 12px;
+  background: #fff4f2;
+  color: #b42318;
+  font-size: 14px;
+  line-height: 1.5;
 }
 .spinner {
   width: 40px; height: 40px;

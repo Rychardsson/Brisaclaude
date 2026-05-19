@@ -3,15 +3,11 @@ import { authService } from '@/services/authService';
 import LoginView from '@/views/LoginView.vue';
 import ResetPasswordView from '@/views/ResetPasswordView.vue';
 import HomeView from '@/views/HomeView.vue';
-import DashboardsView from '@/views/DashboardView.vue';
+import DashboardView from '@/views/DashboardView.vue';
 import PeopleView from '@/views/PeopleView.vue';
 import PessoaPerfilView from '@/views/PessoaPerfilView.vue';
 import ProgramsView from '@/views/ProgramsView.vue';
-
-// 👇 ESTA FOI A ÚNICA LINHA ALTERADA 👇
-// O router agora procura o Arquivo Pai dentro da nova pasta que você criou.
 import ProgramRegistrationView from '@/views/ProgramRegistration/ProgramRegistrationView.vue';
-
 import ClassDetailsView from '@/views/ClassDetailsView.vue';
 import StageDetailsView from '@/views/StageDetailsView.vue';
 import InstitutionsView from '@/views/InstitutionsView.vue';
@@ -19,6 +15,8 @@ import LogsView from '@/views/LogsView.vue';
 import CoursesView from '@/views/CoursesView.vue';
 import AdminPanelView from '@/views/AdminPanelView.vue';
 import CareerView from '@/views/CareerView.vue';
+import ClassesView from '@/views/ClassesView.vue';
+import EnrollmentsView from '@/views/EnrollmentsView.vue';
 
 const routes = [
   {
@@ -33,8 +31,8 @@ const routes = [
   },
   {
     path: '/dashboard',
-    name: 'Dashboards',
-    component: DashboardsView,
+    name: 'Dashboard',
+    component: DashboardView,
     meta: { requiresAuth: true }
   },
   {
@@ -67,7 +65,6 @@ const routes = [
     component: ProgramsView,
     meta: { requiresAuth: true }
   },
-  // 👇 A ROTA CONTINUA A MESMA, APONTANDO SÓ PARA O PAI 👇
   {
     path: '/programs/register',
     name: 'ProgramRegistration',
@@ -78,6 +75,18 @@ const routes = [
     path: '/courses',
     name: 'Courses',
     component: CoursesView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/classes',
+    name: 'Classes',
+    component: ClassesView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/enrollments',
+    name: 'Enrollments',
+    component: EnrollmentsView,
     meta: { requiresAuth: true }
   },
   {
@@ -95,7 +104,7 @@ const routes = [
   {
     path: '/programs/:id',
     name: 'ProgramDetails',
-    redirect: to => ({
+    redirect: (to) => ({
       path: '/programs',
       query: { programId: String(to.params.id) }
     })
@@ -109,7 +118,7 @@ const routes = [
   {
     path: '/programs/:programId/classes/:classId/courses',
     name: 'ClassCourses',
-    redirect: to => ({
+    redirect: (to) => ({
       name: 'ClassDetails',
       params: {
         programId: to.params.programId,
@@ -121,7 +130,6 @@ const routes = [
       }
     })
   },
-  // ✅ Tela 4 — Detalhes de um Curso
   {
     path: '/programs/:programId/classes/:classId/courses/:courseId',
     name: 'CourseDetails',
