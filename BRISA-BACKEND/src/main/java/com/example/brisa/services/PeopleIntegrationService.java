@@ -116,7 +116,7 @@ public class PeopleIntegrationService {
             String city,
             String institution
     ) {
-        List<PeopleModel> people = peopleRepository.findAllByOrderByNameAsc();
+        List<PeopleModel> people = peopleRepository.findAllActiveOrderByNameAsc();
         Map<Long, List<EnrollmentModel>> enrollmentsByPeople = enrollmentRepository.findAllWithRelations().stream()
                 .collect(Collectors.groupingBy(enrollment -> enrollment.getPeople().getId()));
         Map<Long, List<StageCandidateModel>> candidatesByPeople = stageCandidateRepository.findAllWithRelations().stream()
@@ -167,7 +167,7 @@ public class PeopleIntegrationService {
         List<ProgramModel> programs = programRepository.findAllWithRelations();
         List<ClassModel> classes = classRepository.findAll();
         List<StageModel> stages = stageRepository.findAll();
-        List<PeopleModel> people = peopleRepository.findAll();
+        List<PeopleModel> people = peopleRepository.findAllActive();
 
         List<PeopleFilterOptionDTO> programOptions = programs.stream()
                 .sorted(Comparator.comparing(ProgramModel::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
@@ -230,6 +230,7 @@ public class PeopleIntegrationService {
         }
 
         mergePersonData(person, request);
+        reactivateIfSoftDeleted(person);
         person = peopleRepository.save(person);
 
         Long personId = person.getId();
@@ -269,7 +270,7 @@ public class PeopleIntegrationService {
             throw new ValidationException(errors);
         }
 
-        PeopleModel person = peopleRepository.findById(request.getPeopleId())
+        PeopleModel person = peopleRepository.findActiveById(request.getPeopleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pessoa não encontrada."));
 
         ClassModel classModel = classRepository.findById(request.getTurmaId())
@@ -362,6 +363,7 @@ public class PeopleIntegrationService {
         }
 
         mergePersonData(person, request);
+        reactivateIfSoftDeleted(person);
         person = peopleRepository.save(person);
 
         AcademicRoleModel alunoRole = academicRoleRepository.findByName("ALUNO")
@@ -456,6 +458,12 @@ public class PeopleIntegrationService {
         person.setEducationStatus(defaultIfBlank(request.getStatusFormacao(), person.getEducationStatus()));
         if (request.getDataConclusao() != null) {
             person.setEducationCompletionDate(request.getDataConclusao());
+        }
+    }
+
+    private void reactivateIfSoftDeleted(PeopleModel person) {
+        if (Boolean.TRUE.equals(person.getSoftDeleted())) {
+            person.setSoftDeleted(false);
         }
     }
 

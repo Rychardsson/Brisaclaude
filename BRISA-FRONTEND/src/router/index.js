@@ -121,13 +121,6 @@ const routes = [
       }
     })
   },
-  // ✅ Tela 4 — Detalhes de um Curso
-  {
-    path: '/programs/:programId/classes/:classId/courses/:courseId',
-    name: 'CourseDetails',
-    component: () => import('@/views/CourseDetailsView.vue'),
-    meta: { requiresAuth: true }
-  },
   {
     path: '/programs/:programId/classes/:classId/stages/:stageId',
     name: 'StageDetails',

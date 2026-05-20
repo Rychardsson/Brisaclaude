@@ -248,6 +248,8 @@ public class ProgramIntegrationService {
                 .map(enrollment -> enrollment.getPeople().getId())
                 .distinct()
                 .count();
+        long inscricao = countCandidatesByStage(candidates, "inscri");
+        long selecao = countCandidatesByStage(candidates, "sele");
         long nivelamento = countCandidatesByStage(candidates, "nivelamento");
         long imersao = countCandidatesByStage(candidates, "imersao");
         long orientadores = enrollments.stream()
@@ -271,6 +273,8 @@ public class ProgramIntegrationService {
                 periodLabel(program, classModel),
                 status,
                 etapaAtual,
+                inscricao,
+                selecao,
                 inscritos,
                 ativos,
                 nivelamento,

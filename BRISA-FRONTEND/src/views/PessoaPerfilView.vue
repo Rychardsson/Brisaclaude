@@ -1,5 +1,6 @@
 <template>
   <div class="pessoa-perfil-view">
+    <ConfirmDialog ref="confirmDialog" />
     <!-- Header do Perfil -->
     <header class="header">
       <div class="header-top">
@@ -35,6 +36,20 @@
             </svg>
             Editar perfil
           </button>
+          <div ref="personActionsMenuRef" class="person-actions-menu-wrap">
+            <button class="btn-icon" @click.stop="togglePersonActionsMenu" title="Mais ações" aria-label="Mais ações">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="5" r="1"></circle>
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="12" cy="19" r="1"></circle>
+              </svg>
+            </button>
+            <div v-if="showPersonActionsMenu" class="person-actions-menu">
+              <button class="person-actions-menu-item danger" :disabled="deletingPerson" @click="handleSoftDelete">
+                {{ deletingPerson ? 'Apagando...' : 'Apagar pessoa' }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -272,12 +287,13 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onBeforeUnmount, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { peopleService } from '@/services/peopleService';
 import EditPersonModal from '@/components/EditPersonModal.vue';
 import EnrollmentModal from '@/components/EnrollmentModal.vue';
 import FollowUpModal from '@/components/FollowUpModal.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -289,6 +305,10 @@ const activeTab = ref('resumo');
 const isEditing = ref(false);
 const showRegisterVinculo = ref(false);
 const showUpdateAcompanhamento = ref(false);
+const showPersonActionsMenu = ref(false);
+const deletingPerson = ref(false);
+const confirmDialog = ref(null);
+const personActionsMenuRef = ref(null);
 
 const tabs = [
   { id: 'resumo', label: 'Resumo' },
@@ -337,8 +357,44 @@ const formatDate = (date) => {
   return new Date(date).toLocaleDateString('pt-BR');
 };
 
+const togglePersonActionsMenu = () => {
+  showPersonActionsMenu.value = !showPersonActionsMenu.value;
+};
+
+const handleSoftDelete = async () => {
+  showPersonActionsMenu.value = false;
+  const confirmed = await confirmDialog.value?.show(
+    `Tem certeza que deseja apagar ${person.value?.name || 'esta pessoa'}? Você poderá recuperar depois.`,
+    'Apagar'
+  );
+  if (!confirmed) return;
+
+  deletingPerson.value = true;
+  error.value = '';
+  try {
+    await peopleService.delete(route.params.id);
+    router.push('/people');
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Erro ao apagar pessoa';
+  } finally {
+    deletingPerson.value = false;
+  }
+};
+
+const handleDocumentClick = (event) => {
+  if (!(event.target instanceof HTMLElement)) return;
+  if (!event.target.closest('.person-actions-menu-wrap')) {
+    showPersonActionsMenu.value = false;
+  }
+};
+
 onMounted(() => {
   loadPerson();
+  document.addEventListener('click', handleDocumentClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick);
 });
 </script>
 
@@ -385,6 +441,10 @@ onMounted(() => {
   gap: 10px;
 }
 
+.person-actions-menu-wrap {
+  position: relative;
+}
+
 .btn-outline,
 .btn-primary,
 .btn-close {
@@ -401,6 +461,62 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 600;
   transition: all 0.2s;
+}
+
+.btn-icon {
+  width: 48px;
+  min-height: 48px;
+  border-radius: 10px;
+  border: 1px solid #d8e1eb;
+  background: #fff;
+  color: #13233f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: #f8fafc;
+  border-color: #cfd9e6;
+}
+
+.person-actions-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+  z-index: 12;
+}
+
+.person-actions-menu-item {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  padding: 8px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.person-actions-menu-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.person-actions-menu-item.danger {
+  color: #b42318;
+}
+
+.person-actions-menu-item.danger:hover:not(:disabled) {
+  background: #fef2f2;
 }
 
 .btn-outline:hover {

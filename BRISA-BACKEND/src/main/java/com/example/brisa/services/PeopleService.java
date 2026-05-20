@@ -28,16 +28,19 @@ public class PeopleService {
     private static final int BATCH_SIZE = 500; // Processar em lotes de 500 registros
 
     public List<PeopleModel> findAll() {
-        return peopleRepository.findAllByOrderByNameAsc();
+        return peopleRepository.findAllActiveOrderByNameAsc();
     }
 
     public PeopleModel findById(Long id) {
-        return peopleRepository.findById(id)
+        return peopleRepository.findActiveById(id)
                 .orElseThrow(() -> new com.example.brisa.exceptions.ResourceNotFoundException("Pessoa não encontrada com id: " + id));
     }
 
     @Transactional
     public PeopleModel create(PeopleModel people) {
+        if (people.getSoftDeleted() == null) {
+            people.setSoftDeleted(false);
+        }
         return peopleRepository.save(people);
     }
 
@@ -70,7 +73,8 @@ public class PeopleService {
     @Transactional
     public void delete(Long id) {
         PeopleModel people = findById(id);
-        peopleRepository.delete(people);
+        people.setSoftDeleted(true);
+        peopleRepository.save(people);
     }
     
     @Transactional
