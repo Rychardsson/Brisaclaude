@@ -59,8 +59,11 @@ public class ProjectGroupService {
                     .orElseThrow(() -> new ResourceNotFoundException("Empresa/Instituição não encontrada"));
         }
         
-        // sponsorCompany is a free text field (optional)
+        // sponsorCompany is a free text field (required)
         String sponsorCompany = requestDTO.getSponsorCompany();
+        if (sponsorCompany == null || sponsorCompany.trim().isEmpty()) {
+            throw new ValidationException(java.util.List.of("Empresa do Grupo é obrigatória"));
+        }
 
         // Validar alunos (devem estar na etapa de imersão)
         List<PeopleModel> members = new java.util.ArrayList<>();

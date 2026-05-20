@@ -45,8 +45,8 @@ public class ProjectGroupModel {
     @JoinColumn(name = "project_company_id")
     private InstitutionModel projectCompany; // empresa/instituição (local onde o programa ocorre)
     
-    @Column(name = "sponsor_company")
-    private String sponsorCompany; // empresa do grupo (patrocinadora) - texto livre
+    @Column(name = "sponsor_company", nullable = false)
+    private String sponsorCompany; // empresa do grupo (patrocinadora) - texto livre (obrigatório)
 
     @ManyToOne
     @JoinColumn(name = "leader_id")

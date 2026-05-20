@@ -34,12 +34,13 @@
 
           <!-- Empresa do Grupo (patrocinadora) -->
           <div class="form-group">
-            <label for="sponsorCompany">Empresa do Grupo (patrocinadora)</label>
+            <label for="sponsorCompany">Empresa do Grupo</label>
             <input
               id="sponsorCompany"
               v-model="form.sponsorCompany"
               type="text"
-              placeholder="Digite o nome da empresa patrocinadora (opcional)"
+              placeholder="Digite o nome da empresa patrocinadora"
+              required
             />
           </div>
 
@@ -237,6 +238,10 @@ export default {
       }
       if (!this.form.description.trim()) {
         this.errorMessage = 'Resumo do projeto é obrigatório';
+        return;
+      }
+      if (!this.form.sponsorCompany || !this.form.sponsorCompany.trim()) {
+        this.errorMessage = 'Empresa do Grupo é obrigatória';
         return;
       }
       if (!this.form.leaderId) {
