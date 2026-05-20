@@ -3,5 +3,5 @@
 </template>
 
 <script setup>
-import FigmaPeople from '../components/figma-generated/pages/pessoas.vue'
+import FigmaPeople from './FigmaPessoas.vue'
 </script>
