@@ -1,5 +1,6 @@
 <template>
   <div class="people-page">
+    <ConfirmDialog ref="confirmDialog" />
     <div class="people-shell">
       <section class="page-header-card">
         <div class="page-header-top">
@@ -28,6 +29,15 @@
                 <line x1="23" y1="11" x2="17" y2="11"></line>
               </svg>
               Nova pessoa
+            </button>
+
+            <button type="button" class="ghost-btn" @click="showLinkModal = true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 7h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h4"></path>
+                <line x1="12" y1="4" x2="12" y2="13"></line>
+                <line x1="8" y1="9" x2="16" y2="9"></line>
+              </svg>
+              Vincular pessoa existente
             </button>
 
             <button type="button" class="primary-btn" @click="showUploadModal = true">
@@ -147,6 +157,15 @@
                   <option value="">Todos</option>
                   <option v-for="prog in programOptions" :key="prog.id" :value="prog.id">
                     {{ prog.name || prog.label }}
+                  </option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Turma</label>
+                <select v-model="advancedFilters.turma">
+                  <option value="">Todas</option>
+                  <option v-for="turma in classOptions" :key="turma.id" :value="turma.id">
+                    {{ turma.label }}
                   </option>
                 </select>
               </div>
@@ -352,13 +371,29 @@
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                   </button>
-                  <button type="button" class="icon-btn" title="Mais ações" @click="openMoreActions(person)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="5" r="1"></circle>
-                      <circle cx="12" cy="12" r="1"></circle>
-                      <circle cx="12" cy="19" r="1"></circle>
-                    </svg>
-                  </button>
+                  <div class="person-actions-menu-wrap">
+                    <button type="button" class="icon-btn" title="Mais ações" @click.stop="openMoreActions(person)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                      </svg>
+                    </button>
+                    <div
+                      v-if="openPeopleActionsFor === person.id"
+                      class="person-actions-menu"
+                      @click.stop
+                    >
+                      <button
+                        type="button"
+                        class="person-actions-menu-item danger"
+                        :disabled="deletingPersonId === person.id"
+                        @click="handleSoftDelete(person)"
+                      >
+                        {{ deletingPersonId === person.id ? 'Apagando...' : 'Apagar pessoa' }}
+                      </button>
+                    </div>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -593,7 +628,7 @@
         <div class="modal-head">
           <div>
             <h2>Cadastrar nova pessoa</h2>
-            <p class="modal-subtitle">Preencha os dados pessoais, acadêmicos e o vínculo inicial da pessoa com um programa/turma.</p>
+            <p class="modal-subtitle">Preencha os dados pessoais obrigatórios. O vínculo com programa/turma é opcional.</p>
           </div>
           <button type="button" class="modal-close" @click="closeCreateModal" aria-label="Fechar">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -604,43 +639,6 @@
         </div>
         <form class="create-form" @submit.prevent="handleCreate">
           <div class="modal-body">
-            <div class="modal-section">
-              <h3 class="modal-section-title">Vínculo com programa/turma</h3>
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Programa *</label>
-                  <select v-model="createForm.programaId">
-                    <option value="" disabled>Selecione</option>
-                    <option v-for="programa in programOptions" :key="programa.id" :value="programa.id">{{ programa.label }}</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label>Turma *</label>
-                  <select v-model="createForm.turmaId" required>
-                    <option value="" disabled>Selecione</option>
-                    <option v-for="turma in classOptions" :key="turma.id" :value="turma.id">{{ turma.label }}</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label>Etapa inicial *</label>
-                  <select v-model="createForm.etapaId" :disabled="!createForm.turmaId || stageLoading" required>
-                    <option value="" disabled>Selecione</option>
-                    <option v-for="etapa in stageOptions" :key="etapa.id" :value="etapa.id">{{ etapa.label }}</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label>Status inicial</label>
-                  <select v-model="createForm.statusInicial">
-                    <option value="" disabled>Selecione</option>
-                    <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
             <div class="modal-section">
               <h3 class="modal-section-title">Dados pessoais</h3>
               <div class="form-grid">
@@ -736,6 +734,43 @@
               </div>
             </div>
 
+            <div class="modal-section">
+              <h3 class="modal-section-title">Vínculo com programa/turma (opcional)</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Programa</label>
+                  <select v-model="createForm.programaId">
+                    <option value="" disabled>Selecione</option>
+                    <option v-for="programa in programOptions" :key="programa.id" :value="programa.id">{{ programa.label }}</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Turma</label>
+                  <select v-model="createForm.turmaId">
+                    <option value="" disabled>Selecione</option>
+                    <option v-for="turma in classOptions" :key="turma.id" :value="turma.id">{{ turma.label }}</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Etapa inicial</label>
+                  <select v-model="createForm.etapaId" :disabled="!createForm.turmaId || stageLoading">
+                    <option value="" disabled>Selecione</option>
+                    <option v-for="etapa in stageOptions" :key="etapa.id" :value="etapa.id">{{ etapa.label }}</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Status inicial</label>
+                  <select v-model="createForm.statusInicial">
+                    <option value="" disabled>Selecione</option>
+                    <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <div v-if="referenceError" class="alert alert-error">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -768,6 +803,89 @@
             <button type="button" class="secondary-btn modal-secondary" @click="closeCreateModal">Cancelar</button>
             <button type="submit" class="primary-btn" :disabled="createDisabled">
               {{ creating ? 'Cadastrando...' : 'Cadastrar pessoa' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div v-if="showLinkModal" class="modal-overlay" @click="closeLinkModal">
+      <div class="modal-card modal-card-medium" @click.stop>
+        <div class="modal-head">
+          <h2>Vincular pessoa existente</h2>
+          <button type="button" class="modal-close" @click="closeLinkModal" aria-label="Fechar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <form @submit.prevent="handleLinkSubmit" class="modal-form">
+          <div class="modal-section">
+            <h3 class="modal-section-title">Seleção de pessoa</h3>
+            <div class="form-group">
+              <label>Pessoa</label>
+              <select v-model="linkForm.peopleId">
+                <option value="" disabled>Selecione uma pessoa</option>
+                <option v-for="person in availablePeople" :key="person.id" :value="person.id">
+                  {{ person.name }} ({{ person.cpf }})
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-section">
+            <h3 class="modal-section-title">Vínculo com programa/turma</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Programa</label>
+                <select v-model="linkForm.turmaId">
+                  <option value="" disabled>Selecione</option>
+                  <option v-for="turma in classOptions" :key="turma.id" :value="turma.id">{{ turma.label }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Etapa inicial</label>
+                <select v-model="linkForm.etapaId" :disabled="!linkForm.turmaId || linkStageLoading">
+                  <option value="" disabled>Selecione</option>
+                  <option v-for="etapa in linkStageOptions" :key="etapa.id" :value="etapa.id">{{ etapa.label }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Status inicial</label>
+                <select v-model="linkForm.statusInicial">
+                  <option value="" disabled>Selecione</option>
+                  <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="linkStageError" class="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            {{ linkStageError }}
+          </div>
+
+          <div v-if="linkError" class="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            {{ linkError }}
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="secondary-btn modal-secondary" @click="closeLinkModal">Cancelar</button>
+            <button type="submit" class="primary-btn" :disabled="linking">
+              {{ linking ? 'Vinculando...' : 'Vincular' }}
             </button>
           </div>
         </form>
@@ -812,14 +930,16 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { Columns3 } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { peopleService } from '@/services/peopleService';
 import { enrollmentService } from '@/services/enrollmentService';
 import { stageService } from '@/services/stageService';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 const router = useRouter();
+const route = useRoute();
 
 const people = ref([]);
 const enrollments = ref([]);
@@ -832,6 +952,9 @@ const showAdvancedFilters = ref(false);
 const showTemplateModal = ref(false);
 const showColumnsMenu = ref(false);
 const columnsControlRef = ref(null);
+const openPeopleActionsFor = ref(null);
+const deletingPersonId = ref(null);
+const confirmDialog = ref(null);
 const visibleColumns = reactive({
   gender: false,
   age: false,
@@ -883,6 +1006,7 @@ const fallbackStateOptions = [
 ];
 const advancedFilters = ref({
   programa: '',
+  turma: '',
   etapa: '',
   status: '',
   cota: '',
@@ -894,6 +1018,7 @@ const advancedFilters = ref({
 
 const showUploadModal = ref(false);
 const showCreateModal = ref(false);
+const showLinkModal = ref(false);
 const referenceData = ref(null);
 const referenceLoading = ref(false);
 const referenceError = ref(null);
@@ -953,6 +1078,19 @@ const createForm = ref({
 const creating = ref(false);
 const createError = ref(null);
 
+const linkForm = ref({
+  peopleId: '',
+  turmaId: '',
+  etapaId: '',
+  statusInicial: ''
+});
+const linkStageOptions = ref([]);
+const linkStageLoading = ref(false);
+const linkStageError = ref(null);
+const linking = ref(false);
+const linkError = ref(null);
+const availablePeople = computed(() => people.value || []);
+
 const programOptions = computed(() => referenceData.value?.programas || []);
 const classOptions = computed(() => referenceData.value?.turmas || []);
 const stageOptions = computed(() => classStageOptions.value);
@@ -980,6 +1118,9 @@ const educationStatusOptions = computed(() => {
 
 const normalize = (value) => (value ?? '').toString().toLowerCase();
 const hasValue = (value) => !!(value ?? '').toString().trim();
+const enrollmentPersonId = (enrollment) => enrollment?.people?.id ?? enrollment?.peopleId ?? enrollment?.personId ?? null;
+const enrollmentClassId = (enrollment) => enrollment?.classModel?.id ?? enrollment?.turmaId ?? enrollment?.classId ?? enrollment?.turma?.id ?? enrollment?.class_id ?? null;
+const enrollmentProgramId = (enrollment) => enrollment?.classModel?.program?.id ?? enrollment?.programId ?? enrollment?.program?.id ?? enrollment?.programaId ?? null;
 
 const stageLabel = (name) => {
   const normalized = normalize(name);
@@ -1060,13 +1201,11 @@ const formatCPF = (cpf) => {
 const createCpfDigits = computed(() => (createForm.value.cpf || '').replace(/\D/g, ''));
 const createDisabled = computed(() => (
   creating.value
-  || stageLoading.value
   || !createForm.value.nome
   || !createForm.value.email
   || createCpfDigits.value.length !== 11
   || !createForm.value.dataNascimento
-  || !createForm.value.turmaId
-  || !createForm.value.etapaId
+  || !createForm.value.cota
 ));
 
 const uploadTotalCount = computed(() => uploadResult.value?.totalProcessed || 0);
@@ -1326,6 +1465,26 @@ const filteredPeople = computed(() => {
   if (advancedFilters.value.hasEmail) list = list.filter((person) => hasValue(person.email));
   if (advancedFilters.value.completeOnly) list = list.filter(isCompleteProfile);
   if (advancedFilters.value.recentOnly) list = list.filter(isRecent30d);
+  if (advancedFilters.value.programa) {
+    const programaId = Number(advancedFilters.value.programa);
+    list = list.filter((person) => {
+      return (enrollments.value || []).some((enrollment) => {
+        const personId = enrollmentPersonId(enrollment);
+        const eid = Number(enrollmentProgramId(enrollment));
+        return personId === person.id && eid === programaId;
+      });
+    });
+  }
+  if (advancedFilters.value.turma) {
+    const turmaId = Number(advancedFilters.value.turma);
+    list = list.filter((person) => {
+      return (enrollments.value || []).some((enrollment) => {
+        const personId = enrollmentPersonId(enrollment);
+        const cid = Number(enrollmentClassId(enrollment));
+        return personId === person.id && cid === turmaId;
+      });
+    });
+  }
 
   return list;
 });
@@ -1442,8 +1601,28 @@ const viewHistory = (person) => {
   router.push(`/people/${person.id}`);
 };
 
-const openMoreActions = () => {
-  // Placeholder visual button matching the Figma row actions.
+const openMoreActions = (person) => {
+  openPeopleActionsFor.value = openPeopleActionsFor.value === person.id ? null : person.id;
+};
+
+const handleSoftDelete = async (person) => {
+  openPeopleActionsFor.value = null;
+  const confirmed = await confirmDialog.value?.show(
+    `Tem certeza que deseja apagar ${person?.name || 'esta pessoa'}? Você poderá recuperar depois.`,
+    'Apagar'
+  );
+  if (!confirmed) return;
+
+  deletingPersonId.value = person.id;
+  error.value = null;
+  try {
+    await peopleService.delete(person.id);
+    await loadData();
+  } catch (err) {
+    error.value = `Erro ao apagar pessoa: ${err.response?.data?.message || err.message}`;
+  } finally {
+    deletingPersonId.value = null;
+  }
 };
 
 const downloadTemplate = () => {
@@ -1616,7 +1795,7 @@ const toNullableNumber = (value) => {
 const handleCreate = async () => {
   const cpfDigits = createCpfDigits.value;
 
-  if (!createForm.value.nome || !createForm.value.email || cpfDigits.length !== 11 || !createForm.value.dataNascimento || !createForm.value.turmaId || !createForm.value.etapaId) {
+  if (!createForm.value.nome || !createForm.value.email || cpfDigits.length !== 11 || !createForm.value.dataNascimento || !createForm.value.cota) {
     createError.value = 'Preencha os campos obrigatórios marcados com *.';
     return;
   }
@@ -1625,7 +1804,7 @@ const handleCreate = async () => {
   createError.value = null;
 
   try {
-    await peopleService.createLink({
+    const payload = {
       ...createForm.value,
       cpf: cpfDigits,
       programaId: toNullableNumber(createForm.value.programaId),
@@ -1633,7 +1812,15 @@ const handleCreate = async () => {
       etapaId: toNullableNumber(createForm.value.etapaId),
       dataNascimento: createForm.value.dataNascimento || null,
       dataConclusao: createForm.value.dataConclusao || null
-    });
+    };
+
+    // Se turma foi preenchida, vincula logo. Senão, cria apenas a pessoa.
+    if (createForm.value.turmaId) {
+      await peopleService.createLink(payload);
+    } else {
+      await peopleService.createOnly(payload);
+    }
+
     closeCreateModal();
     await loadData();
   } catch (err) {
@@ -1677,6 +1864,51 @@ const closeCreateModal = () => {
     statusFormacao: '',
     dataConclusao: ''
   };
+};
+
+const closeLinkModal = () => {
+  showLinkModal.value = false;
+  linkError.value = null;
+  linkStageError.value = null;
+  linkStageOptions.value = [];
+  linkForm.value = {
+    peopleId: '',
+    turmaId: '',
+    etapaId: '',
+    statusInicial: ''
+  };
+};
+
+const handleLinkSubmit = async () => {
+  if (!linkForm.value.peopleId || !linkForm.value.turmaId || !linkForm.value.etapaId || !linkForm.value.statusInicial) {
+    linkError.value = 'Preencha todos os campos obrigatórios.';
+    return;
+  }
+
+  linking.value = true;
+  linkError.value = null;
+
+  try {
+    const payload = {
+      peopleId: parseInt(linkForm.value.peopleId),
+      turmaId: parseInt(linkForm.value.turmaId),
+      etapaId: parseInt(linkForm.value.etapaId),
+      statusInicial: linkForm.value.statusInicial
+    };
+
+    await peopleService.linkExisting(payload);
+    closeLinkModal();
+    await loadData();
+  } catch (err) {
+    const details = err.response?.data?.details;
+    if (Array.isArray(details) && details.length) {
+      linkError.value = details.join(' ');
+    } else {
+      linkError.value = err.response?.data?.message || err.message || 'Erro ao vincular pessoa';
+    }
+  } finally {
+    linking.value = false;
+  }
 };
 
 const handleFileSelect = (event) => {
@@ -1748,9 +1980,13 @@ const closeColumnsMenu = () => {
 
 const handleDocumentClick = (event) => {
   const control = columnsControlRef.value;
-  if (!control) return;
-  if (!control.contains(event.target)) {
+  if (control && !control.contains(event.target)) {
     closeColumnsMenu();
+  }
+
+  if (!(event.target instanceof HTMLElement)) return;
+  if (!event.target.closest('.person-actions-menu-wrap')) {
+    openPeopleActionsFor.value = null;
   }
 };
 
@@ -1828,10 +2064,57 @@ watch(() => uploadForm.value.turmaId, async (turmaId) => {
   }
 });
 
-onMounted(() => {
-  loadData();
-  loadReferenceData();
+watch(() => linkForm.value.turmaId, async (turmaId) => {
+  if (!turmaId) {
+    linkStageOptions.value = [];
+    linkForm.value.etapaId = '';
+    linkStageError.value = null;
+    return;
+  }
+
+  linkStageLoading.value = true;
+  linkStageError.value = null;
+  try {
+    const stages = await stageService.getByClassId(turmaId);
+    linkStageOptions.value = stages
+      .map((stage) => ({ id: stage.id, label: stageLabel(stage.name) }))
+      .sort((a, b) => {
+        const priorityDiff = stagePriority(a.label) - stagePriority(b.label);
+        if (priorityDiff !== 0) return priorityDiff;
+        return a.label.localeCompare(b.label, 'pt-BR');
+      });
+
+    if (!linkStageOptions.value.some((option) => option.id === linkForm.value.etapaId)) {
+      linkForm.value.etapaId = '';
+    }
+  } catch (err) {
+    linkStageOptions.value = [];
+    linkForm.value.etapaId = '';
+    linkStageError.value = `Erro ao carregar etapas: ${err.response?.data?.message || err.message}`;
+  } finally {
+    linkStageLoading.value = false;
+  }
+});
+
+onMounted(async () => {
+  await Promise.all([loadData(), loadReferenceData()]);
   document.addEventListener('click', handleDocumentClick);
+  const q = route.query || {};
+
+  if (q.programaId && hasValue(q.programaId)) {
+    advancedFilters.value.programa = String(q.programaId);
+  }
+  if (q.turmaId && hasValue(q.turmaId)) {
+    advancedFilters.value.turma = String(q.turmaId);
+  }
+  if (q.programa && hasValue(q.programa) && !advancedFilters.value.programa) {
+    searchTerm.value = String(q.programa);
+  }
+
+  if (advancedFilters.value.programa || advancedFilters.value.turma || searchTerm.value) {
+    showAdvancedFilters.value = true;
+    currentPage.value = 1;
+  }
 });
 
 onBeforeUnmount(() => {
@@ -2452,6 +2735,53 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
+}
+
+.person-actions-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.person-actions-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 150px;
+  background: #fff;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  z-index: 12;
+  padding: 6px;
+}
+
+.person-actions-menu-item {
+  width: 100%;
+  border: none;
+  background: #fff;
+  color: #13233f;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.person-actions-menu-item:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.person-actions-menu-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.person-actions-menu-item.danger {
+  color: #b42318;
+}
+
+.person-actions-menu-item.danger:hover:not(:disabled) {
+  background: #fef2f2;
 }
 
 .icon-btn {

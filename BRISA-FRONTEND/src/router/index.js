@@ -109,15 +109,17 @@ const routes = [
   {
     path: '/programs/:programId/classes/:classId/courses',
     name: 'ClassCourses',
-    component: () => import('@/views/ClassCoursesView.vue'),
-    meta: { requiresAuth: true }
-  },
-  // ✅ Tela 4 — Detalhes de um Curso
-  {
-    path: '/programs/:programId/classes/:classId/courses/:courseId',
-    name: 'CourseDetails',
-    component: () => import('@/views/CourseDetailsView.vue'),
-    meta: { requiresAuth: true }
+    redirect: to => ({
+      name: 'ClassDetails',
+      params: {
+        programId: to.params.programId,
+        classId: to.params.classId
+      },
+      query: {
+        tab: 'etapas',
+        subTab: 'nivelamento'
+      }
+    })
   },
   {
     path: '/programs/:programId/classes/:classId/stages/:stageId',

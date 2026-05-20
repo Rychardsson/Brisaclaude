@@ -3,9 +3,7 @@ package com.example.brisa.services;
 import com.example.brisa.dtos.course.CourseAlertRequestDTO;
 import com.example.brisa.dtos.course.CourseAlertResponseDTO;
 import com.example.brisa.dtos.course.CourseClassImportResponseDTO;
-import com.example.brisa.dtos.course.CourseDetailsDTO;
 import com.example.brisa.dtos.course.CourseProgressionImportResponseDTO;
-import com.example.brisa.dtos.course.CourseStudentProgressionDTO;
 import com.example.brisa.exceptions.ResourceNotFoundException;
 import com.example.brisa.models.EnrollmentModel;
 import com.example.brisa.models.PeopleModel;
@@ -78,102 +76,6 @@ public class CourseService {
 
     public List<CourseProgressionModel> findProgressionsByCourseId(Long courseId) {
         return courseProgressionRepository.findByCourseId(courseId);
-    }
-
-    /**
-     * Retorna detalhes completos de um curso para uma turma específica,
-     * incluindo progressão de cada aluno e nota do EnrollmentModel.
-     */
-    public CourseDetailsDTO getCourseDetails(Long courseId, Long classId) {
-        CourseModel course = findById(courseId);
-        // Load existing progressions (may be empty if backfill removed)
-        List<CourseProgressionModel> progressions = courseProgressionRepository
-            .findByCourseIdAndClassId(courseId, classId);
-
-        // Load enrollments for the class — prefer showing enrolled students even
-        // if they don't have a progression yet. If enrollments exist, build the
-        // students list from enrollments, using progression values when present
-        // or defaults otherwise. If no enrollments, fall back to existing
-        // progressions (legacy/edge cases).
-        List<EnrollmentModel> enrollments = enrollmentRepository.findByClassModelId(classId);
-        Map<Long, Double> gradeByPeopleId = enrollments.stream()
-            .filter(e -> e.getGrade() != null)
-            .collect(Collectors.toMap(
-                e -> e.getPeople().getId(),
-                EnrollmentModel::getGrade,
-                (a, b) -> a
-            ));
-
-        List<CourseStudentProgressionDTO> students = new ArrayList<>();
-
-        if (enrollments != null && !enrollments.isEmpty()) {
-            // index existing progressions by people id for quick lookup
-            Map<Long, CourseProgressionModel> progByPeople = progressions.stream()
-                .filter(p -> p.getPeople() != null && p.getPeople().getId() != null)
-                .collect(Collectors.toMap(p -> p.getPeople().getId(), p -> p, (a, b) -> a));
-
-            for (EnrollmentModel e : enrollments) {
-            if (e.getPeople() == null || e.getPeople().getId() == null) continue;
-            Long pid = e.getPeople().getId();
-            CourseProgressionModel p = progByPeople.get(pid);
-            if (p != null) {
-                students.add(new CourseStudentProgressionDTO(
-                    p.getPeople().getId(),
-                    p.getPeople().getName(),
-                    p.getPeople().getEmail(),
-                    p.getStatus(),
-                    p.getCompletionPercentage(),
-                    p.getLastAccess(),
-                    gradeByPeopleId.get(p.getPeople().getId())
-                ));
-            } else {
-                // No progression yet — show as not started
-                students.add(new CourseStudentProgressionDTO(
-                    e.getPeople().getId(),
-                    e.getPeople().getName(),
-                    e.getPeople().getEmail(),
-                    "não iniciado",
-                    0.0,
-                    null,
-                    gradeByPeopleId.get(e.getPeople().getId())
-                ));
-            }
-            }
-        } else {
-            // No enrollments available — fall back to existing progressions
-            students = progressions.stream()
-                .map(p -> new CourseStudentProgressionDTO(
-                    p.getPeople().getId(),
-                    p.getPeople().getName(),
-                    p.getPeople().getEmail(),
-                    p.getStatus(),
-                    p.getCompletionPercentage(),
-                    p.getLastAccess(),
-                    null
-                ))
-                .collect(Collectors.toList());
-        }
-
-        int total      = students.size();
-        int notStarted = (int) students.stream().filter(s -> "não iniciado".equalsIgnoreCase(s.status())).count();
-        int inProgress = (int) students.stream().filter(s -> "em andamento".equalsIgnoreCase(s.status())).count();
-        int completed  = (int) students.stream().filter(s -> "concluído".equalsIgnoreCase(s.status())).count();
-        double avgCompletion = total > 0
-                ? students.stream().mapToDouble(CourseStudentProgressionDTO::completionPercentage).average().orElse(0)
-                : 0;
-
-        return new CourseDetailsDTO(
-                course.getId(),
-                course.getName(),
-                course.getKnowledgeArea() != null ? course.getKnowledgeArea().getName() : null,
-                course.getWorkload(),
-                total,
-                notStarted,
-                inProgress,
-                completed,
-                Math.round(avgCompletion * 10.0) / 10.0,
-                students
-        );
     }
 
     // Create a single course. If knowledge area name is provided, find or create it.

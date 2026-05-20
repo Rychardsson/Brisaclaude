@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface AcademicRoleRepository extends JpaRepository<AcademicRoleModel, Long> {
     Optional<AcademicRoleModel> findByName(String name);
+    Optional<AcademicRoleModel> findByNameIgnoreCase(String name);
 }

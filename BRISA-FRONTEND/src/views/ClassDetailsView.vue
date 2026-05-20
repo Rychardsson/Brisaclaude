@@ -158,10 +158,10 @@
 
             <div class="cycle">
               <div v-for="(item, index) in overviewCycle" :key="item" class="cycle-item">
-                <div class="cycle-pill" :class="{ done: index < overviewCurrentCycleIndex, current: index === overviewCurrentCycleIndex }">
+                <div class="cycle-pill" :class="{ done: overviewCycleHasStudents(item) }">
                   {{ item }}
                 </div>
-                <div v-if="index < overviewCycle.length - 1" class="cycle-line" :class="{ done: index < overviewCurrentCycleIndex }" />
+                <div v-if="index < overviewCycle.length - 1" class="cycle-line" :class="{ done: overviewCycleHasStudents(item) }" />
               </div>
             </div>
           </article>
@@ -566,7 +566,7 @@
                 <span>Submeter notas da prova</span>
               </button>
               <div class="spacer"></div>
-              <button type="button" class="btn-primary" @click="showSendMessageModal = true"><span>Enviar mensagem</span></button>
+              <button type="button" class="btn-primary" @click="openSendMessageModal()"><span>Enviar mensagem</span></button>
             </div>
           </div>
 
@@ -574,8 +574,7 @@
           <!-- Seção Cursos do Nivelamento -->
           <article class="panel">
            <div class="panel-head">
-             <h3>Cursos do Nivelamento</h3>
-             <button v-if="courseItems && courseItems.length" type="button" class="btn-primary" @click="openAddCoursesModal">Gerenciar cursos</button>
+            <h3>Cursos do Nivelamento</h3>
            </div>
 
            <div class="courses-list">
@@ -626,7 +625,7 @@
                <strong>Cursos obrigatórios com pendências</strong>
                <p>37 alunos ainda possuem pendências em cursos obrigatórios</p>
              </div>
-             <button type="button" class="alert-link">Enviar mensagem</button>
+             <button type="button" class="alert-link" @click="showSendMessageModal = true">Enviar mensagem</button>
            </div>
           </article>
 
@@ -1567,7 +1566,7 @@
     </div>
 
     <!-- Modal: Send Message -->
-    <div v-if="showSendMessageModal" class="modal-overlay" @click="showSendMessageModal = false">
+    <div v-if="showSendMessageModal" class="modal-overlay modal-overlay-top" @click="showSendMessageModal = false">
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
           <h2>Enviar mensagem aos alunos</h2>
@@ -1585,11 +1584,11 @@
           <div class="send-message-section">
             <label class="section-label">Destinatários</label>
             <div class="radio-option">
-              <input type="radio" id="all-students" name="recipients" value="all" checked />
+              <input type="radio" id="all-students" name="recipients" value="all" v-model="sendMessageRecipients" />
               <label for="all-students">Todos os alunos do nivelamento</label>
             </div>
             <div class="radio-option">
-              <input type="radio" id="pending-students" name="recipients" value="pending" />
+              <input type="radio" id="pending-students" name="recipients" value="pending" v-model="sendMessageRecipients" />
               <label for="pending-students">Apenas alunos com cursos obrigatórios pendentes</label>
             </div>
 
@@ -1616,6 +1615,7 @@
               type="text"
               placeholder="Pendência na conclusão dos cursos obrigatórios"
               class="text-input"
+              v-model="sendMessageSubject"
             />
           </div>
 
@@ -1626,7 +1626,8 @@
               class="textarea-input"
               rows="6"
               placeholder="Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo."
-            >Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.</textarea>
+              v-model="sendMessageBody"
+            />
           </div>
 
           <div class="modal-actions">
@@ -1685,6 +1686,7 @@
               <strong>Alunos com pendência</strong>
               <p>{{ selectedCourseItem?.pendingCount || 0 }} alunos ainda não concluíram este curso</p>
             </div>
+            <button type="button" class="alert-link" @click="openCoursePendingMessage">Enviar mensagem</button>
           </div>
 
           <div class="modal-actions">
@@ -1887,6 +1889,9 @@ export default {
     const showAtualizarPresencaImersaoModal = ref(false);
     const tipoAvaliacaoImersao = ref('parcial');
     const showSendMessageModal = ref(false);
+    const sendMessageRecipients = ref('all');
+    const sendMessageSubject = ref('Pendência na conclusão dos cursos obrigatórios');
+    const sendMessageBody = ref('Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.');
     const showCourseDetailsModal = ref(false);
     const selectedCourseItem = ref(null);
     const showGroupCreateModal = ref(false);
@@ -2221,6 +2226,69 @@ export default {
       return 0;
     });
     const overviewProgressPct = computed(() => Math.round((overviewCurrentCycleIndex.value / (overviewCycle.length - 1)) * 100));
+    const hasStartedInscricao = computed(() => {
+      const startDate = parseDateValue(classData.value?.applicationStartDate);
+      if (!startDate) return false;
+      return startDate.getTime() <= Date.now();
+    });
+
+    const overviewStageCounts = computed(() => {
+      const counts = {
+        inscricao: 0,
+        selecao: 0,
+        nivelamento: 0,
+        prova: 0,
+        imersao: 0,
+        avaliacao: 0,
+      };
+      stages.value.forEach((stage) => {
+        const count = Number(stageCandidatesCount.value?.[stage.id] ?? 0);
+        if (!count) return;
+        const value = normalizeText(stage?.name || '');
+        if (value.includes('inscri')) counts.inscricao += count;
+        if (value.includes('sele')) counts.selecao += count;
+        if (value.includes('nivel')) counts.nivelamento += count;
+        if (value.includes('prova')) counts.prova += count;
+        if (value.includes('imers')) counts.imersao += count;
+        if (value.includes('avali')) counts.avaliacao += count;
+      });
+      return counts;
+    });
+
+    const overviewCycleHasStudents = (label) => {
+      const value = normalizeText(label);
+      if (value.includes('inscri')) {
+        return overviewStageCounts.value.inscricao > 0 || hasStartedInscricao.value;
+      }
+      if (value.includes('process')) return overviewStageCounts.value.selecao > 0;
+      if (value.includes('sele')) return overviewStageCounts.value.selecao > 0;
+      if (value.includes('nivel')) return overviewStageCounts.value.nivelamento > 0;
+      if (value.includes('prova')) return overviewStageCounts.value.prova > 0;
+      if (value.includes('imers')) return overviewStageCounts.value.imersao > 0;
+      if (value.includes('avali')) return overviewStageCounts.value.avaliacao > 0;
+      if (value.includes('encerr')) {
+        return normalizeText(classData.value?.status || '').includes('encerr');
+      }
+      return false;
+    };
+
+    const openSendMessageModal = (options = {}) => {
+      const { subject, body, recipients } = options;
+      sendMessageSubject.value = subject ?? 'Pendência na conclusão dos cursos obrigatórios';
+      sendMessageBody.value = body ?? 'Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.';
+      sendMessageRecipients.value = recipients ?? 'all';
+      showSendMessageModal.value = true;
+    };
+
+    const openCoursePendingMessage = () => {
+      if (!selectedCourseItem.value) return;
+      const courseName = selectedCourseItem.value?.name || 'este curso';
+      openSendMessageModal({
+        subject: `Pendência no curso ${courseName}`,
+        body: `Olá, identificamos que você ainda possui pendência no curso "${courseName}" do nivelamento. A conclusão desse curso é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.`,
+        recipients: 'pending',
+      });
+    };
 
     const stageBucket = computed(() => {
       const summary = { selecao: 0, nivelamento: 0, imersao: 0 };
@@ -2627,9 +2695,6 @@ export default {
           }
         };
 
-        const goToCourse = (course) => {
-          router.push({ name: 'ClassCourses', params: { programId: programId.value, classId: classId.value }, query: { courseId: course.id } });
-        };
         const openCourseDetails = (course) => {
           selectedCourseItem.value = course;
           showCourseDetailsModal.value = true;
@@ -2641,6 +2706,19 @@ export default {
 
         // Load nivelamento data when Etapas tab is opened
         const etapasSubTab = ref('nivelamento');
+        const applyTabStateFromQuery = () => {
+          const tab = String(route.query?.tab || '').toLowerCase();
+          const rawSubTab = route.query?.subTab ?? route.query?.etapasSubTab;
+          const subTab = String(rawSubTab || '').toLowerCase();
+
+          if (tab === 'etapas') {
+            activeTab.value = 'etapas';
+          }
+
+          if (subTab === 'nivelamento' || subTab === 'imersao') {
+            etapasSubTab.value = subTab;
+          }
+        };
         // When false, keep frontend mocks for imersaoGroups instead of replacing them with API results
         const useRealImersaoGroups = ref(false);
         const lastEmailInfo = computed(() => {
@@ -2655,6 +2733,13 @@ export default {
         watch(() => activeTab.value, (tab) => {
           if (tab === 'etapas') loadNivelamentoData();
         });
+
+        watch(
+          () => [route.query?.tab, route.query?.subTab, route.query?.etapasSubTab],
+          () => {
+            applyTabStateFromQuery();
+          }
+        );
 
         // Load imersao groups when sub-tab switches to 'imersao'
         const loadImersaoGroups = async () => {
@@ -2893,7 +2978,18 @@ export default {
     const goToPeople = () => {
       const programName = classData.value?.program?.name || 'Programa';
       const classCode = classData.value?.code || '-';
-      router.push({ path: '/people', query: { programa: `${programName} - Turma ${classCode}` } });
+      const turmaId = classId.value ? String(classId.value) : null;
+      const resolvedProgramId = classData.value?.program?.id ?? programId.value ?? null;
+      const query = { programa: `${programName} - Turma ${classCode}` };
+
+      if (resolvedProgramId != null && resolvedProgramId !== '') {
+        query.programaId = String(resolvedProgramId);
+      }
+      if (turmaId) {
+        query.turmaId = turmaId;
+      }
+
+      router.push({ path: '/people', query });
     };
 
     const viewPerson = (person) => {
@@ -2927,8 +3023,9 @@ export default {
 
     const goToClassCourses = () => {
       router.push({
-        name: 'ClassCourses',
+        name: 'ClassDetails',
         params: { programId: programId.value, classId: classId.value },
+        query: { tab: 'etapas', subTab: 'nivelamento' },
       });
     };
 
@@ -3049,6 +3146,7 @@ export default {
     const goBack = () => router.back();
 
     onMounted(() => {
+      applyTabStateFromQuery();
       loadClassDetails();
     });
 
@@ -3132,6 +3230,7 @@ export default {
       openEditStageModal,
       overviewCurrentCycleIndex,
       overviewCycle,
+      overviewCycleHasStudents,
       overviewProgressPct,
       overviewStageCards,
       overviewTimeline,
@@ -3184,7 +3283,12 @@ export default {
       showSubmitNotasImersaoModal,
       showAtualizarPresencaImersaoModal,
       tipoAvaliacaoImersao,
+      sendMessageRecipients,
+      sendMessageSubject,
+      sendMessageBody,
       showSendMessageModal,
+      openSendMessageModal,
+      openCoursePendingMessage,
       showCourseDetailsModal,
       selectedCourseItem,
       showGroupCreateModal,
@@ -3223,7 +3327,6 @@ export default {
       loadNivelamentoData,
       assignCourse,
       removeCourse,
-      goToCourse,
       openCourseDetails,
       closeCourseDetailsModal,
       onGroupCreated,
@@ -4129,6 +4232,10 @@ export default {
   align-items: center;
   z-index: 1000;
   padding: 16px;
+}
+
+.modal-overlay.modal-overlay-top {
+  z-index: 1100;
 }
 
 .modal {

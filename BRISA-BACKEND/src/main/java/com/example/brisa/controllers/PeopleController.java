@@ -3,6 +3,7 @@ package com.example.brisa.controllers;
 import com.example.brisa.dtos.people.PeopleCreateLinkRequestDTO;
 import com.example.brisa.dtos.people.PeopleCreateLinkResponseDTO;
 import com.example.brisa.dtos.people.PeopleImportResponseDTO;
+import com.example.brisa.dtos.people.PeopleLinkExistingRequestDTO;
 import com.example.brisa.dtos.people.PeopleOverviewResponseDTO;
 import com.example.brisa.dtos.people.PeopleReferenceDataDTO;
 import com.example.brisa.models.PeopleModel;
@@ -113,6 +114,42 @@ public class PeopleController {
             } else {
                 logHelper.logUpdate("People", response.peopleId().toString(), response.pessoa().nome(), userId, httpRequest);
             }
+        } catch (Exception ignored) {
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/create-only")
+    public ResponseEntity<PeopleCreateLinkResponseDTO> createOnlyPeople(
+            @RequestBody PeopleCreateLinkRequestDTO request,
+            HttpServletRequest httpRequest
+    ) {
+        PeopleCreateLinkResponseDTO response = peopleIntegrationService.createOnly(request);
+
+        try {
+            UUID userId = getUserId();
+            if (response.pessoaCriada()) {
+                logHelper.logCreate("People", response.peopleId().toString(), response.pessoa().nome(), userId, httpRequest);
+            } else {
+                logHelper.logUpdate("People", response.peopleId().toString(), response.pessoa().nome(), userId, httpRequest);
+            }
+        } catch (Exception ignored) {
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/link-existing")
+    public ResponseEntity<PeopleCreateLinkResponseDTO> linkExistingPerson(
+            @RequestBody PeopleLinkExistingRequestDTO request,
+            HttpServletRequest httpRequest
+    ) {
+        PeopleCreateLinkResponseDTO response = peopleIntegrationService.linkExistingPerson(request);
+
+        try {
+            UUID userId = getUserId();
+            logHelper.logUpdate("People", response.peopleId().toString(), response.pessoa().nome(), userId, httpRequest);
         } catch (Exception ignored) {
         }
 

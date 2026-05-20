@@ -224,13 +224,13 @@
 
               <div class="stage-track">
                 <div v-for="(stage, index) in stageTrack" :key="stage" class="stage-step">
-                  <div class="stage-pill" :class="stageClass(program.etapaAtual, index)">
+                  <div class="stage-pill" :class="stageClass(program, stage)">
                     {{ stage }}
                   </div>
                   <div
                     v-if="index < stageTrack.length - 1"
                     class="stage-connector"
-                    :class="{ active: index < stageIndex(program.etapaAtual) }"
+                    :class="{ active: stageConnectorActive(program, index) }"
                   />
                 </div>
               </div>
@@ -763,6 +763,8 @@ function mapClassToProgramListItem(classItem, fallbackProgram) {
     periodo: '-',
     status: classItem?.status || 'andamento',
     etapaAtual: classItem?.currentStage || 'Inscricao',
+    inscricao: 0,
+    selecao: 0,
     inscritos: 0,
     ativos: 0,
     nivelamento: 0,
@@ -779,6 +781,9 @@ function formatError(error, fallback) {
 }
 
 const allPrograms = computed(() => overview.value?.items ?? []);
+const classesById = computed(() =>
+  new Map((allClasses.value || []).map((item) => [Number(item.id), item]))
+);
 
 const programCatalog = computed(() => {
   const map = new Map();
@@ -856,6 +861,25 @@ const classesBySelectedProgram = computed(() => {
 function numberValue(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseDateValue(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function classByProgram(program) {
+  const classId = Number(program?.classId);
+  if (!classId) return null;
+  return classesById.value.get(classId) || null;
+}
+
+function hasStartedInscricao(program) {
+  const classModel = classByProgram(program);
+  const startDate = parseDateValue(classModel?.applicationStartDate);
+  if (!startDate) return false;
+  return startDate.getTime() <= Date.now();
 }
 
 function isStage(item, stageName) {
@@ -997,16 +1021,28 @@ const pageNumbers = computed(() => {
   return Array.from({ length: adjustedEnd - adjustedStart + 1 }, (_, index) => adjustedStart + index);
 });
 
-function stageIndex(stage) {
-  const index = stageTrack.findIndex((item) => normalizeText(item) === normalizeText(stage));
-  return index === -1 ? 0 : index;
+function stageCountFor(program, stageLabel) {
+  const label = normalizeText(stageLabel);
+  if (label.includes('inscri')) {
+    const count = numberValue(program?.inscricao ?? program?.inscritos);
+    return hasStartedInscricao(program) ? Math.max(count, 1) : count;
+  }
+  if (label.includes('sele')) return numberValue(program?.selecao);
+  if (label.includes('nivel')) return numberValue(program?.nivelamento);
+  if (label.includes('imers')) return numberValue(program?.imersao);
+  if (label.includes('encer')) return normalizedStatus(program?.status) === 'encerrado' ? 1 : 0;
+  return 0;
 }
 
-function stageClass(stage, index) {
-  const current = stageIndex(stage);
-  if (index === current) return 'current';
-  if (index < current) return 'done';
-  return 'pending';
+function stageClass(program, stageLabel) {
+  return stageCountFor(program, stageLabel) > 0 ? 'done' : 'pending';
+}
+
+function stageConnectorActive(program, index) {
+  const lastActiveIndex = Math.max(
+    ...stageTrack.map((stage, idx) => (stageCountFor(program, stage) > 0 ? idx : -1))
+  );
+  return lastActiveIndex >= 0 && index < lastActiveIndex;
 }
 
 function statusLabel(status) {
@@ -1109,25 +1145,51 @@ async function loadSelectedProgramClasses() {
 }
 
 function openDashboard(program) {
-  router.push({ path: '/home', query: { programa: `${program.nome} - Turma ${program.turma}` } });
+  const classId = resolveClassId(program) || resolveClassIdByCode(program);
+  const resolvedProgramId = program?.programId ?? program?.idPrograma ?? null;
+  const query = { programa: `${program.nome} - Turma ${program.turma}` };
+
+  if (resolvedProgramId != null) {
+    query.programaId = String(resolvedProgramId);
+  }
+  if (classId != null) {
+    query.turmaId = String(classId);
+  }
+
+  router.push({ path: '/dashboard', query });
 }
 
 function openPeople(program) {
-  router.push({ path: '/people', query: { programa: `${program.nome} - Turma ${program.turma}` } });
+  const classId = resolveClassId(program) || resolveClassIdByCode(program);
+  const resolvedProgramId = program?.programId ?? program?.idPrograma ?? null;
+  const query = { programa: `${program.nome} - Turma ${program.turma}` };
+
+  if (resolvedProgramId != null) {
+    query.programaId = String(resolvedProgramId);
+  }
+  if (classId != null) {
+    query.turmaId = String(classId);
+  }
+
+  router.push({ path: '/people', query });
 }
 
 function openClassCourses(program) {
   const classId = resolveClassId(program) || resolveClassIdByCode(program);
   if (classId == null) {
-    errorMessage.value = 'Não foi possível identificar a turma para abrir os cursos.';
+    errorMessage.value = 'Não foi possível identificar a turma para abrir os detalhes.';
     return;
   }
 
   router.push({
-    name: 'ClassCourses',
+    name: 'ClassDetails',
     params: {
       programId: program.programId,
       classId,
+    },
+    query: {
+      tab: 'etapas',
+      subTab: 'nivelamento',
     },
   });
 }

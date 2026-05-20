@@ -33,6 +33,12 @@
            </select>
          </div>
        </div>
+       <div v-if="imersaoForm.modalidade !== 'Online'" class="form-row two-cols">
+         <div class="form-group">
+           <label>Local da Imersão</label>
+           <input v-model="imersaoForm.local" type="text" placeholder="Ex: Campus Principal - Sala 101" class="form-input"/>
+         </div>
+       </div>
        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
          <div class="form-group">
            <label>Carga Horária Total (horas)</label>
@@ -107,17 +113,6 @@
              <div class="form-group"><label>Tamanho Mínimo do Grupo</label><input v-model="imersaoForm.minGroup" type="number" class="form-input"/></div>
              <div class="form-group"><label>Tamanho Máximo do Grupo</label><input v-model="imersaoForm.maxGroup" type="number" class="form-input"/></div>
           </div>
-          <div class="form-group">
-            <label>Professor Orientador</label>
-            <select v-model="imersaoForm.orientador" class="form-input form-select">
-               <option value="vinculado">Professor Vinculado</option>
-               <option value="convidado">Professor Convidado</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin-top: 16px;">
-            <label>Nome do Professor</label>
-            <input v-model="imersaoForm.nomeProfessor" type="text" placeholder="Ex: Jobson Araújo" class="form-input"/>
-          </div>
        </div>
     </div>
 
@@ -143,22 +138,8 @@
        </div>
 
        <div v-if="imersaoForm.presenca.frequenciaSemanal" class="nested-block" style="padding-top: 16px;">
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+          <div class="form-row">
              <div class="form-group"><label>Frequência Mínima (%)</label><input v-model="imersaoForm.presenca.minFrequencia" type="number" class="form-input"/></div>
-             <div class="form-group">
-                <label>Dia</label>
-                <select v-model="imersaoForm.presenca.diaPadrao" class="form-input form-select">
-                  <option value="Segunda-feira">Segunda-feira</option>
-                  <option value="Terça-feira">Terça-feira</option>
-                  <option value="Quarta-feira">Quarta-feira</option>
-                  <option value="Quinta-feira">Quinta-feira</option>
-                  <option value="Sexta-feira">Sexta-feira</option>
-                </select>
-             </div>
-             <div class="form-group">
-                <label>Horário</label>
-                <input v-model="imersaoForm.presenca.horarioPadrao" @input="$emit('parse-time-input-imersao')" type="text" placeholder="HH:MM" class="form-input" maxlength="5"/>
-             </div>
           </div>
        </div>
 

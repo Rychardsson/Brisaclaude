@@ -24,8 +24,8 @@ public class LogHelper {
 
     /**
      * Registra um log de forma assíncrona (não bloqueia a execução)
+     * Extrai dados do request ANTES de chamar o método async
      */
-    @Async
     public void logAsync(
             LogAction action,
             String description,
@@ -34,86 +34,164 @@ public class LogHelper {
             UUID userId,
             HttpServletRequest request
     ) {
-        systemLogService.createLog(action, description, entityType, entityId, userId, request, null);
+        String ipAddress = extractClientIp(request);
+        String userAgent = extractUserAgent(request);
+        logAsyncInternal(action, description, entityType, entityId, userId, ipAddress, userAgent);
+    }
+
+    /**
+     * Versão interna assíncrona de logAsync
+     */
+    @Async
+    private void logAsyncInternal(
+            LogAction action,
+            String description,
+            String entityType,
+            String entityId,
+            UUID userId,
+            String ipAddress,
+            String userAgent
+    ) {
+        systemLogService.createLogWithRequestData(action, description, entityType, entityId, userId, ipAddress, userAgent, null);
     }
 
     /**
      * Log de criação de entidade
+     * Extrai dados do request ANTES de chamar o método async
      */
-    @Async
     public void logCreate(String entityType, String entityId, String entityName, UUID userId, HttpServletRequest request) {
-        LogAction action = getCreateAction(entityType);
-        String description = String.format("%s '%s' foi criado(a)", entityType, entityName);
+        String ipAddress = extractClientIp(request);
+        String userAgent = extractUserAgent(request);
         
         Map<String, Object> details = new HashMap<>();
         details.put("entityName", entityName);
         details.put("operation", "CREATE");
         
-        systemLogService.createLog(action, description, entityType, entityId, userId, request, details);
+        logCreateInternal(entityType, entityId, entityName, userId, ipAddress, userAgent, details);
+    }
+
+    /**
+     * Versão interna assíncrona de logCreate
+     */
+    @Async
+    private void logCreateInternal(String entityType, String entityId, String entityName, UUID userId, String ipAddress, String userAgent, Map<String, Object> details) {
+        LogAction action = getCreateAction(entityType);
+        String description = String.format("%s '%s' foi criado(a)", entityType, entityName);
+        systemLogService.createLogWithRequestData(action, description, entityType, entityId, userId, ipAddress, userAgent, details);
     }
 
     /**
      * Log de atualização de entidade
+     * Extrai dados do request ANTES de chamar o método async
      */
-    @Async
     public void logUpdate(String entityType, String entityId, String entityName, UUID userId, HttpServletRequest request) {
-        LogAction action = getUpdateAction(entityType);
-        String description = String.format("%s '%s' foi atualizado(a)", entityType, entityName);
+        String ipAddress = extractClientIp(request);
+        String userAgent = extractUserAgent(request);
         
         Map<String, Object> details = new HashMap<>();
         details.put("entityName", entityName);
         details.put("operation", "UPDATE");
         
-        systemLogService.createLog(action, description, entityType, entityId, userId, request, details);
+        logUpdateInternal(entityType, entityId, entityName, userId, ipAddress, userAgent, details);
+    }
+
+    /**
+     * Versão interna assíncrona de logUpdate
+     */
+    @Async
+    private void logUpdateInternal(String entityType, String entityId, String entityName, UUID userId, String ipAddress, String userAgent, Map<String, Object> details) {
+        LogAction action = getUpdateAction(entityType);
+        String description = String.format("%s '%s' foi atualizado(a)", entityType, entityName);
+        systemLogService.createLogWithRequestData(action, description, entityType, entityId, userId, ipAddress, userAgent, details);
     }
 
     /**
      * Log de exclusão de entidade
+     * Extrai dados do request ANTES de chamar o método async
      */
-    @Async
     public void logDelete(String entityType, String entityId, String entityName, UUID userId, HttpServletRequest request) {
-        LogAction action = getDeleteAction(entityType);
-        String description = String.format("%s '%s' foi excluído(a)", entityType, entityName);
+        String ipAddress = extractClientIp(request);
+        String userAgent = extractUserAgent(request);
         
         Map<String, Object> details = new HashMap<>();
         details.put("entityName", entityName);
         details.put("operation", "DELETE");
         
-        systemLogService.createLog(action, description, entityType, entityId, userId, request, details);
+        logDeleteInternal(entityType, entityId, entityName, userId, ipAddress, userAgent, details);
     }
 
     /**
-     * Log de login de usuário
+     * Versão interna assíncrona de logDelete
      */
     @Async
+    private void logDeleteInternal(String entityType, String entityId, String entityName, UUID userId, String ipAddress, String userAgent, Map<String, Object> details) {
+        LogAction action = getDeleteAction(entityType);
+        String description = String.format("%s '%s' foi excluído(a)", entityType, entityName);
+        systemLogService.createLogWithRequestData(action, description, entityType, entityId, userId, ipAddress, userAgent, details);
+    }
+
+    /**
+     * Log de login de usuário (com extração segura de dados do request)
+     * Extrai IP e User-Agent ANTES de chamar o método async
+     */
     public void logLogin(UUID userId, String username, HttpServletRequest request) {
-        String description = String.format("Usuário '%s' fez login no sistema", username);
-        systemLogService.createLog(LogAction.USER_LOGIN, description, "User", userId.toString(), userId, request, null);
+        String ipAddress = extractClientIp(request);
+        String userAgent = extractUserAgent(request);
+        logLoginAsync(userId, username, ipAddress, userAgent);
     }
 
     /**
-     * Log de logout de usuário
+     * Log de login de usuário (versão interna assíncrona)
      */
     @Async
+    private void logLoginAsync(UUID userId, String username, String ipAddress, String userAgent) {
+        String description = String.format("Usuário '%s' fez login no sistema", username);
+        systemLogService.createLogWithRequestData(LogAction.USER_LOGIN, description, "User", userId.toString(), userId, ipAddress, userAgent, null);
+    }
+
+    /**
+     * Log de logout de usuário (com extração segura de dados do request)
+     * Extrai IP e User-Agent ANTES de chamar o método async
+     */
     public void logLogout(UUID userId, String username, HttpServletRequest request) {
+        String ipAddress = extractClientIp(request);
+        String userAgent = extractUserAgent(request);
+        logLogoutAsync(userId, username, ipAddress, userAgent);
+    }
+
+    /**
+     * Log de logout de usuário (versão interna assíncrona)
+     */
+    @Async
+    private void logLogoutAsync(UUID userId, String username, String ipAddress, String userAgent) {
         String description = String.format("Usuário '%s' fez logout do sistema", username);
-        systemLogService.createLog(LogAction.USER_LOGOUT, description, "User", userId.toString(), userId, request, null);
+        systemLogService.createLogWithRequestData(LogAction.USER_LOGOUT, description, "User", userId.toString(), userId, ipAddress, userAgent, null);
     }
 
     /**
      * Log de importação
+     * Extrai dados do request ANTES de chamar o método async
      */
-    @Async
     public void logImport(String entityType, int successCount, int errorCount, UUID userId, HttpServletRequest request) {
-        LogAction action = getImportAction(entityType);
-        String description = String.format("Importação de %s: %d sucesso, %d erros", entityType, successCount, errorCount);
+        String ipAddress = extractClientIp(request);
+        String userAgent = extractUserAgent(request);
         
         Map<String, Object> details = new HashMap<>();
         details.put("successCount", successCount);
         details.put("errorCount", errorCount);
         details.put("operation", "IMPORT");
         
-        systemLogService.createLog(action, description, entityType, null, userId, request, details);
+        logImportInternal(entityType, successCount, errorCount, userId, ipAddress, userAgent, details);
+    }
+
+    /**
+     * Versão interna assíncrona de logImport
+     */
+    @Async
+    private void logImportInternal(String entityType, int successCount, int errorCount, UUID userId, String ipAddress, String userAgent, Map<String, Object> details) {
+        LogAction action = getImportAction(entityType);
+        String description = String.format("Importação de %s: %d sucesso, %d erros", entityType, successCount, errorCount);
+        systemLogService.createLogWithRequestData(action, description, entityType, null, userId, ipAddress, userAgent, details);
     }
 
     /**
@@ -172,8 +250,55 @@ public class LogHelper {
     private LogAction getImportAction(String entityType) {
         return switch (entityType.toLowerCase()) {
             case "people" -> LogAction.PEOPLE_IMPORT;
+            case "program" -> LogAction.PROGRAM_IMPORT;
+            case "class" -> LogAction.CLASS_IMPORT;
+            case "enrollment" -> LogAction.ENROLLMENT_IMPORT;
+            case "institution" -> LogAction.INSTITUTION_IMPORT;
             case "stagecandidate", "stage_candidate" -> LogAction.STAGE_CANDIDATES_IMPORT;
             default -> LogAction.SYSTEM_INFO;
         };
+    }
+
+    /**
+     * Extrai o IP do cliente de forma segura
+     */
+    private String extractClientIp(HttpServletRequest request) {
+        if (request == null) return "UNKNOWN";
+        
+        try {
+            String ip = request.getHeader("X-Forwarded-For");
+            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+                ip = request.getHeader("Proxy-Client-IP");
+            }
+            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+                ip = request.getHeader("WL-Proxy-Client-IP");
+            }
+            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+                ip = request.getRemoteAddr();
+            }
+            
+            // Se houver múltiplos IPs, pega o primeiro
+            if (ip != null && ip.contains(",")) {
+                ip = ip.split(",")[0].trim();
+            }
+            
+            return ip != null ? ip : "UNKNOWN";
+        } catch (Exception e) {
+            return "UNKNOWN";
+        }
+    }
+
+    /**
+     * Extrai o User-Agent de forma segura
+     */
+    private String extractUserAgent(HttpServletRequest request) {
+        if (request == null) return "UNKNOWN";
+        
+        try {
+            String userAgent = request.getHeader("User-Agent");
+            return userAgent != null && !userAgent.isEmpty() ? userAgent : "UNKNOWN";
+        } catch (Exception e) {
+            return "UNKNOWN";
+        }
     }
 }

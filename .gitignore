@@ -4,6 +4,9 @@ BRISA-BACKEND/src/main/resources/application.properties
 BRISA-BACKEND/src/main/resources/application.properties
 BRISA-BACKEND/src/main/resources/application.properties
 BRISA-BACKEND/src/main/resources/application.properties
-Brisa-ONE
+Brisa ONE/
+Brisa-ONE/
 .playwright-mcp
+*.md
 *.png
+backend-career-run*.log

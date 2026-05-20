@@ -1,5 +1,6 @@
 <template>
   <div class="pessoa-perfil-view">
+    <ConfirmDialog ref="confirmDialog" />
     <!-- Header do Perfil -->
     <header class="header">
       <div class="header-top">
@@ -35,13 +36,20 @@
             </svg>
             Editar perfil
           </button>
-          <button class="btn-outline" aria-label="Mais ações" title="Mais ações">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="1"></circle>
-              <circle cx="19" cy="12" r="1"></circle>
-              <circle cx="5" cy="12" r="1"></circle>
-            </svg>
-          </button>
+          <div ref="personActionsMenuRef" class="person-actions-menu-wrap">
+            <button class="btn-icon" @click.stop="togglePersonActionsMenu" title="Mais ações" aria-label="Mais ações">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="5" r="1"></circle>
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="12" cy="19" r="1"></circle>
+              </svg>
+            </button>
+            <div v-if="showPersonActionsMenu" class="person-actions-menu">
+              <button class="person-actions-menu-item danger" :disabled="deletingPerson" @click="handleSoftDelete">
+                {{ deletingPerson ? 'Apagando...' : 'Apagar pessoa' }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -96,7 +104,8 @@
 
       <!-- Tabs -->
       <div class="tabs-header">
-        <div class="tabs-container" role="tablist" aria-label="Person profile sections">
+        <div class="tabs-scroll">
+          <div class="tabs-container" role="tablist" aria-label="Person profile sections">
           <button
             v-for="tab in tabs"
             :key="tab.id"
@@ -104,11 +113,12 @@
             :class="['tab-btn', { active: activeTab === tab.id }]"
             role="tab"
             :aria-selected="activeTab === tab.id ? 'true' : 'false'"
-            :id="`tab-${tab.id}`"
-            :aria-controls="`panel-${tab.id}`"
+            :id="`profile-tab-${tab.id}`"
+            :aria-controls="`profile-panel-${tab.id}`"
           >
             {{ tab.label }}
           </button>
+          </div>
         </div>
       </div>
     </header>
@@ -132,7 +142,7 @@
     <!-- Content -->
     <div v-else class="content">
       <!-- Resumo Tab -->
-      <div v-if="activeTab === 'resumo'" class="tab-content" id="panel-resumo" role="tabpanel" aria-labelledby="tab-resumo">
+      <div v-if="activeTab === 'resumo'" class="tab-content" id="profile-panel-resumo" role="tabpanel" aria-labelledby="profile-tab-resumo">
         <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-header">
@@ -196,7 +206,7 @@
       </div>
 
       <!-- Dados Pessoais Tab -->
-      <div v-if="activeTab === 'dados-pessoais'" class="tab-content" id="panel-dados-pessoais" role="tabpanel" aria-labelledby="tab-dados-pessoais">
+      <div v-if="activeTab === 'dados-pessoais'" class="tab-content" id="profile-panel-dados-pessoais" role="tabpanel" aria-labelledby="profile-tab-dados-pessoais">
         <div class="data-card">
           <h3>Informações Pessoais</h3>
           <div class="data-grid">
@@ -237,7 +247,7 @@
       </div>
 
       <!-- Dados Acadêmicos Tab -->
-      <div v-if="activeTab === 'dados-academicos'" class="tab-content" id="panel-dados-academicos" role="tabpanel" aria-labelledby="tab-dados-academicos">
+      <div v-if="activeTab === 'dados-academicos'" class="tab-content" id="profile-panel-dados-academicos" role="tabpanel" aria-labelledby="profile-tab-dados-academicos">
         <div class="data-card">
           <h3>Informações Acadêmicas</h3>
           <div class="data-grid">
@@ -262,11 +272,9 @@
       </div>
 
       <!-- Placeholder para outras abas -->
-      <div v-for="tab in tabs.filter(t => !['resumo', 'dados-pessoais', 'dados-academicos'].includes(t.id))" :key="tab.id">
-        <div v-if="activeTab === tab.id" class="tab-content" :id="`panel-${tab.id}`" role="tabpanel" :aria-labelledby="`tab-${tab.id}`">
-          <div class="empty-state">
-            <p>{{ tab.label }} - Em desenvolvimento</p>
-          </div>
+      <div v-if="isPlaceholderTab" class="tab-content" :id="`profile-panel-${activeTabMeta.id}`" role="tabpanel" :aria-labelledby="`profile-tab-${activeTabMeta.id}`">
+        <div class="profile-empty-state">
+          <p>{{ activeTabMeta.label }} - Em desenvolvimento</p>
         </div>
       </div>
     </div>
@@ -279,12 +287,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { computed, ref, onBeforeUnmount, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { peopleService } from '@/services/peopleService';
 import EditPersonModal from '@/components/EditPersonModal.vue';
 import EnrollmentModal from '@/components/EnrollmentModal.vue';
 import FollowUpModal from '@/components/FollowUpModal.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -296,6 +305,10 @@ const activeTab = ref('resumo');
 const isEditing = ref(false);
 const showRegisterVinculo = ref(false);
 const showUpdateAcompanhamento = ref(false);
+const showPersonActionsMenu = ref(false);
+const deletingPerson = ref(false);
+const confirmDialog = ref(null);
+const personActionsMenuRef = ref(null);
 
 const tabs = [
   { id: 'resumo', label: 'Resumo' },
@@ -304,9 +317,11 @@ const tabs = [
   { id: 'participacoes', label: 'Participações em Programas' },
   { id: 'desempenho', label: 'Desempenho no Programa' },
   { id: 'acompanhamento', label: 'Carreira' },
-  { id: 'documentos', label: 'Documentos' },
   { id: 'historico', label: 'Histórico' },
 ];
+const placeholderTabIds = ['participacoes', 'desempenho', 'acompanhamento', 'historico'];
+const activeTabMeta = computed(() => tabs.find((tab) => tab.id === activeTab.value));
+const isPlaceholderTab = computed(() => !!activeTabMeta.value && placeholderTabIds.includes(activeTabMeta.value.id));
 
 const loadPerson = async () => {
   try {
@@ -342,8 +357,44 @@ const formatDate = (date) => {
   return new Date(date).toLocaleDateString('pt-BR');
 };
 
+const togglePersonActionsMenu = () => {
+  showPersonActionsMenu.value = !showPersonActionsMenu.value;
+};
+
+const handleSoftDelete = async () => {
+  showPersonActionsMenu.value = false;
+  const confirmed = await confirmDialog.value?.show(
+    `Tem certeza que deseja apagar ${person.value?.name || 'esta pessoa'}? Você poderá recuperar depois.`,
+    'Apagar'
+  );
+  if (!confirmed) return;
+
+  deletingPerson.value = true;
+  error.value = '';
+  try {
+    await peopleService.delete(route.params.id);
+    router.push('/people');
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Erro ao apagar pessoa';
+  } finally {
+    deletingPerson.value = false;
+  }
+};
+
+const handleDocumentClick = (event) => {
+  if (!(event.target instanceof HTMLElement)) return;
+  if (!event.target.closest('.person-actions-menu-wrap')) {
+    showPersonActionsMenu.value = false;
+  }
+};
+
 onMounted(() => {
   loadPerson();
+  document.addEventListener('click', handleDocumentClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick);
 });
 </script>
 
@@ -351,11 +402,13 @@ onMounted(() => {
 .pessoa-perfil-view {
   background: #f8fafc;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .header {
   background: white;
   border-bottom: 1px solid #e2eaf2;
+  overflow-x: hidden;
 }
 
 .header-top {
@@ -388,6 +441,10 @@ onMounted(() => {
   gap: 10px;
 }
 
+.person-actions-menu-wrap {
+  position: relative;
+}
+
 .btn-outline,
 .btn-primary,
 .btn-close {
@@ -406,9 +463,68 @@ onMounted(() => {
   transition: all 0.2s;
 }
 
+.btn-icon {
+  width: 48px;
+  min-height: 48px;
+  border-radius: 10px;
+  border: 1px solid #d8e1eb;
+  background: #fff;
+  color: #13233f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: #f8fafc;
+  border-color: #cfd9e6;
+}
+
+.person-actions-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+  z-index: 12;
+}
+
+.person-actions-menu-item {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  padding: 8px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.person-actions-menu-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.person-actions-menu-item.danger {
+  color: #b42318;
+}
+
+.person-actions-menu-item.danger:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
 .btn-outline:hover {
   background: #f8fafc;
   border-color: #cfd9e6;
+  color: #13233f;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-primary {
@@ -420,6 +536,21 @@ onMounted(() => {
 .btn-primary:hover {
   background: #0d9488;
   border-color: #0d9488;
+  color: #ffffff;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-outline:disabled,
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-outline:disabled:hover {
+  background: #ffffff;
+  border-color: #d8e1eb;
+  color: #9aa8bc;
 }
 
 .btn-close {
@@ -523,22 +654,37 @@ onMounted(() => {
 
 .tabs-header {
   border-top: 1px solid #e2eaf2;
+  overflow-x: hidden;
+}
+
+.tabs-scroll {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
 }
 
 .tabs-container {
   display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  width: max-content;
+  min-width: 100%;
   padding: 0 32px;
 }
 
 .tab-btn {
-  padding: 14px 16px;
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 16px 12px;
   border: none;
   background: none;
   cursor: pointer;
   color: #5f728d;
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.25;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
   white-space: nowrap;
@@ -695,7 +841,7 @@ onMounted(() => {
   color: #13233f;
 }
 
-.empty-state {
+.profile-empty-state {
   background: white;
   border: 1px solid #e2eaf2;
   border-radius: 12px;

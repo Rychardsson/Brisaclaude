@@ -136,11 +136,15 @@ export default {
     const selectClass = (item) => {
       if (!item.classId) return;
       router.push({
-        name: 'ClassCourses',
+        name: 'ClassDetails',
         params: {
           programId: item.programId,
           classId: item.classId
-        }
+        },
+        query: {
+          tab: 'etapas',
+          subTab: 'nivelamento'
+        },
       });
     };
 

@@ -10,6 +10,8 @@ public record ProgramOverviewItemDTO(
         String periodo,
         String status,
         String etapaAtual,
+        long inscricao,
+        long selecao,
         long inscritos,
         long ativos,
         long nivelamento,

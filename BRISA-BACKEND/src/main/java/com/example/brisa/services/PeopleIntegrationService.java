@@ -3,6 +3,7 @@ package com.example.brisa.services;
 import com.example.brisa.dtos.people.PeopleCreateLinkRequestDTO;
 import com.example.brisa.dtos.people.PeopleCreateLinkResponseDTO;
 import com.example.brisa.dtos.people.PeopleFilterOptionDTO;
+import com.example.brisa.dtos.people.PeopleLinkExistingRequestDTO;
 import com.example.brisa.dtos.people.PeopleListItemDTO;
 import com.example.brisa.dtos.people.PeopleOverviewResponseDTO;
 import com.example.brisa.dtos.people.PeopleReferenceDataDTO;
@@ -115,7 +116,7 @@ public class PeopleIntegrationService {
             String city,
             String institution
     ) {
-        List<PeopleModel> people = peopleRepository.findAllByOrderByNameAsc();
+        List<PeopleModel> people = peopleRepository.findAllActiveOrderByNameAsc();
         Map<Long, List<EnrollmentModel>> enrollmentsByPeople = enrollmentRepository.findAllWithRelations().stream()
                 .collect(Collectors.groupingBy(enrollment -> enrollment.getPeople().getId()));
         Map<Long, List<StageCandidateModel>> candidatesByPeople = stageCandidateRepository.findAllWithRelations().stream()
@@ -166,7 +167,7 @@ public class PeopleIntegrationService {
         List<ProgramModel> programs = programRepository.findAllWithRelations();
         List<ClassModel> classes = classRepository.findAll();
         List<StageModel> stages = stageRepository.findAll();
-        List<PeopleModel> people = peopleRepository.findAll();
+        List<PeopleModel> people = peopleRepository.findAllActive();
 
         List<PeopleFilterOptionDTO> programOptions = programs.stream()
                 .sorted(Comparator.comparing(ProgramModel::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
@@ -195,6 +196,128 @@ public class PeopleIntegrationService {
                 uniqueSortedValues(flattenInstitutionValues(people)),
                 uniqueSortedValues(people.stream().map(PeopleModel::getEducationLevel).toList()),
                 STATUS_FORMACAO_OPTIONS
+        );
+    }
+
+    @Transactional
+    public PeopleCreateLinkResponseDTO createOnly(PeopleCreateLinkRequestDTO request) {
+        List<String> errors = new ArrayList<>();
+        if (isBlank(request.getNome())) {
+            errors.add("Nome e obrigatorio.");
+        }
+        if (isBlank(request.getCpf())) {
+            errors.add("CPF e obrigatorio.");
+        }
+        if (isBlank(request.getEmail())) {
+            errors.add("Email e obrigatorio.");
+        }
+        if (request.getDataNascimento() == null) {
+            errors.add("Data de nascimento e obrigatoria.");
+        }
+        if (isBlank(request.getCota())) {
+            errors.add("Cota e obrigatoria.");
+        }
+        if (!errors.isEmpty()) {
+            throw new ValidationException(errors);
+        }
+
+        PeopleModel person = findExistingPerson(request.getCpf(), request.getEmail()).orElse(null);
+        boolean personCreated = false;
+
+        if (person == null) {
+            person = new PeopleModel();
+            personCreated = true;
+        }
+
+        mergePersonData(person, request);
+        reactivateIfSoftDeleted(person);
+        person = peopleRepository.save(person);
+
+        Long personId = person.getId();
+        List<EnrollmentModel> personEnrollments = enrollmentRepository.findAllWithRelations().stream()
+                .filter(item -> Objects.equals(item.getPeople().getId(), personId))
+                .toList();
+        List<StageCandidateModel> personCandidates = stageCandidateRepository.findAllWithRelations().stream()
+                .filter(item -> Objects.equals(item.getPeople().getId(), personId))
+                .toList();
+
+        return new PeopleCreateLinkResponseDTO(
+                personId,
+                personCreated,
+                false,
+                false,
+                List.of(),
+                buildPeopleListItem(person, personEnrollments, personCandidates)
+        );
+    }
+
+    @Transactional
+    public PeopleCreateLinkResponseDTO linkExistingPerson(PeopleLinkExistingRequestDTO request) {
+        List<String> errors = new ArrayList<>();
+        if (request.getPeopleId() == null) {
+            errors.add("ID da pessoa é obrigatório.");
+        }
+        if (request.getTurmaId() == null) {
+            errors.add("Turma é obrigatória.");
+        }
+        if (request.getEtapaId() == null) {
+            errors.add("Etapa é obrigatória.");
+        }
+        if (isBlank(request.getStatusInicial())) {
+            errors.add("Status inicial é obrigatório.");
+        }
+        if (!errors.isEmpty()) {
+            throw new ValidationException(errors);
+        }
+
+        PeopleModel person = peopleRepository.findActiveById(request.getPeopleId())
+                .orElseThrow(() -> new ResourceNotFoundException("Pessoa não encontrada."));
+
+        ClassModel classModel = classRepository.findById(request.getTurmaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada."));
+
+        StageModel stage = stageRepository.findById(request.getEtapaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Etapa não encontrada."));
+
+        Optional<EnrollmentModel> existingEnrollment = enrollmentRepository.findAllWithRelations().stream()
+                .filter(e -> Objects.equals(e.getPeople().getId(), request.getPeopleId()) &&
+                        Objects.equals(e.getClassModel().getId(), request.getTurmaId()))
+                .findFirst();
+
+        if (existingEnrollment.isPresent()) {
+            throw new ValidationException(List.of("Pessoa já está vinculada a esta turma."));
+        }
+
+        AcademicRoleModel alunoRole = academicRoleRepository.findByName("ALUNO")
+                .orElseGet(() -> academicRoleRepository.save(new AcademicRoleModel("ALUNO", "Aluno")));
+
+        EnrollmentModel enrollment = new EnrollmentModel();
+        enrollment.setPeople(person);
+        enrollment.setClassModel(classModel);
+        enrollment.setAcademicRole(alunoRole);
+        enrollment.setEnrollmentDate(LocalDate.now());        enrollment.setStatus(normalizeEnrollmentStatus(request.getStatusInicial()));        enrollmentRepository.save(enrollment);
+
+        StageCandidateModel candidate = new StageCandidateModel();
+        candidate.setPeople(person);
+        candidate.setStage(stage);
+        candidate.setStatus(toStageStatus(request.getStatusInicial()));
+        stageCandidateRepository.save(candidate);
+
+        Long personId = person.getId();
+        List<EnrollmentModel> personEnrollments = enrollmentRepository.findAllWithRelations().stream()
+                .filter(item -> Objects.equals(item.getPeople().getId(), personId))
+                .toList();
+        List<StageCandidateModel> personCandidates = stageCandidateRepository.findAllWithRelations().stream()
+                .filter(item -> Objects.equals(item.getPeople().getId(), personId))
+                .toList();
+
+        return new PeopleCreateLinkResponseDTO(
+                personId,
+                false,
+                true,
+                false,
+                List.of(),
+                buildPeopleListItem(person, personEnrollments, personCandidates)
         );
     }
 
@@ -240,6 +363,7 @@ public class PeopleIntegrationService {
         }
 
         mergePersonData(person, request);
+        reactivateIfSoftDeleted(person);
         person = peopleRepository.save(person);
 
         AcademicRoleModel alunoRole = academicRoleRepository.findByName("ALUNO")
@@ -334,6 +458,12 @@ public class PeopleIntegrationService {
         person.setEducationStatus(defaultIfBlank(request.getStatusFormacao(), person.getEducationStatus()));
         if (request.getDataConclusao() != null) {
             person.setEducationCompletionDate(request.getDataConclusao());
+        }
+    }
+
+    private void reactivateIfSoftDeleted(PeopleModel person) {
+        if (Boolean.TRUE.equals(person.getSoftDeleted())) {
+            person.setSoftDeleted(false);
         }
     }
 
