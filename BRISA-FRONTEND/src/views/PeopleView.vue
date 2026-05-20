@@ -3,5 +3,5 @@
 </template>
 
 <script setup>
-import FigmaPeople from './FigmaPessoas.vue'
+import FigmaPeople from './PeopleFigma.vue'
 </script>
