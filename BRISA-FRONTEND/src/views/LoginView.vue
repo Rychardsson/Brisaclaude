@@ -104,7 +104,7 @@ export default {
 
       try {
         await authService.login(credentials.value.login, credentials.value.password);
-        router.push('/home');
+        router.push('/dashboard');
       } catch (err) {
         error.value = err.response?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.';
       } finally {

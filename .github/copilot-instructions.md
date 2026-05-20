@@ -6,7 +6,7 @@ This repository is a multi-project workspace:
 
 - `BRISA-BACKEND`: Spring Boot 3.1.1 API (Java 21, Maven, PostgreSQL by default unless overridden by profile/config, JWT auth)
 - `BRISA-FRONTEND`: Vue 3 + Vite SPA that consumes the backend API
-- `Brisa ONE`: separate React + Vite bundle (Figma/Make export), not wired into `BRISA-FRONTEND`
+- `Brisa-ONE`: separate React + Vite bundle (Figma/Make export), not wired into `BRISA-FRONTEND`
 
 When implementing features, confirm which project is in scope before editing.
 
@@ -19,7 +19,8 @@ When implementing features, confirm which project is in scope before editing.
 - Full test suite: `.\mvnw.cmd test`
 - Single test class: `.\mvnw.cmd -Dtest=AuthApplicationTests test`
 - Single test method: `.\mvnw.cmd -Dtest=AuthApplicationTests#contextLoads test`
-- API runs on port `8083` by default.
+- API runs on port `8082` by default (`server.port=${SERVER_PORT:8082}`).
+- No lint task configured.
 
 ### BRISA-FRONTEND (`BRISA-FRONTEND`)
 
@@ -27,23 +28,25 @@ When implementing features, confirm which project is in scope before editing.
 - Run dev server: `npm run dev`
 - Build production bundle: `npm run build`
 - Preview production bundle: `npm run preview`
-- No test or lint scripts are currently defined in `package.json`.
+- `VITE_API_BASE_URL` is configured in `.env` (example in `.env.example`, default `http://localhost:8082/api`).
+- No test or lint scripts are defined in `package.json`.
 
-### Brisa ONE (`Brisa ONE`)
+### Brisa-ONE (`Brisa-ONE`)
 
 - Install dependencies: `npm i`
 - Run dev server: `npm run dev`
 - Build production bundle: `npm run build`
-- No test or lint scripts are currently defined in `package.json`.
+- No test or lint scripts are defined in `package.json`.
 
 ## High-level architecture
 
 ### Backend API (Spring Boot)
 
-- Core business graph is **Program -> Class -> Stage**.
-- `PeopleModel` links into classes through `EnrollmentModel` and stage progress through `StageCandidateModel`.
+- Core business graph is **Program -> Class -> Stage**; `ProgramModel` owns `ClassModel` and each `StageModel` belongs to a class.
+- `PeopleModel` links into classes through `EnrollmentModel` and stage progress through `StageCandidateModel` (status per stage).
 - Read models in `models/` first, then controllers in `controllers/`, then integration services in `services/` to trace list/overview behavior.
-- Overview/list endpoints (`/api/people/overview`, `/api/programs/overview`) are composed in `PeopleIntegrationService` and `ProgramIntegrationService`, which bulk-load with repository `findAllWithRelations()` methods and aggregate in-memory.
+- Overview/list endpoints (`/api/people/overview`, `/api/programs/overview`) are composed in `PeopleIntegrationService` and `ProgramIntegrationService`, which bulk-load with repository `findAllWithRelations()` methods and aggregate/filter in-memory into summary + tabs + items DTOs.
+- People filter reference data (programs/classes/stages/status/cotas/etc.) is assembled in `PeopleIntegrationService.getReferenceData()`.
 - Controllers call `LogHelper` after state-changing operations (create/update/delete/import); logging is async and intentionally non-blocking.
 
 ### Security/auth
@@ -57,13 +60,13 @@ When implementing features, confirm which project is in scope before editing.
 
 - Vue app entry: `src/main.js` -> `App.vue` -> `router/index.js`.
 - Route protection is meta-driven (`meta.requiresAuth`) and enforced in a global `beforeEach` guard.
-- API access is centralized in `src/services/api.js`, driven by `VITE_API_BASE_URL` and defaulting to `http://localhost:8083/api`, with an Axios request interceptor that injects JWT from `localStorage`.
+- API access is centralized in `src/services/api.js`, driven by `VITE_API_BASE_URL` (see `.env.example`, default `http://localhost:8082/api`), with an Axios request interceptor that injects JWT from `localStorage`.
 - Feature services (`peopleService`, `programService`, etc.) wrap API endpoints and are the boundary for view components.
 - Program registration is a large wizard-style flow under `src/views/ProgramRegistration/`.
 - `authService` persists both `token` and serialized `user` in `localStorage`.
 - Playwright MCP is useful here for browser-level validation of Vue screens, routing, and form flows when browser automation is available.
 
-### Brisa ONE (React + Vite)
+### Brisa-ONE (React + Vite)
 
 - Separate bundle exported from Figma/Make (`main.tsx` entry).
 - Not wired into the Vue frontend routing or services; treat as independent unless the task explicitly bridges them.
