@@ -58,6 +58,9 @@ public class ProjectGroupService {
             company = institutionRepository.findById(requestDTO.getProjectCompanyId())
                     .orElseThrow(() -> new ResourceNotFoundException("Empresa/Instituição não encontrada"));
         }
+        
+        // sponsorCompany is a free text field (optional)
+        String sponsorCompany = requestDTO.getSponsorCompany();
 
         // Validar alunos (devem estar na etapa de imersão)
         List<PeopleModel> members = new java.util.ArrayList<>();
@@ -93,6 +96,7 @@ public class ProjectGroupService {
         projectGroup.setProjectTheme(requestDTO.getProjectTheme());
         projectGroup.setDescription(requestDTO.getDescription());
         projectGroup.setProjectCompany(company);
+        projectGroup.setSponsorCompany(sponsorCompany);
         projectGroup.setLeader(leader);
         projectGroup.setClassModel(classModel);
         projectGroup.setRepositoryLink(requestDTO.getRepositoryLink());
@@ -206,6 +210,7 @@ public class ProjectGroupService {
         dto.setDescription(group.getDescription());
         dto.setProjectCompanyName(group.getProjectCompany() != null ? group.getProjectCompany().getName() : null);
         dto.setProjectCompanyId(group.getProjectCompany() != null ? group.getProjectCompany().getId() : null);
+        dto.setSponsorCompany(group.getSponsorCompany());
         dto.setLeaderName(group.getLeader() != null ? group.getLeader().getName() : null);
         dto.setLeaderId(group.getLeader() != null ? group.getLeader().getId() : null);
         dto.setMemberCount(group.getMembers() != null ? group.getMembers().size() : 0);

@@ -43,8 +43,11 @@ public class ProjectGroupModel {
     
     @ManyToOne
     @JoinColumn(name = "project_company_id")
-    private InstitutionModel projectCompany; // empresa do projeto
+    private InstitutionModel projectCompany; // empresa/instituição (local onde o programa ocorre)
     
+    @Column(name = "sponsor_company")
+    private String sponsorCompany; // empresa do grupo (patrocinadora) - texto livre
+
     @ManyToOne
     @JoinColumn(name = "leader_id")
     private PeopleModel leader; // orientador do grupo

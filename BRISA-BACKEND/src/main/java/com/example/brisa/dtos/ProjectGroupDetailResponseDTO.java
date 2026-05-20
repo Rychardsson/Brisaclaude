@@ -17,6 +17,7 @@ public class ProjectGroupDetailResponseDTO {
     private String description;
     private String projectCompanyName;
     private Long projectCompanyId;
+    private String sponsorCompany;
     private String leaderName;
     private Long leaderId;
     private List<GroupMemberDTO> members;

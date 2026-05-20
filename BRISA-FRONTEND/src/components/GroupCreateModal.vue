@@ -32,15 +32,15 @@
             ></textarea>
           </div>
 
-          <!-- Empresa/Instituição -->
+          <!-- Empresa do Grupo (patrocinadora) -->
           <div class="form-group">
-            <label for="projectCompanyId">Empresa/Instituição</label>
-            <select v-model="form.projectCompanyId">
-              <option :value="null">Selecione uma empresa (opcional)</option>
-              <option v-for="company in companies" :key="company.id" :value="company.id">
-                {{ company.name }}
-              </option>
-            </select>
+            <label for="sponsorCompany">Empresa do Grupo (patrocinadora)</label>
+            <input
+              id="sponsorCompany"
+              v-model="form.sponsorCompany"
+              type="text"
+              placeholder="Digite o nome da empresa patrocinadora (opcional)"
+            />
           </div>
 
           <!-- Orientador -->
@@ -160,6 +160,7 @@ export default {
       form: {
         projectTheme: '',
         description: '',
+        sponsorCompany: '',
         projectCompanyId: null,
         leaderId: null,
         memberIds: [],
@@ -204,7 +205,7 @@ export default {
         this.members = membersResponse.data || [];
         this.filteredMembers = this.members;
 
-        // Carregar empresas/instituições
+        // Carregar empresas/instituições (mantém lista para compatibilidade se necessário)
         const companiesResponse = await institutionService.getAll();
         this.companies = companiesResponse.data || [];
       } catch (error) {
@@ -262,6 +263,7 @@ export default {
         const response = await groupService.createGroup(this.classId, {
           projectTheme: this.form.projectTheme,
           description: this.form.description,
+          sponsorCompany: this.form.sponsorCompany,
           projectCompanyId: this.form.projectCompanyId,
           leaderId: this.form.leaderId,
           memberIds: this.form.memberIds,
