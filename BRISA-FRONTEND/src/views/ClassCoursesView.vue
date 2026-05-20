@@ -57,7 +57,6 @@
           v-for="course in courseItems"
           :key="course.id"
           class="course-card"
-          @click="goToCourse(course)"
         >
           <div class="course-left">
             <!-- Info do curso -->
@@ -101,10 +100,6 @@
               <button v-else class="btn-add" @click.stop="assignCourse(course)">Adicionar</button>
             </div>
           </div>
-
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" class="arrow-icon">
-            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-          </svg>
         </div>
       </div>
 
@@ -225,7 +220,6 @@ export default {
     const progressionImportSuccess = ref('');
 
     const classId = computed(() => route.params.classId);
-    const programId = computed(() => route.params.programId);
 
     // Monta os itens de curso com estatísticas calculadas
     const courseItems = computed(() => {
@@ -271,13 +265,6 @@ export default {
       if (pct >= 80) return '#27ae60';
       if (pct >= 40) return '#f39c12';
       return '#e74c3c';
-    };
-
-    const goToCourse = (course) => {
-      router.push({
-        name: 'CourseDetails',
-        params: { programId: programId.value, classId: classId.value, courseId: course.id }
-      });
     };
 
     const assignCourse = async (course) => {
@@ -404,7 +391,7 @@ export default {
     return {
       router, classData, loading,
       courseItems, courseStats,
-      getCompletionColor, goToCourse,
+      getCompletionColor,
       assignCourse, removeCourse,
       showProgressionImportModal,
       progressionImportFile,

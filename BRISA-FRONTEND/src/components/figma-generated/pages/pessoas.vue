@@ -1,5 +1,6 @@
 <template>
   <div class="people-page">
+    <ConfirmDialog ref="confirmDialog" />
     <div class="people-shell">
       <section class="page-header-card">
         <div class="page-header-top">
@@ -156,6 +157,15 @@
                   <option value="">Todos</option>
                   <option v-for="prog in programOptions" :key="prog.id" :value="prog.id">
                     {{ prog.name || prog.label }}
+                  </option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Turma</label>
+                <select v-model="advancedFilters.turma">
+                  <option value="">Todas</option>
+                  <option v-for="turma in classOptions" :key="turma.id" :value="turma.id">
+                    {{ turma.label }}
                   </option>
                 </select>
               </div>
@@ -361,13 +371,29 @@
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                   </button>
-                  <button type="button" class="icon-btn" title="Mais ações" @click="openMoreActions(person)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="5" r="1"></circle>
-                      <circle cx="12" cy="12" r="1"></circle>
-                      <circle cx="12" cy="19" r="1"></circle>
-                    </svg>
-                  </button>
+                  <div class="person-actions-menu-wrap">
+                    <button type="button" class="icon-btn" title="Mais ações" @click.stop="openMoreActions(person)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                      </svg>
+                    </button>
+                    <div
+                      v-if="openPeopleActionsFor === person.id"
+                      class="person-actions-menu"
+                      @click.stop
+                    >
+                      <button
+                        type="button"
+                        class="person-actions-menu-item danger"
+                        :disabled="deletingPersonId === person.id"
+                        @click="handleSoftDelete(person)"
+                      >
+                        {{ deletingPersonId === person.id ? 'Apagando...' : 'Apagar pessoa' }}
+                      </button>
+                    </div>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -904,14 +930,16 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { Columns3 } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { peopleService } from '@/services/peopleService';
 import { enrollmentService } from '@/services/enrollmentService';
 import { stageService } from '@/services/stageService';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 const router = useRouter();
+const route = useRoute();
 
 const people = ref([]);
 const enrollments = ref([]);
@@ -924,6 +952,9 @@ const showAdvancedFilters = ref(false);
 const showTemplateModal = ref(false);
 const showColumnsMenu = ref(false);
 const columnsControlRef = ref(null);
+const openPeopleActionsFor = ref(null);
+const deletingPersonId = ref(null);
+const confirmDialog = ref(null);
 const visibleColumns = reactive({
   gender: false,
   age: false,
@@ -975,6 +1006,7 @@ const fallbackStateOptions = [
 ];
 const advancedFilters = ref({
   programa: '',
+  turma: '',
   etapa: '',
   status: '',
   cota: '',
@@ -1086,6 +1118,9 @@ const educationStatusOptions = computed(() => {
 
 const normalize = (value) => (value ?? '').toString().toLowerCase();
 const hasValue = (value) => !!(value ?? '').toString().trim();
+const enrollmentPersonId = (enrollment) => enrollment?.people?.id ?? enrollment?.peopleId ?? enrollment?.personId ?? null;
+const enrollmentClassId = (enrollment) => enrollment?.classModel?.id ?? enrollment?.turmaId ?? enrollment?.classId ?? enrollment?.turma?.id ?? enrollment?.class_id ?? null;
+const enrollmentProgramId = (enrollment) => enrollment?.classModel?.program?.id ?? enrollment?.programId ?? enrollment?.program?.id ?? enrollment?.programaId ?? null;
 
 const stageLabel = (name) => {
   const normalized = normalize(name);
@@ -1430,6 +1465,26 @@ const filteredPeople = computed(() => {
   if (advancedFilters.value.hasEmail) list = list.filter((person) => hasValue(person.email));
   if (advancedFilters.value.completeOnly) list = list.filter(isCompleteProfile);
   if (advancedFilters.value.recentOnly) list = list.filter(isRecent30d);
+  if (advancedFilters.value.programa) {
+    const programaId = Number(advancedFilters.value.programa);
+    list = list.filter((person) => {
+      return (enrollments.value || []).some((enrollment) => {
+        const personId = enrollmentPersonId(enrollment);
+        const eid = Number(enrollmentProgramId(enrollment));
+        return personId === person.id && eid === programaId;
+      });
+    });
+  }
+  if (advancedFilters.value.turma) {
+    const turmaId = Number(advancedFilters.value.turma);
+    list = list.filter((person) => {
+      return (enrollments.value || []).some((enrollment) => {
+        const personId = enrollmentPersonId(enrollment);
+        const cid = Number(enrollmentClassId(enrollment));
+        return personId === person.id && cid === turmaId;
+      });
+    });
+  }
 
   return list;
 });
@@ -1546,8 +1601,28 @@ const viewHistory = (person) => {
   router.push(`/people/${person.id}`);
 };
 
-const openMoreActions = () => {
-  // Placeholder visual button matching the Figma row actions.
+const openMoreActions = (person) => {
+  openPeopleActionsFor.value = openPeopleActionsFor.value === person.id ? null : person.id;
+};
+
+const handleSoftDelete = async (person) => {
+  openPeopleActionsFor.value = null;
+  const confirmed = await confirmDialog.value?.show(
+    `Tem certeza que deseja apagar ${person?.name || 'esta pessoa'}? Você poderá recuperar depois.`,
+    'Apagar'
+  );
+  if (!confirmed) return;
+
+  deletingPersonId.value = person.id;
+  error.value = null;
+  try {
+    await peopleService.delete(person.id);
+    await loadData();
+  } catch (err) {
+    error.value = `Erro ao apagar pessoa: ${err.response?.data?.message || err.message}`;
+  } finally {
+    deletingPersonId.value = null;
+  }
 };
 
 const downloadTemplate = () => {
@@ -1905,9 +1980,13 @@ const closeColumnsMenu = () => {
 
 const handleDocumentClick = (event) => {
   const control = columnsControlRef.value;
-  if (!control) return;
-  if (!control.contains(event.target)) {
+  if (control && !control.contains(event.target)) {
     closeColumnsMenu();
+  }
+
+  if (!(event.target instanceof HTMLElement)) return;
+  if (!event.target.closest('.person-actions-menu-wrap')) {
+    openPeopleActionsFor.value = null;
   }
 };
 
@@ -2017,10 +2096,25 @@ watch(() => linkForm.value.turmaId, async (turmaId) => {
   }
 });
 
-onMounted(() => {
-  loadData();
-  loadReferenceData();
+onMounted(async () => {
+  await Promise.all([loadData(), loadReferenceData()]);
   document.addEventListener('click', handleDocumentClick);
+  const q = route.query || {};
+
+  if (q.programaId && hasValue(q.programaId)) {
+    advancedFilters.value.programa = String(q.programaId);
+  }
+  if (q.turmaId && hasValue(q.turmaId)) {
+    advancedFilters.value.turma = String(q.turmaId);
+  }
+  if (q.programa && hasValue(q.programa) && !advancedFilters.value.programa) {
+    searchTerm.value = String(q.programa);
+  }
+
+  if (advancedFilters.value.programa || advancedFilters.value.turma || searchTerm.value) {
+    showAdvancedFilters.value = true;
+    currentPage.value = 1;
+  }
 });
 
 onBeforeUnmount(() => {
@@ -2641,6 +2735,53 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
+}
+
+.person-actions-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.person-actions-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 150px;
+  background: #fff;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  z-index: 12;
+  padding: 6px;
+}
+
+.person-actions-menu-item {
+  width: 100%;
+  border: none;
+  background: #fff;
+  color: #13233f;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.person-actions-menu-item:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.person-actions-menu-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.person-actions-menu-item.danger {
+  color: #b42318;
+}
+
+.person-actions-menu-item.danger:hover:not(:disabled) {
+  background: #fef2f2;
 }
 
 .icon-btn {

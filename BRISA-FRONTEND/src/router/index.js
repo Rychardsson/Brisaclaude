@@ -131,12 +131,6 @@ const routes = [
     })
   },
   {
-    path: '/programs/:programId/classes/:classId/courses/:courseId',
-    name: 'CourseDetails',
-    component: () => import('@/views/CourseDetailsView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/programs/:programId/classes/:classId/stages/:stageId',
     name: 'StageDetails',
     component: StageDetailsView,
