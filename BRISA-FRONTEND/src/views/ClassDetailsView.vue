@@ -1916,83 +1916,16 @@ export default {
       notes: '',
     });
     const imersaoMetricsCards = ref([
-      { label: 'Total de grupos', value: '10', valueClass: '' },
-      { label: 'Total de alunos', value: '50', valueClass: 'teal-strong' },
-      { label: 'Alunos ativos', value: '44', valueClass: 'teal-strong' },
-      { label: 'Nota de corte parcial', value: '3,75', valueClass: 'warning-strong' },
-      { label: 'Nota de corte final', value: '75% da maior', valueClass: 'warning-strong' },
-      { label: 'Alunos em risco', value: '3', valueClass: 'danger-strong' },
+      { label: 'Total de grupos', value: '0', valueClass: '' },
+      { label: 'Total de alunos', value: '0', valueClass: 'teal-strong' },
+      { label: 'Alunos ativos', value: '0', valueClass: 'teal-strong' },
+      { label: 'Nota de corte parcial', value: '-', valueClass: 'warning-strong' },
+      { label: 'Nota de corte final', value: '-', valueClass: 'warning-strong' },
+      { label: 'Alunos em risco', value: '0', valueClass: 'danger-strong' },
     ]);
-    const imersaoGroups = ref([
-      {
-        id: 1,
-        name: 'Grupo 03',
-        status: 'OK',
-        statusClass: 'is-ok',
-        mentor: 'Prof. João Silva',
-        project: 'Plataforma de Gestão Acadêmica',
-        partnerCompany: 'BRISA',
-        lastGradesUpdate: '25/04/2026',
-        lastMeetingDate: '24/04/2026',
-        students: 5,
-        partialAverage: '7.8',
-        finalAverage: '8.4',
-        studentsDetails: [
-          { id: 'g03-1', name: 'João Silva', partial: '4.2', final: '4.5', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g03-2', name: 'Maria Santos', partial: '3.8', final: '4.1', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g03-3', name: 'Carlos Oliveira', partial: '4.5', final: '4.7', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g03-4', name: 'Ana Costa', partial: '4.0', final: '4.3', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g03-5', name: 'Pedro Lima', partial: '3.5', final: '3.8', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: false },
-        ],
-      },
-      {
-        id: 2,
-        name: 'Grupo 07',
-        status: 'OK',
-        statusClass: 'is-ok',
-        mentor: 'Prof. Maria Santos',
-        project: 'Sistema de Controle de Estoque',
-        partnerCompany: 'BRISA',
-        lastGradesUpdate: '25/04/2026',
-        lastMeetingDate: '24/04/2026',
-        students: 4,
-        partialAverage: '8.2',
-        finalAverage: '8.9',
-        studentsDetails: [
-          { id: 'g07-1', name: 'Fernanda Lima', partial: '4.4', final: '4.8', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g07-2', name: 'Gustavo Rocha', partial: '4.1', final: '4.6', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g07-3', name: 'Helena Costa', partial: '3.9', final: '4.4', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g07-4', name: 'Igor Nascimento', partial: '4.0', final: '4.5', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-        ],
-      },
-      {
-        id: 3,
-        name: 'Grupo 12',
-        status: 'Atenção',
-        statusClass: 'is-warning',
-        mentor: 'Prof. Carlos Oliveira',
-        project: 'App de Mobilidade Urbana',
-        partnerCompany: 'BRISA',
-        lastGradesUpdate: '25/04/2026',
-        lastMeetingDate: '24/04/2026',
-        students: 5,
-        partialAverage: '6.5',
-        finalAverage: '7.2',
-        studentsDetails: [
-          { id: 'g12-1', name: 'João Victor Melo', partial: '3.6', final: '3.9', situation: 'Atenção', situationClass: 'status-warning', attendedLastMeeting: false },
-          { id: 'g12-2', name: 'Karina Souza', partial: '3.8', final: '4.0', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g12-3', name: 'Lucas Monteiro', partial: '4.0', final: '4.1', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g12-4', name: 'Mariana Lopes', partial: '3.7', final: '3.9', situation: 'Atenção', situationClass: 'status-warning', attendedLastMeeting: false },
-          { id: 'g12-5', name: 'Nicolas Barros', partial: '3.5', final: '3.8', situation: 'Atenção', situationClass: 'status-warning', attendedLastMeeting: true },
-        ],
-      },
-    ]);
-    const imersaoExpandedGroupId = ref(1);
-    const imersaoGroupTabs = ref({
-      1: 'resumo',
-      2: 'resumo',
-      3: 'resumo',
-    });
+    const imersaoGroups = ref([]);
+    const imersaoExpandedGroupId = ref(null);
+    const imersaoGroupTabs = ref({});
     const toggleImersaoGroup = (groupId) => {
       imersaoExpandedGroupId.value = imersaoExpandedGroupId.value === groupId ? null : groupId;
     };
@@ -2000,58 +1933,10 @@ export default {
       imersaoGroupTabs.value[groupId] = tabId;
     };
     const getImersaoGroupTab = (groupId) => imersaoGroupTabs.value[groupId] || 'resumo';
-    const imersaoPresencaGroups = ref([
-      {
-        id: 'grupo-03',
-        name: 'Grupo 03',
-        meetings: [
-          { value: '2026-03-03', label: '03/03/2026' },
-          { value: '2026-03-10', label: '10/03/2026' },
-          { value: '2026-03-17', label: '17/03/2026' },
-        ],
-        students: [
-          { id: 'g03-s1', name: 'Ana Beatriz Santos' },
-          { id: 'g03-s2', name: 'Bruno Almeida' },
-          { id: 'g03-s3', name: 'Camila Ferreira' },
-          { id: 'g03-s4', name: 'Diego Araújo' },
-          { id: 'g03-s5', name: 'Ester Oliveira' },
-        ],
-      },
-      {
-        id: 'grupo-07',
-        name: 'Grupo 07',
-        meetings: [
-          { value: '2026-03-04', label: '04/03/2026' },
-          { value: '2026-03-11', label: '11/03/2026' },
-          { value: '2026-03-18', label: '18/03/2026' },
-        ],
-        students: [
-          { id: 'g07-s1', name: 'Fernanda Lima' },
-          { id: 'g07-s2', name: 'Gustavo Rocha' },
-          { id: 'g07-s3', name: 'Helena Costa' },
-          { id: 'g07-s4', name: 'Igor Nascimento' },
-        ],
-      },
-      {
-        id: 'grupo-12',
-        name: 'Grupo 12',
-        meetings: [
-          { value: '2026-03-05', label: '05/03/2026' },
-          { value: '2026-03-12', label: '12/03/2026' },
-          { value: '2026-03-19', label: '19/03/2026' },
-        ],
-        students: [
-          { id: 'g12-s1', name: 'João Victor Melo' },
-          { id: 'g12-s2', name: 'Karina Souza' },
-          { id: 'g12-s3', name: 'Lucas Monteiro' },
-          { id: 'g12-s4', name: 'Mariana Lopes' },
-          { id: 'g12-s5', name: 'Nicolas Barros' },
-        ],
-      },
-    ]);
+    const imersaoPresencaGroups = ref([]);
     const imersaoPresencaForm = ref({
-      groupId: 'grupo-03',
-      meetingDate: '2026-03-03',
+      groupId: '',
+      meetingDate: '',
     });
     const presencaDraft = ref({});
     const selectedPresencaGroup = computed(() => imersaoPresencaGroups.value.find((group) => group.id === imersaoPresencaForm.value.groupId) || null);
@@ -2719,8 +2604,8 @@ export default {
             etapasSubTab.value = subTab;
           }
         };
-        // When false, keep frontend mocks for imersaoGroups instead of replacing them with API results
-        const useRealImersaoGroups = ref(false);
+        // Mantido como flag para forcar a leitura real dos grupos da imersao.
+        const useRealImersaoGroups = ref(true);
         const lastEmailInfo = computed(() => {
           const info = classData.value?.lastEmailSent;
           if (info && info.date) {
@@ -2742,38 +2627,96 @@ export default {
         );
 
         // Load imersao groups when sub-tab switches to 'imersao'
-        const loadImersaoGroups = async () => {
-          try {
-            const res = await groupService.getGroupsByClass(classId.value);
-            const groups = (res && res.data && (Array.isArray(res.data) ? res.data : res.data.groups)) || res.data || res || [];
-            imersaoGroups.value = (groups || []).map((g) => ({
-              id: g.id,
-              name: g.projectTheme || g.name || '-',
-              status: g.status || 'Ativo',
-              statusClass: (g.status === 'Atenção') ? 'is-warning' : 'is-ok',
-              mentor: g.leaderName || g.leader || '-',
-              project: g.projectTheme || g.project || '-',
-              partnerCompany: g.projectCompanyName || g.projectCompany || '',
-              lastGradesUpdate: g.lastGradesUpdate || '-',
-              lastMeetingDate: g.lastMeetingDate || '-',
-              students: g.memberCount ?? (g.members?.length ?? 0),
-              partialAverage: g.partialAverage ?? '-',
-              finalAverage: g.finalAverage ?? '-',
-              studentsDetails: (g.members || g.studentDetails || []).map((m) => ({
-                id: m.id,
-                name: m.name,
-                partial: m.partial ?? '-',
-                final: m.final ?? '-',
-                situation: m.situation || 'Regular',
-                situationClass: (m.situation === 'Atenção') ? 'status-warning' : 'status-regular',
-                attendedLastMeeting: !!m.attendedLastMeeting,
+        const syncImersaoPresenceGroups = (groups) => {
+          imersaoPresencaGroups.value = groups
+            .filter((group) => group.studentsDetails.length > 0)
+            .map((group) => ({
+              id: group.id,
+              name: group.name,
+              meetings: group.meetings,
+              students: group.studentsDetails.map((student) => ({
+                id: student.id,
+                name: student.name,
               })),
             }));
-            // update metrics
+          const firstGroup = imersaoPresencaGroups.value[0] || null;
+          const currentGroup = imersaoPresencaGroups.value.find((group) => group.id === imersaoPresencaForm.value.groupId);
+          const targetGroup = currentGroup || firstGroup;
+          imersaoPresencaForm.value.groupId = targetGroup?.id || '';
+          imersaoPresencaForm.value.meetingDate = targetGroup?.meetings?.[0]?.value || '';
+        };
+        const loadImersaoGroups = async () => {
+          try {
+            const groups = await groupService.getGroupsByClass(classId.value);
+            const safeGroups = Array.isArray(groups) ? groups : [];
+            const details = await Promise.all(
+              safeGroups.map(async (group) => {
+                try {
+                  const detail = await groupService.getGroupDetail(classId.value, group.id);
+                  return detail && typeof detail === 'object' ? detail : group;
+                } catch (error) {
+                  console.error('Erro ao carregar detalhes do grupo:', error);
+                  return group;
+                }
+              })
+            );
+            imersaoGroups.value = details.map((group) => {
+              const meetings = Array.isArray(group.meetings)
+                ? [...group.meetings]
+                    .map((meeting) => ({
+                      value: meeting.meetingDate,
+                      label: formatDate(meeting.meetingDate),
+                    }))
+                    .sort((left, right) => new Date(left.value) - new Date(right.value))
+                : [];
+              const studentsDetails = Array.isArray(group.members)
+                ? group.members.map((member) => ({
+                    id: member.id,
+                    name: member.name,
+                    partial: '-',
+                    final: '-',
+                    situation: 'Regular',
+                    situationClass: 'status-regular',
+                    attendedLastMeeting: false,
+                  }))
+                : [];
+              const totalStudents = group.memberCount ?? studentsDetails.length;
+              const hasStudents = totalStudents > 0;
+              const latestMeeting = meetings.length ? meetings[meetings.length - 1].label : '-';
+              return {
+                id: group.id,
+                name: group.projectTheme || group.name || '-',
+                status: hasStudents ? 'OK' : 'Atenção',
+                statusClass: hasStudents ? 'is-ok' : 'is-warning',
+                mentor: group.leaderName || group.leader || '-',
+                project: group.projectTheme || group.project || '-',
+                partnerCompany: group.projectCompanyName || group.projectCompany || '',
+                lastGradesUpdate: latestMeeting,
+                lastMeetingDate: latestMeeting,
+                students: totalStudents,
+                partialAverage: '-',
+                finalAverage: '-',
+                studentsDetails,
+                meetings,
+              };
+            });
+            syncImersaoPresenceGroups(imersaoGroups.value);
             imersaoMetricsCards.value[0].value = String(imersaoGroups.value.length || 0);
-            imersaoMetricsCards.value[1].value = String(imersaoGroups.value.reduce((s, g) => s + (g.students || 0), 0));
+            imersaoMetricsCards.value[1].value = String(imersaoGroups.value.reduce((sum, group) => sum + (group.students || 0), 0));
+            imersaoMetricsCards.value[2].value = imersaoMetricsCards.value[1].value;
+            imersaoMetricsCards.value[5].value = String(
+              imersaoGroups.value.filter((group) => group.statusClass === 'is-warning').length
+            );
           } catch (err) {
             console.error('Erro ao carregar grupos:', err);
+            imersaoGroups.value = [];
+            imersaoPresencaGroups.value = [];
+            imersaoPresencaForm.value.groupId = '';
+            imersaoPresencaForm.value.meetingDate = '';
+            imersaoMetricsCards.value[0].value = '0';
+            imersaoMetricsCards.value[1].value = '0';
+            imersaoMetricsCards.value[2].value = '0';
+            imersaoMetricsCards.value[5].value = '0';
           }
         };
 
@@ -3136,11 +3079,10 @@ export default {
     };
 
     const onGroupCreated = (group) => {
-      // Atualizar lista de grupos se necessário
-      // ou apenas fechar o modal (que já é feito pelo evento close)
+      // Atualizar lista de grupos, mantendo a tela sincronizada apos o cadastro.
       console.log('Grupo criado:', group);
-      // Recarregar dados se necessário
       loadClassDetails();
+      loadImersaoGroups();
     };
 
     const goBack = () => router.back();
@@ -3148,6 +3090,9 @@ export default {
     onMounted(() => {
       applyTabStateFromQuery();
       loadClassDetails();
+      if (activeTab.value === 'etapas' && etapasSubTab.value === 'imersao') {
+        loadImersaoGroups();
+      }
     });
 
     watch(

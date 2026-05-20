@@ -196,19 +196,19 @@ export default {
         }
         // Carregar orientadores (qualquer pessoa)
         const peopleResponse = await peopleService.getAll();
-        this.leaders = peopleResponse.data || [];
+        this.leaders = Array.isArray(peopleResponse) ? peopleResponse : [];
         this.filteredLeaders = this.leaders;
 
         // Carregar alunos na etapa de imersão desta classe
         const membersResponse = await groupService.getImmersionStudents(this.classId);
-        this.members = membersResponse.data || [];
+        this.members = Array.isArray(membersResponse) ? membersResponse : [];
         this.filteredMembers = this.members;
 
         // Carregar empresas/instituições
         const companiesResponse = await institutionService.getAll();
-        this.companies = companiesResponse.data || [];
+        this.companies = Array.isArray(companiesResponse) ? companiesResponse : [];
       } catch (error) {
-        this.errorMessage = 'Erro ao carregar dados: ' + (error.response?.data?.error || error.message);
+        this.errorMessage = 'Erro ao carregar dados: ' + (error.response?.data?.message || error.response?.data?.error || error.message);
       }
     },
 
@@ -259,7 +259,7 @@ export default {
       this.errorMessage = '';
 
       try {
-        const response = await groupService.createGroup(this.classId, {
+        const createdGroup = await groupService.createGroup(this.classId, {
           projectTheme: this.form.projectTheme,
           description: this.form.description,
           projectCompanyId: this.form.projectCompanyId,
@@ -270,10 +270,10 @@ export default {
           repositoryLink: this.form.repositoryLink,
         });
 
-        this.$emit('group-created', response.data);
+        this.$emit('group-created', createdGroup);
         this.closeModal();
       } catch (error) {
-        this.errorMessage = error.response?.data?.error || 'Erro ao criar grupo';
+        this.errorMessage = error.response?.data?.message || error.response?.data?.error || 'Erro ao criar grupo';
       } finally {
         this.isLoading = false;
       }

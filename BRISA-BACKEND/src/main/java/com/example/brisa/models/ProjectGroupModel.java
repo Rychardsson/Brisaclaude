@@ -56,7 +56,7 @@ public class ProjectGroupModel {
     private Set<PeopleProjectGroupModel> members = new HashSet<>(); // membros do grupo de projeto
 
     @Column(name = "weekly_meeting_day")
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
     private DayOfWeek weeklyMeetingDay; // dia da semana para reuniões (MONDAY, TUESDAY, etc)
 
     @Column(name = "first_meeting_date")

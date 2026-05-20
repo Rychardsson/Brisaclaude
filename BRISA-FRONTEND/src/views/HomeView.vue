@@ -222,19 +222,16 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { programService } from '@/services/programService';
 import { classService } from '@/services/classService';
 import { institutionService } from '@/services/institutionService';
 import { logService } from '@/services/logService';
-import StageChart from '@/components/dashboard/StageChart.vue';
 import BrazilMap from '@/components/dashboard/BrazilMap.vue';
 
 export default {
   name: 'HomeView',
-  components: { StageChart, BrazilMap },
+  components: { BrazilMap },
   setup() {
-    const router = useRouter();
     const loading = ref(true);
     const programs = ref([]);
     const classes = ref([]);
@@ -432,16 +429,6 @@ export default {
       };
     });
 
-    const stageData = computed(() => {
-      const filtered = selectedState.value
-        ? classes.value.filter(c => c.location?.state === selectedState.value)
-        : classes.value;
-      return {
-        '1': filtered.slice(0, Math.ceil(filtered.length / 2)),
-        '2': filtered.slice(Math.ceil(filtered.length / 2))
-      };
-    });
-
     const getStateColor = (uf) => stateColors[uf] || '#667eea';
 
     const selectState = (uf) => {
@@ -478,17 +465,13 @@ export default {
 
     onMounted(() => {
       loadData();
-      // Recarregar dados quando retornar a esta rota
-      router.afterEach(() => {
-        loadData();
-      });
     });
 
     return {
       loading, programs, classes, institutions, logs,
       selectedState, mapModalOpen, recentActivities,
       stateNames, stateColors,
-      activeStates, globalStats, stateStats, stageData,
+      activeStates, globalStats, stateStats,
       getStateColor, selectState, selectStateFromModal
     };
   }
