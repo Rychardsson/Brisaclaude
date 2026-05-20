@@ -10,7 +10,7 @@
       
       <ul class="nav-menu">
         <li>
-          <router-link to="/dashboard" :class="{ active: $route.path === '/dashboard' }">
+          <router-link :to="dashboardLink" :class="{ active: $route.path === '/dashboard' }">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 21v-4"></path>
               <path d="M9 21v-10"></path>
@@ -85,21 +85,33 @@
 </template>
 
 <script>
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { computed } from 'vue';
 import { authService } from '@/services/authService';
 
 export default {
   name: 'NavBar',
   setup() {
     const router = useRouter();
+    const route = useRoute();
 
     const logout = () => {
       authService.logout();
       router.push('/');
     };
 
+    const dashboardLink = computed(() => {
+      const q = {};
+      if (route?.query?.programaId) q.programaId = String(route.query.programaId);
+      if (route?.query?.turmaId) q.turmaId = String(route.query.turmaId);
+      if (route?.params?.programId) q.programaId = String(route.params.programId);
+      if (route?.params?.classId) q.turmaId = String(route.params.classId);
+      return Object.keys(q).length ? { path: '/dashboard', query: q } : '/dashboard';
+    });
+
     return {
-      logout
+      logout,
+      dashboardLink,
     };
   }
 };
