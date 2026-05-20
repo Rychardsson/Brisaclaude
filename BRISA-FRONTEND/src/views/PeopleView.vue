@@ -1,7 +1,7 @@
 <template>
-  <FigmaPeople />
+  <PeopleListView />
 </template>
 
 <script setup>
-import FigmaPeople from './PeopleFigma.vue'
+import PeopleListView from './PeopleListView.vue'
 </script>
