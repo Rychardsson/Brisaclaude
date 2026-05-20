@@ -1,29 +1,33 @@
 import api from './api';
 
 export const groupService = {
-  createGroup(classId, data) {
-    return api.post(`/classes/${classId}/groups`, data);
+  async createGroup(classId, data) {
+    const response = await api.post(`/classes/${classId}/groups`, data);
+    return response.data;
   },
 
-  getGroupsByClass(classId) {
-    return api.get(`/classes/${classId}/groups`);
+  async getGroupsByClass(classId) {
+    const response = await api.get(`/classes/${classId}/groups`);
+    return response.data;
   },
 
-  getGroupDetail(classId, groupId) {
-    return api.get(`/classes/${classId}/groups/${groupId}`);
+  async getGroupDetail(classId, groupId) {
+    const response = await api.get(`/classes/${classId}/groups/${groupId}`);
+    return response.data;
   },
 
-  updateGroup(classId, groupId, data) {
-    return api.put(`/classes/${classId}/groups/${groupId}`, data);
+  async updateGroup(classId, groupId, data) {
+    const response = await api.put(`/classes/${classId}/groups/${groupId}`, data);
+    return response.data;
   },
 
-  deleteGroup(classId, groupId) {
-    return api.delete(`/classes/${classId}/groups/${groupId}`);
+  async deleteGroup(classId, groupId) {
+    const response = await api.delete(`/classes/${classId}/groups/${groupId}`);
+    return response.data;
   },
 
-  getImmersionStudents(classId) {
-    // Buscar alunos que estão na etapa de imersão
-    // Para isso, precisamos buscar todos os stages e filtrar pela classe
-    return api.get(`/classes/${classId}/immersion-students`);
+  async getImmersionStudents(classId) {
+    const response = await api.get(`/classes/${classId}/immersion-students`);
+    return response.data;
   },
 };

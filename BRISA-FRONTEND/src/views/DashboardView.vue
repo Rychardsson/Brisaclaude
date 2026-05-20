@@ -88,21 +88,6 @@
           </button>
         </div>
 
-        <div v-if="!loading && usingSampleData" class="sample-banner">
-          <div>
-            <strong>Dados de exemplo</strong>
-            <p>{{ sampleBannerMessage }}</p>
-          </div>
-          <button
-            v-if="hasRealDashboardData"
-            type="button"
-            class="ghost-inline-btn"
-            @click="toggleSampleData"
-          >
-            Ver dados reais
-          </button>
-        </div>
-
         <div v-if="loading" class="state-row">
           <div class="spinner"></div>
           <span>Carregando dados do dashboard...</span>
@@ -761,16 +746,11 @@ async function loadData() {
 
 const rawOverviewItems = computed(() => Array.isArray(overview.value?.items) ? overview.value.items : []);
 const hasRealDashboardData = computed(() => rawOverviewItems.value.length > 0);
-const usingSampleData = computed(() => forceSampleData.value || !hasRealDashboardData.value);
-const displayErrorMessage = computed(() => (usingSampleData.value ? '' : errorMessage.value));
-const sampleBannerMessage = computed(() => (
-  hasRealDashboardData.value
-    ? 'O painel está em modo demonstração para facilitar a apresentação visual. Você pode voltar para os dados reais a qualquer momento.'
-    : 'Ainda não há base consolidada suficiente para esta leitura, então o dashboard está exibindo um cenário ilustrativo.'
-));
-const overviewItems = computed(() => (usingSampleData.value ? SAMPLE_DASHBOARD_OVERVIEW_ITEMS : rawOverviewItems.value));
-const availableClasses = computed(() => (usingSampleData.value ? SAMPLE_DASHBOARD_CLASSES : classes.value));
-const availableEnrollments = computed(() => (usingSampleData.value ? SAMPLE_DASHBOARD_ENROLLMENTS : enrollments.value));
+const usingSampleData = computed(() => false);
+const displayErrorMessage = computed(() => errorMessage.value);
+const overviewItems = computed(() => rawOverviewItems.value);
+const availableClasses = computed(() => classes.value);
+const availableEnrollments = computed(() => enrollments.value);
 
 watch(usingSampleData, () => {
   if (selectedProgramId.value && !programOptions.value.some((item) => item.id === selectedProgramId.value)) {
@@ -920,7 +900,7 @@ const completedStudentEnrollments = computed(() =>
 const participantPeople = computed(() => uniquePeopleFromEnrollments(studentEnrollments.value));
 const activeParticipantPeople = computed(() => uniquePeopleFromEnrollments(activeStudentEnrollments.value));
 
-const storedCareerFollowUps = computed(() => (usingSampleData.value ? SAMPLE_DASHBOARD_FOLLOWUPS : careerFollowUps.value));
+const storedCareerFollowUps = computed(() => careerFollowUps.value);
 
 const scopedFollowUps = computed(() => {
   if (!storedCareerFollowUps.value.length) return [];
