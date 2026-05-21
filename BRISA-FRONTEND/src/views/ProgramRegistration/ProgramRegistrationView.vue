@@ -971,7 +971,7 @@ export default {
     prevStep() { this.validateCurrentStep(); if (this.currentStep > 1) { this.currentStep--; } this.saveDraft(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
     goToStep(num) { this.validateCurrentStep(); this.currentStep = num; this.saveDraft(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
     
-    // Preenchimento de mock automático para o array da Aba 2 (Estruturas)
+    // Preenchimento padrão automático para o array da Aba 2 (Estruturas)
     restoreDefaultStages() {
       this.stageList = [
         { id: 0, title: 'Inscrição', type: 'Inscrição / Triagem', desc: 'Etapa de inscrições e triagem inicial dos candidatos', modality: 'Online', duration: '30 dias', slots: 'Ilimitado', isDefault: true },
