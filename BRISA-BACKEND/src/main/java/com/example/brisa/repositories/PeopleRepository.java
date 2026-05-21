@@ -33,7 +33,4 @@ public interface PeopleRepository extends JpaRepository<PeopleModel, Long> {
 
     @Query("select p from PeopleModel p where p.email in :emails and coalesce(p.softDeleted, false) = false")
     List<PeopleModel> findAllActiveByEmailIn(@Param("emails") List<String> emails);
-    
-    // Find seed users by email prefix (e.g. 'candidate')
-    List<PeopleModel> findByEmailStartingWith(String prefix);
 }
