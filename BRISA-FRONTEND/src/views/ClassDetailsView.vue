@@ -1083,7 +1083,17 @@
           <div class="modal-back">
             <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
           </div>
-          <h3>Importar planilha de inscritos</h3>
+          <div class="modal-header-with-action">
+            <h3>Importar planilha de inscritos</h3>
+            <a href="/Modelo_Inscritos.xlsx" download="Modelo_Inscritos.xlsx" class="ghost-btn hero-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Baixar Modelo .xlsx</span>
+            </a>
+          </div>
           <p class="modal-desc">Envie uma planilha Excel ou CSV com os dados dos candidatos inscritos. A planilha deve conter as seguintes colunas:</p>
 
           <div class="columns-grid">
@@ -1260,7 +1270,7 @@
       </div>
     </div>
 
-    <!-- Modal: Submit Courses Data -->
+        <!-- Modal: Submit Courses Data -->
     <div v-if="showSubmitCoursesModal" class="modal-overlay" @click="showSubmitCoursesModal = false">
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
@@ -1274,7 +1284,17 @@
         </div>
 
         <div class="modal-content submit-cursos-modal">
-          <p class="modal-desc">Envie a planilha com os dados de conclusão e notas dos cursos</p>
+          <div class="modal-header-with-action" style="margin-bottom: 16px;">
+            <p class="modal-desc" style="margin: 0;">Envie a planilha com os dados de conclusão e notas dos cursos</p>
+            <a href="/Modelo_Nivelamento_Cursos.xlsx" download="Modelo_Nivelamento_Cursos.xlsx" class="ghost-btn hero-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Baixar Modelo .xlsx</span>
+            </a>
+          </div>
 
           <div class="columns-grid">
             <div class="columns-grid-title">A planilha deve conter as seguintes colunas:</div>
