@@ -30,8 +30,13 @@
               </div>
 
               <div class="form-group full-width">
-                <label for="sponsorCompany">Empresa do Grupo</label>
-                <input id="sponsorCompany" v-model="form.sponsorCompany" type="text" placeholder="Digite o nome da empresa patrocinadora" required />
+                <label for="projectCompanyId">Empresa/Instituição Parceira *</label>
+                <select id="projectCompanyId" v-model="form.projectCompanyId" required>
+                  <option :value="null">Selecione a empresa/instituição parceira</option>
+                  <option v-for="company in companies" :key="company.id" :value="company.id">
+                    {{ company.name || company.acronym }}
+                  </option>
+                </select>
               </div>
 
               <div class="form-group">
@@ -99,6 +104,7 @@
 import { groupService } from '@/services/groupService';
 import { peopleService } from '@/services/peopleService';
 import { institutionService } from '@/services/institutionService';
+import { classService } from '@/services/classService';
 
 export default {
   name: 'GroupCreateModal',
@@ -112,7 +118,6 @@ export default {
       form: {
         projectTheme: '',
         description: '',
-        sponsorCompany: '',
         projectCompanyId: null,
         leaderId: null,
         memberIds: [],
@@ -144,12 +149,12 @@ export default {
     canSubmit() {
       const themeOk = this.form.projectTheme && this.form.projectTheme.trim().length > 0;
       const descriptionOk = this.form.description && this.form.description.trim().length > 0;
-      const sponsorOk = this.form.sponsorCompany && this.form.sponsorCompany.trim().length > 0;
+      const companyOk = !!this.form.projectCompanyId;
       const leaderOk = !!this.form.leaderId;
       const membersOk = Array.isArray(this.form.memberIds) && this.form.memberIds.length > 0;
       const dateOk = !!this.form.firstMeetingDate;
       const dayOk = this.form.weeklyMeetingDay !== null && this.form.weeklyMeetingDay !== '';
-      return themeOk && descriptionOk && sponsorOk && leaderOk && membersOk && dateOk && dayOk;
+      return themeOk && descriptionOk && companyOk && leaderOk && membersOk && dateOk && dayOk;
     },
     submitDisabled() {
       return this.isLoading || !this.canSubmit;
@@ -172,9 +177,28 @@ export default {
         this.members = Array.isArray(membersResponse) ? membersResponse : [];
         this.filteredMembers = this.members;
 
-        // Carregar empresas/instituições (mantém lista para compatibilidade se necessário)
+        // Carregar empresas/instituições parceiras do programa da turma
         const companiesResponse = await institutionService.getAll();
-        this.companies = Array.isArray(companiesResponse) ? companiesResponse : [];
+        const allCompanies = Array.isArray(companiesResponse) ? companiesResponse : [];
+
+        const classResponse = await classService.getById(this.classId).catch(() => null);
+        const programInstitutions = Array.isArray(classResponse?.program?.programInstitutions)
+          ? classResponse.program.programInstitutions
+          : [];
+        const partnerIds = new Set(
+          programInstitutions
+            .map((item) => item?.institution?.id)
+            .filter((id) => id !== null && id !== undefined)
+            .map((id) => String(id))
+        );
+
+        this.companies = partnerIds.size > 0
+          ? allCompanies.filter((company) => partnerIds.has(String(company.id)))
+          : allCompanies;
+
+        if (this.companies.length === 0) {
+          this.errorMessage = 'Nenhuma empresa/instituição parceira cadastrada para este programa.';
+        }
       } catch (error) {
         this.errorMessage = 'Erro ao carregar dados: ' + (error.response?.data?.message || error.response?.data?.error || error.message);
       }
@@ -206,8 +230,8 @@ export default {
         this.errorMessage = 'Resumo do projeto é obrigatório';
         return;
       }
-      if (!this.form.sponsorCompany || !this.form.sponsorCompany.trim()) {
-        this.errorMessage = 'Empresa do Grupo é obrigatória';
+      if (!this.form.projectCompanyId) {
+        this.errorMessage = 'Selecione uma empresa/instituição parceira';
         return;
       }
       if (!this.form.leaderId) {
@@ -234,8 +258,7 @@ export default {
         const createdGroup = await groupService.createGroup(this.classId, {
           projectTheme: this.form.projectTheme,
           description: this.form.description,
-          sponsorCompany: this.form.sponsorCompany,
-          projectCompanyId: this.form.projectCompanyId,
+          projectCompanyId: this.form.projectCompanyId ? Number(this.form.projectCompanyId) : null,
           leaderId: this.form.leaderId,
           memberIds: this.form.memberIds,
           weeklyMeetingDay: parseInt(this.form.weeklyMeetingDay),

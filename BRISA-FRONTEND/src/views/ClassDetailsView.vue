@@ -49,7 +49,7 @@
                   <path d="M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 0 1 16 0Z" />
                   <circle cx="12" cy="10" r="3" />
                 </svg>
-                {{ classData.location?.name || '-' }}
+                {{ classLocationLabel }}
               </span>
               <span class="meta-item">
                 <svg class="meta-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -137,7 +137,7 @@
               </div>
               <div>
                 <span>Local</span>
-                <strong>{{ classData.location?.name || '-' }}</strong>
+                <strong>{{ classLocationLabel }}</strong>
               </div>
             </div>
 
@@ -2097,6 +2097,19 @@ export default {
         classData.value?.program?.institutionName ||
         'EASY/UFAL'
     );
+    const classLocationLabel = computed(() => {
+      const locality = classData.value?.locality || classData.value?.localidade;
+      if (locality) return locality;
+
+      const location = classData.value?.location;
+      if (!location) return '-';
+
+      if (location.name && location.state) {
+        return `${location.name} - ${location.state}`;
+      }
+
+      return location.name || '-';
+    });
     const currentStagePeriod = computed(() => classData.value?.stagePeriod || '17/11/2025 a 18/05/2026');
     const currentStageMilestone = computed(() => classData.value?.nextMilestone || 'Avaliação parcial');
     const currentStageMilestoneDate = computed(() => classData.value?.nextMilestoneDate || '03/03/2026');
@@ -3178,6 +3191,7 @@ export default {
       goToPeople,
       goToStageDetails,
       classModelLabel,
+      classLocationLabel,
       classPeriodLabel,
       classWorkloadLabel,
       loading,
@@ -4160,13 +4174,14 @@ export default {
 }
 
 .btn-danger {
-  color: var(--danger-700);
-  border-color: #fecdd3;
-  background: #fff;
+  color: #fff;
+  border-color: var(--danger-700);
+  background: var(--danger-700);
 }
 
 .btn-danger:hover {
-  background: var(--danger-100);
+  background: var(--danger-800);
+  border-color: var(--danger-800);
 }
 
 .state-box {

@@ -193,6 +193,31 @@
       </div>
     </div>
 
+    <div v-if="showPublishSuccessModal" class="modal-overlay" @click="closePublishSuccessModal">
+      <div class="modal-content modal-sm" @click.stop>
+        <div class="modal-header">
+          <div>
+            <h3>Cadastro concluído</h3>
+            <p class="modal-subtitle">Programa cadastrado com sucesso.</p>
+          </div>
+          <button class="btn-close-modal" @click="closePublishSuccessModal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p class="delete-confirm-text">Seu programa foi cadastrado com sucesso!</p>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-footer-continue" @click="closePublishSuccessModal">Fechar</button>
+        </div>
+      </div>
+    </div>
+
     <div v-if="showCustomFieldModal" class="modal-overlay" @click="closeCustomFieldModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
@@ -682,6 +707,7 @@ export default {
       showDeleteConfirmModal: false,
       stageToDelete: null,
       showRestartConfirmModal: false, 
+      showPublishSuccessModal: false,
       showCustomFieldModal: false,
       customFieldFormError: false, 
       customFieldForm: { name: '', type: 'text', required: true },
@@ -875,6 +901,9 @@ export default {
     // Esconde o Modal de Confirmação de Limpeza sem fazer nada
     cancelRestartRegistration() {
       this.showRestartConfirmModal = false;
+    },
+    closePublishSuccessModal() {
+      this.showPublishSuccessModal = false;
     },
     
     // Função "Destrutiva" (Nuke): Limpa o LocalStorage e redefine todas as variáveis do State para os seus valores limpos originais
@@ -1262,8 +1291,8 @@ export default {
         
         console.log('Edital (classe) criado com sucesso:', classResponse);
         
-        alert('Edital publicado com sucesso! 🎉');
         this.executeRestartRegistration(); // Limpa o formulário após publicação
+        this.showPublishSuccessModal = true;
       } catch (error) {
         console.error('Erro ao publicar edital:', error);
         const errorMsg = error.response?.data?.message || error.message || 'Erro ao publicar o edital';
@@ -1352,7 +1381,7 @@ export default {
 .info-item span { display: block; font-size: 13px; color: #1a233a; font-weight: 500; } /* Valor numérico/texto da métrica na etapa */
 .stage-actions { display: flex; gap: 12px; } /* Container para os botões Editar/Duplicar/Excluir da etapa */
 .btn-stage-action { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; display: flex; align-items: center; gap: 6px; } /* Estilo dos botões de ação do card da etapa */
-.btn-stage-action.btn-danger { color: #ef4444; border-color: #fca5a5; } /* Estilo de erro/vermelho para o botão Excluir etapa */
+.btn-stage-action.btn-danger { color: #fff; border-color: #ef4444; background: #ef4444; } /* Estilo de erro/vermelho para o botão Excluir etapa */
 .stage-list-actions { display: flex; gap: 12px; margin-top: 8px; margin-bottom: 40px; } /* Ações globais no rodapé da lista de etapas */
 .btn-action-outline { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 16px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; } /* Botão vazado para adicionar nova etapa */
 .btn-action-outline:hover { background: #f9fafb; border-color: #9ca3af; } /* Efeito hover no botão vazado */

@@ -172,35 +172,35 @@
        <div class="quota-row">
          <span class="list-item-title">Ampla concorrência</span>
          <div class="quota-input-wrapper">
-           <input type="number" v-model="inscriptionForm.quotas.ampla" class="quota-input"/>
+           <input type="number" min="0" max="100" v-model="inscriptionForm.quotas.ampla" @input="handleQuotaInput('ampla')" class="quota-input"/>
            <span class="quota-symbol">%</span>
          </div>
        </div>
        <div class="quota-row">
          <span class="list-item-title">PCD / Neurodivergentes</span>
          <div class="quota-input-wrapper">
-           <input type="number" v-model="inscriptionForm.quotas.pcd" class="quota-input"/>
+           <input type="number" min="0" max="100" v-model="inscriptionForm.quotas.pcd" @input="handleQuotaInput('pcd')" class="quota-input"/>
            <span class="quota-symbol">%</span>
          </div>
        </div>
        <div class="quota-row">
          <span class="list-item-title">Negros e pardos</span>
          <div class="quota-input-wrapper">
-           <input type="number" v-model="inscriptionForm.quotas.negros" class="quota-input"/>
+           <input type="number" min="0" max="100" v-model="inscriptionForm.quotas.negros" @input="handleQuotaInput('negros')" class="quota-input"/>
            <span class="quota-symbol">%</span>
          </div>
        </div>
        <div class="quota-row">
          <span class="list-item-title">Mulheres</span>
          <div class="quota-input-wrapper">
-           <input type="number" v-model="inscriptionForm.quotas.mulheres" class="quota-input"/>
+           <input type="number" min="0" max="100" v-model="inscriptionForm.quotas.mulheres" @input="handleQuotaInput('mulheres')" class="quota-input"/>
            <span class="quota-symbol">%</span>
          </div>
        </div>
        <div class="quota-row" style="border-bottom: none; margin-bottom: 16px;">
          <span class="list-item-title">45+</span>
          <div class="quota-input-wrapper">
-           <input type="number" v-model="inscriptionForm.quotas.age45" class="quota-input"/>
+           <input type="number" min="0" max="100" v-model="inscriptionForm.quotas.age45" @input="handleQuotaInput('age45')" class="quota-input"/>
            <span class="quota-symbol">%</span>
          </div>
        </div>
@@ -312,6 +312,28 @@ export default {
     
     // Função do Pai usada para verificar se o dia renderizado é literalmente "hoje" (pinta o número de negrito)
     isToday: { type: Function, required: true }
+  },
+  methods: {
+    handleQuotaInput(changedKey) {
+      const quotaKeys = ['ampla', 'pcd', 'negros', 'mulheres', 'age45'];
+      const quotas = this.inscriptionForm?.quotas;
+
+      if (!quotas || !quotaKeys.includes(changedKey)) {
+        return;
+      }
+
+      quotaKeys.forEach((key) => {
+        const numeric = Number(quotas[key]);
+        const safeValue = Number.isFinite(numeric) ? numeric : 0;
+        quotas[key] = Math.max(0, Math.min(100, safeValue));
+      });
+
+      const total = quotaKeys.reduce((sum, key) => sum + Number(quotas[key] || 0), 0);
+      if (total > 100) {
+        const overflow = total - 100;
+        quotas[changedKey] = Math.max(0, Number(quotas[changedKey] || 0) - overflow);
+      }
+    }
   }
 }
 </script>

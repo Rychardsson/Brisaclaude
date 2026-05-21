@@ -43,10 +43,10 @@ public class ProjectGroupModel {
     
     @ManyToOne
     @JoinColumn(name = "project_company_id")
-    private InstitutionModel projectCompany; // empresa/instituição (local onde o programa ocorre)
+    private InstitutionModel projectCompany; // empresa/instituição parceira (patrocinadora do grupo)
     
     @Column(name = "sponsor_company", nullable = false)
-    private String sponsorCompany; // empresa do grupo (patrocinadora) - texto livre (obrigatório)
+    private String sponsorCompany; // nome da empresa/instituição parceira selecionada
 
     @ManyToOne
     @JoinColumn(name = "leader_id")

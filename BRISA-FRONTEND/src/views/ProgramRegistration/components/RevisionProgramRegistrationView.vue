@@ -169,6 +169,7 @@
           <div class="quota-review-item"><span>Ampla concorrência</span><strong>{{ inscriptionForm.quotas.ampla }}%</strong></div>
           <div class="quota-review-item"><span>PCD / Neurodivergentes</span><strong>{{ inscriptionForm.quotas.pcd }}%</strong></div>
           <div class="quota-review-item"><span>Negros e pardos</span><strong>{{ inscriptionForm.quotas.negros }}%</strong></div>
+          <div class="quota-review-item"><span>Mulheres</span><strong>{{ inscriptionForm.quotas.mulheres }}%</strong></div>
           <div class="quota-review-item"><span>45+</span><strong>{{ inscriptionForm.quotas.age45 }}%</strong></div>
        </div>
     </div>
@@ -219,7 +220,7 @@
              <i class="fa-solid fa-floppy-disk"></i> Salvar Rascunho
           </button>
           <button class="btn-publish" @click="$emit('publish-program')" :disabled="progressPercentage !== 100" :style="progressPercentage !== 100 ? 'opacity: 0.5; cursor: not-allowed;' : ''">
-             <i class="fa-solid fa-paper-plane"></i> Publicar Edital
+             <i class="fa-solid fa-paper-plane"></i> Cadastrar programa
           </button>
        </div>
     </div>
@@ -320,7 +321,7 @@ export default {
       checkField(this.displayDates.inscEnd, 'Data de fim das inscrições não definida.', step3Errors);
       
       const q = this.inscriptionForm.quotas;
-      const totalQuotas = Number(q.ampla) + Number(q.pcd) + Number(q.negros) + Number(q.age45);
+      const totalQuotas = Number(q.ampla) + Number(q.pcd) + Number(q.negros) + Number(q.mulheres) + Number(q.age45);
       checkField(totalQuotas === 100, `Distribuição de cotas inválida (${totalQuotas}% em vez de 100%).`, step3Errors);
       
       if (step3Errors.length > 0) {

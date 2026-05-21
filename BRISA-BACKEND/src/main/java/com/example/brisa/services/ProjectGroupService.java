@@ -27,6 +27,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -52,18 +53,16 @@ public class ProjectGroupService {
         PeopleModel leader = peopleRepository.findById(requestDTO.getLeaderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Orientador não encontrado"));
 
-        // Validar empresa/instituição (opcional)
-        InstitutionModel company = null;
-        if (requestDTO.getProjectCompanyId() != null) {
-            company = institutionRepository.findById(requestDTO.getProjectCompanyId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Empresa/Instituição não encontrada"));
+        // Validar empresa/instituição parceira (obrigatória)
+        if (requestDTO.getProjectCompanyId() == null) {
+            throw new ValidationException(java.util.List.of("Empresa/Instituição parceira é obrigatória"));
         }
-        
-        // sponsorCompany is a free text field (required)
-        String sponsorCompany = requestDTO.getSponsorCompany();
-        if (sponsorCompany == null || sponsorCompany.trim().isEmpty()) {
-            throw new ValidationException(java.util.List.of("Empresa do Grupo é obrigatória"));
-        }
+        InstitutionModel company = institutionRepository.findById(requestDTO.getProjectCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa/Instituição não encontrada"));
+        validateProgramPartnerInstitution(classModel, company);
+
+        // sponsorCompany agora é derivada da empresa/instituição parceira selecionada
+        String sponsorCompany = company.getName();
 
         // Validar alunos (devem estar na etapa de imersão)
         List<PeopleModel> members = new java.util.ArrayList<>();
@@ -177,7 +176,9 @@ public class ProjectGroupService {
         if (requestDTO.getProjectCompanyId() != null) {
             InstitutionModel company = institutionRepository.findById(requestDTO.getProjectCompanyId())
                     .orElseThrow(() -> new ResourceNotFoundException("Empresa/Instituição não encontrada"));
+            validateProgramPartnerInstitution(group.getClassModel(), company);
             group.setProjectCompany(company);
+            group.setSponsorCompany(company.getName());
         }
 
         // Atualizar orientador
@@ -238,6 +239,7 @@ public class ProjectGroupService {
         dto.setDescription(group.getDescription());
         dto.setProjectCompanyName(group.getProjectCompany() != null ? group.getProjectCompany().getName() : null);
         dto.setProjectCompanyId(group.getProjectCompany() != null ? group.getProjectCompany().getId() : null);
+        dto.setSponsorCompany(group.getSponsorCompany());
         dto.setLeaderName(group.getLeader() != null ? group.getLeader().getName() : null);
         dto.setLeaderId(group.getLeader() != null ? group.getLeader().getId() : null);
         dto.setWeeklyMeetingDay(group.getWeeklyMeetingDay());
@@ -265,5 +267,26 @@ public class ProjectGroupService {
         dto.setMeetings(meetingDTOs);
 
         return dto;
+    }
+
+    private void validateProgramPartnerInstitution(ClassModel classModel, InstitutionModel institution) {
+        if (classModel == null || classModel.getProgram() == null) {
+            throw new ValidationException(java.util.List.of("Turma sem programa vinculado para validar empresa/instituição parceira."));
+        }
+
+        Set<Long> partnerIds = classModel.getProgram().getProgramInstitutions().stream()
+                .map(membership -> membership.getInstitution())
+                .filter(Objects::nonNull)
+                .map(InstitutionModel::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (partnerIds.isEmpty()) {
+            throw new ValidationException(java.util.List.of("O programa da turma não possui empresas/instituições parceiras cadastradas."));
+        }
+
+        if (institution == null || institution.getId() == null || !partnerIds.contains(institution.getId())) {
+            throw new ValidationException(java.util.List.of("A empresa/instituição selecionada não está cadastrada como parceira deste programa."));
+        }
     }
 }
