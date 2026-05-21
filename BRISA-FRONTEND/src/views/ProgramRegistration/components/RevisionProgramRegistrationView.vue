@@ -220,7 +220,7 @@
              <i class="fa-solid fa-floppy-disk"></i> Salvar Rascunho
           </button>
           <button class="btn-publish" @click="$emit('publish-program')" :disabled="progressPercentage !== 100" :style="progressPercentage !== 100 ? 'opacity: 0.5; cursor: not-allowed;' : ''">
-             <i class="fa-solid fa-paper-plane"></i> Cadastrar programa
+             <i class="fa-solid fa-paper-plane"></i> {{ isEditMode ? 'Atualizar programa' : 'Cadastrar programa' }}
           </button>
        </div>
     </div>
@@ -238,7 +238,8 @@ export default {
     nivelamentoForm: { type: Object, required: true },
     imersaoForm: { type: Object, required: true },
     displayDates: { type: Object, required: true },
-    currentStep: { type: Number, required: true }
+    currentStep: { type: Number, required: true },
+    isEditMode: { type: Boolean, default: false }
   },
   data() {
     return {

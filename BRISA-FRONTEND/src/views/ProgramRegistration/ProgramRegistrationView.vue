@@ -381,8 +381,11 @@
 
     <div class="header">
       <div class="header-left">
-        <h1>Cadastro de Programa</h1>
-        <p class="subtitle">Configure e publique novos editais</p>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <h1>{{ isEditMode ? 'Editar Programa' : 'Cadastro de Programa' }}</h1>
+          <span v-if="isEditMode" style="background-color: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">Modo Edição</span>
+        </div>
+        <p class="subtitle">{{ isEditMode ? 'Altere os dados do programa' : 'Configure e publique novos editais' }}</p>
       </div>
     </div>
 
@@ -526,6 +529,7 @@
           :nivelamentoForm="nivelamentoForm"
           :imersaoForm="imersaoForm" 
           :displayDates="displayDates"
+          :isEditMode="isEditMode"
           @go-to-step="goToStep"
           @save-draft="saveDraft"
           @publish-program="publishProgram"
@@ -622,6 +626,8 @@ export default {
       stepStatuses: ['pending', 'pending', 'pending', 'pending', 'pending', 'pending'], // Status de validação de cada etapa para pintar as bolinhas laterais ('pending', 'warning', 'completed')
       
       isRevisionValid: false, // Flag que controla se a aba 6 está 100% validada sem erros
+      isEditMode: false, // Flag que controla se estamos editando um programa existente
+      editingProgramId: null, // ID do programa sendo editado (se aplicável)
 
       // Textos exibidos nos botões do menu lateral esquerdo
       stepTitles: ['Dados do Programa', 'Estrutura das Etapas', 'Etapa 0 — Inscrição', 'Etapa 1 — Nivelamento', 'Etapa 2 — Imersão', 'Revisão Final'],
@@ -742,6 +748,15 @@ export default {
   // Lifecycle Hook: Executado assim que a tela termina de ser montada no navegador
   mounted() { 
     this.updateLastModifiedTime(); // Inicializa o relógio
+    
+    // Verificar se estamos em modo de edição
+    const programIdToEdit = this.$route.query.edit;
+    if (programIdToEdit) {
+      this.isEditMode = true;
+      this.editingProgramId = parseInt(programIdToEdit, 10);
+      this.loadProgramForEdit();
+      return; // Sai do fluxo normal de carregamento de rascunho
+    }
     
     // Tentativa de resgatar rascunhos anteriores salvos no cache (localStorage) do navegador
     const savedStep = localStorage.getItem('programDraftStep');
@@ -1252,7 +1267,7 @@ export default {
           return;
         }
 
-        // PASSO 1: Criar o programa no backend
+        // Dados comuns para ambos os casos (criar ou editar)
         const programData = {
           name: this.formData.programName.trim(),
           contractNumber: this.formData.batchName || this.formData.programName,
@@ -1263,12 +1278,22 @@ export default {
           evaluationCriteria: JSON.stringify(this.nivelamentoForm.grading)
         };
 
-        const programResponse = await this.programService.create(programData);
-        const programId = programResponse.id;
+        let programId;
         
-        console.log('Programa criado com ID:', programId);
+        if (this.isEditMode) {
+          // CASO 2: Editar programa existente
+          console.log('Atualizando programa com ID:', this.editingProgramId);
+          await this.programService.update(this.editingProgramId, programData);
+          programId = this.editingProgramId;
+          console.log('Programa atualizado com sucesso.');
+        } else {
+          // CASO 1: Criar novo programa
+          const programResponse = await this.programService.create(programData);
+          programId = programResponse.id;
+          console.log('Programa criado com ID:', programId);
+        }
 
-        // PASSO 2: Criar a classe/edital a partir do programa
+        // PASSO 2: Criar/atualizar a classe/edital a partir do programa
         const classData = {
           nomeTurma: this.formData.batchName || this.formData.programName,
           localidade: this.imersaoForm.local || this.formData.location || '',
@@ -1287,9 +1312,13 @@ export default {
           certificateIssueDate: this.formData.endDate
         };
 
-        const classResponse = await this.programService.createClassFromProgram(programId, classData);
-        
-        console.log('Edital (classe) criado com sucesso:', classResponse);
+        if (!this.isEditMode) {
+          // Só criar nova classe se estamos criando um novo programa
+          const classResponse = await this.programService.createClassFromProgram(programId, classData);
+          console.log('Edital (classe) criado com sucesso:', classResponse);
+        } else {
+          console.log('Em modo de edição - classe não foi criada novamente');
+        }
         
         this.executeRestartRegistration(); // Limpa o formulário após publicação
         this.showPublishSuccessModal = true;
@@ -1298,6 +1327,57 @@ export default {
         const errorMsg = error.response?.data?.message || error.message || 'Erro ao publicar o edital';
         alert('Erro ao publicar: ' + errorMsg);
       }
+    },
+
+    // Carrega os dados do programa para edição
+    async loadProgramForEdit() {
+      try {
+        const program = await this.programService.getById(this.editingProgramId);
+        console.log('Programa carregado para edição:', program);
+        
+        // Mapear dados do programa para as estruturas de formulário
+        this.mapProgramToFormData(program);
+        
+        // Marcar como rascunho não salvo para indicar que está carregado
+        this.isDraftSaved = true;
+        this.currentStep = 1;
+      } catch (error) {
+        console.error('Erro ao carregar programa para edição:', error);
+        alert('Erro ao carregar programa: ' + (error.response?.data?.message || error.message));
+        // Redirecionar para programas em caso de erro
+        this.$router.push('/programs');
+      }
+    },
+
+    // Mapeia dados do programa da API para as estruturas de formulário da tela
+    mapProgramToFormData(program) {
+      // Aba 1 - Dados gerais do programa
+      this.formData.programName = program.name || '';
+      this.formData.batchName = program.contractNumber || '';
+      this.formData.objective = program.targetAudience || '';
+      this.formData.startDate = program.startDate || '';
+      this.formData.endDate = program.endDate || '';
+      
+      // Tentar parsear critérios de quota e avaliação
+      if (program.quotaCriteria) {
+        try {
+          this.inscriptionForm.quotas = JSON.parse(program.quotaCriteria);
+        } catch (e) {
+          console.warn('Não foi possível parsear quotaCriteria');
+        }
+      }
+      
+      if (program.evaluationCriteria) {
+        try {
+          this.nivelamentoForm.grading = JSON.parse(program.evaluationCriteria);
+        } catch (e) {
+          console.warn('Não foi possível parsear evaluationCriteria');
+        }
+      }
+      
+      // Atualizar datas de display
+      this.displayDates.startDate = this.formatDateDisplay(program.startDate);
+      this.displayDates.endDate = this.formatDateDisplay(program.endDate);
     }
   }
 };
