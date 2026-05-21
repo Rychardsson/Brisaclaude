@@ -260,8 +260,8 @@
             {{ importing ? 'Enviando...' : 'Enviar' }}
           </button>
         </div>
-        <div v-if="importError" class="alert alert-error">
-          <button @click="importError = null" class="btn-close-alert">×</button>
+        <div v-if="importError || (rowErrors && rowErrors.length > 0)" class="alert alert-error">
+          <button @click="importError = null; rowErrors = []" class="btn-close-alert">×</button>
           <div class="alert-scrollable">
             <div class="alert-content">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -269,7 +269,17 @@
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
-              <div class="alert-message">{{ importError }}</div>
+              <div class="alert-message">
+                <div v-if="importError">{{ importError }}</div>
+                <div v-if="rowErrors && rowErrors.length > 0" style="margin-top:8px;">
+                  <strong>Erros no arquivo (linhas não importadas):</strong>
+                  <ul style="margin-top:6px;">
+                    <li v-for="(err, index) in rowErrors" :key="index">
+                      Linha {{ err.row }}: <span v-for="(m,mi) in err.messages" :key="mi">{{ m }}<span v-if="mi < err.messages.length -1">; </span></span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -390,6 +400,7 @@ export default {
     const importSuccessMessage = ref('');
     const importedPeopleNames = ref([]);
     const duplicatePeopleNames = ref([]);
+    const rowErrors = ref([]);
     const selectedFile = ref(null);
     const fileInput = ref(null);
 
@@ -522,29 +533,54 @@ export default {
         formData.append('file', selectedFile.value);
         
         const response = await stageService.importCandidates(stageId.value, formData);
-        
-        // Monta mensagem de sucesso com detalhes
+
+        // Registra erros por linha, se houver
+        rowErrors.value = response.rowErrors || [];
+
+        // Reset previous state
+        importError.value = null;
+        importSuccess.value = false;
+        importSuccessMessage.value = '';
+        importedPeopleNames.value = [];
+        duplicatePeopleNames.value = [];
+
+        // Monta mensagem de sucesso com detalhes (apenas para itens importados)
         let successMessage = `${response.successfullyInserted} candidato(s) importado(s) com sucesso!`;
-        
+
         if (response.newPeopleCreated > 0) {
           successMessage += ` ${response.newPeopleCreated} pessoa(s) nova(s) inserida(s) no sistema.`;
           importedPeopleNames.value = response.createdPeople || [];
         }
-        
+
         if (response.alreadyInStage > 0) {
           successMessage += ` ${response.alreadyInStage} já estava(m) nesta etapa.`;
           duplicatePeopleNames.value = response.duplicateCandidates || [];
         }
-        
-        importSuccess.value = true;
-        importSuccessMessage.value = successMessage;
+
+        if (response.successfullyInserted > 0) {
+          importSuccess.value = true;
+          importSuccessMessage.value = successMessage;
+        }
+
+        // Se houver erros por linha, converte para erro legível e armazena em importError (mantendo detalhes em rowErrors)
+        if (rowErrors.value.length > 0) {
+          importError.value = rowErrors.value
+            .map(err => `Linha ${err.row}: ${err.messages.join('; ')}`)
+            .join(' | ');
+        } else {
+          importError.value = null;
+        }
 
         // Recarrega a lista de candidatos
         await loadStageDetails();
 
-        // If opened as combined modal, close it so the header button appears
-        if (showAddCandidatesModal.value) {
-          closeAddCandidatesModal();
+        // Se houver erros por linha, mantem o modal aberto para correção; caso contrário fecha-o
+        if (rowErrors.value.length === 0) {
+          if (showAddCandidatesModal.value) {
+            closeAddCandidatesModal();
+          } else {
+            closeImportModal();
+          }
         }
       } catch (err) {
         importError.value = 'Erro ao importar arquivo: ' + (err.response?.data?.message || err.message);
@@ -845,6 +881,7 @@ export default {
       importSuccessMessage,
       importedPeopleNames,
       duplicatePeopleNames,
+      rowErrors,
       selectedFile,
       fileInput,
       showAddCoursesModal,

@@ -1072,7 +1072,7 @@
 
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="closeIndividualRegistration">Cancelar</button>
-            <button type="button" class="btn-primary" :disabled="registeringCandidate" @click="registerCandidateIndividually">
+            <button type="button" class="btn-primary" :disabled="registeringCandidate || !canRegisterIndividually" @click="registerCandidateIndividually">
               {{ registeringCandidate ? 'Cadastrando...' : 'Cadastrar aluno' }}
             </button>
           </div>
@@ -3033,6 +3033,16 @@ export default {
       return stage?.id || null;
     });
 
+    const newCandidateCpfDigits = computed(() => (newCandidateForm.value.cpf || '').replace(/\D/g, ''));
+
+    const canRegisterIndividually = computed(() => (
+      !registeringCandidate.value
+      && newCandidateForm.value.name
+      && newCandidateForm.value.birthDate
+      && (newCandidateCpfDigits.value.length === 11)
+      && newCandidateForm.value.status
+    ));
+
     const registerCandidateIndividually = async () => {
       registeringCandidate.value = true;
       registrationError.value = '';
@@ -3066,8 +3076,12 @@ export default {
 
         await Promise.all([loadClassDetails(), loadClassPeople(), loadSelectionProcessContext()]);
         closeIndividualRegistration();
-      } catch (error) {
-        registrationError.value = error?.response?.data?.message || error.message || 'Erro ao cadastrar aluno.';
+      } catch (err) {
+        if (err?.response?.data?.details && Array.isArray(err.response.data.details) && err.response.data.details.length) {
+          registrationError.value = err.response.data.details.join(' ');
+        } else {
+          registrationError.value = err?.response?.data?.message || err.message || 'Erro ao cadastrar aluno.';
+        }
       } finally {
         registeringCandidate.value = false;
       }

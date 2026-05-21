@@ -14,4 +14,5 @@ public class CandidateImportDTO {
     private String cpf;
     private StageStatus status;
     private String notes;
+    private int row; // número da linha no arquivo Excel (1-based)
 }

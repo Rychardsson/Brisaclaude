@@ -32,6 +32,7 @@ public class StageService {
     private final StageCandidateRepository stageCandidateRepository;
     private final ClassRepository classRepository;
     private final PeopleRepository peopleRepository;
+    private final PeopleIntegrationService peopleIntegrationService;
 
     public List<StageResponseDTO> findAll() {
         return stageRepository.findAll().stream()
@@ -227,27 +228,28 @@ public class StageService {
                 CandidateImportDTO candidate = new CandidateImportDTO();
 
                 // Coluna A (0): Nome
-                candidate.setName(getCellValueAsString(row.getCell(0)));
+                    candidate.setRow(i + 1);
+                    candidate.setName(getCellValueAsString(row.getCell(0)));
 
-                // Coluna B (1): Email
-                candidate.setEmail(getCellValueAsString(row.getCell(1)));
+                    // Coluna B (1): Email
+                    candidate.setEmail(getCellValueAsString(row.getCell(1)));
 
-                // Coluna C (2): CPF (opcional)
-                candidate.setCpf(getCellValueAsString(row.getCell(2)));
+                    // Coluna C (2): CPF (opcional)
+                    candidate.setCpf(getCellValueAsString(row.getCell(2)));
 
-                // Coluna D (3): Status (opcional, padrão APROVADO)
-                String statusStr = getCellValueAsString(row.getCell(3));
-                candidate.setStatus(parseStatus(statusStr));
+                    // Coluna D (3): Status (opcional, padrão APROVADO)
+                    String statusStr = getCellValueAsString(row.getCell(3));
+                    candidate.setStatus(parseStatus(statusStr));
 
-                // Coluna E (4): Observações (opcional)
-                candidate.setNotes(getCellValueAsString(row.getCell(4)));
+                    // Coluna E (4): Observações (opcional)
+                    candidate.setNotes(getCellValueAsString(row.getCell(4)));
 
-                // Adiciona apenas se tiver nome e email
-                if (candidate.getName() != null && !candidate.getName().isEmpty()
-                        && candidate.getEmail() != null && !candidate.getEmail().isEmpty()) {
-                    candidatesList.add(candidate);
+                    // Adiciona apenas se tiver nome e email
+                    if (candidate.getName() != null && !candidate.getName().isEmpty()
+                            && candidate.getEmail() != null && !candidate.getEmail().isEmpty()) {
+                        candidatesList.add(candidate);
+                    }
                 }
-            }
         }
 
         return candidatesList;
@@ -293,6 +295,7 @@ public class StageService {
         List<String> createdPeople = new ArrayList<>();
         int successfullyInserted = 0;
         int newPeopleCreated = 0;
+        List<CandidateRowErrorDTO> rowErrors = new ArrayList<>();
 
         // Extrai todos os emails de uma vez
         List<String> allEmails = candidatesList.stream()
@@ -334,17 +337,34 @@ public class StageService {
             // Verifica se já é candidato nesta etapa
             if (existingPeopleIds.contains(person.getId())) {
                 duplicateCandidates.add(person.getName());
-            } else {
-                // Cria o candidato
-                StageCandidateModel candidate = new StageCandidateModel();
-                candidate.setStage(stage);
-                candidate.setPeople(person);
-                candidate.setStatus(candidateDTO.getStatus() != null ? candidateDTO.getStatus() : StageStatus.APROVADO);
-                candidate.setNotes(candidateDTO.getNotes());
-
-                candidatesToInsert.add(candidate);
-                existingPeopleIds.add(person.getId()); // Evita duplicatas no próprio lote
+                continue;
             }
+
+            // Checa conflito de nivelamento em outras turmas
+            try {
+                List<String> alerts = peopleIntegrationService.detectActiveConflicts(person.getId(), stage.getClassModel().getId());
+                boolean hasNivelamentoConflict = alerts.stream().anyMatch(a -> a != null && a.toLowerCase().contains("nivelament"));
+                if (hasNivelamentoConflict) {
+                    // Registra erro por linha e não cria o candidato
+                    int rowNumber = candidateDTO.getRow();
+                    rowErrors.add(new CandidateRowErrorDTO(rowNumber, alerts));
+                    continue;
+                }
+            } catch (Exception ex) {
+                int rowNumber = candidateDTO.getRow();
+                rowErrors.add(new CandidateRowErrorDTO(rowNumber, List.of("Erro ao validar conflito: " + ex.getMessage())));
+                continue;
+            }
+
+            // Cria o candidato
+            StageCandidateModel candidate = new StageCandidateModel();
+            candidate.setStage(stage);
+            candidate.setPeople(person);
+            candidate.setStatus(candidateDTO.getStatus() != null ? candidateDTO.getStatus() : StageStatus.APROVADO);
+            candidate.setNotes(candidateDTO.getNotes());
+
+            candidatesToInsert.add(candidate);
+            existingPeopleIds.add(person.getId()); // Evita duplicatas no próprio lote
         }
 
         // Salva todos os candidatos de uma vez
@@ -361,6 +381,7 @@ public class StageService {
         response.setNewPeopleCreated(newPeopleCreated);
         response.setDuplicateCandidates(duplicateCandidates);
         response.setCreatedPeople(createdPeople);
+        response.setRowErrors(rowErrors);
 
         return response;
     }

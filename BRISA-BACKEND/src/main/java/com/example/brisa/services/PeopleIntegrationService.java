@@ -295,7 +295,9 @@ public class PeopleIntegrationService {
         enrollment.setPeople(person);
         enrollment.setClassModel(classModel);
         enrollment.setAcademicRole(alunoRole);
-        enrollment.setEnrollmentDate(LocalDate.now());        enrollment.setStatus(normalizeEnrollmentStatus(request.getStatusInicial()));        enrollmentRepository.save(enrollment);
+        enrollment.setEnrollmentDate(LocalDate.now());
+        enrollment.setStatus(normalizeEnrollmentStatus(request.getStatusInicial()));
+        enrollmentRepository.save(enrollment);
 
         StageCandidateModel candidate = new StageCandidateModel();
         candidate.setPeople(person);
@@ -304,6 +306,14 @@ public class PeopleIntegrationService {
         stageCandidateRepository.save(candidate);
 
         Long personId = person.getId();
+
+        List<String> alerts = detectActiveConflicts(personId, classModel.getId());
+        // Bloquear se houver conflito de nivelamento
+        boolean hasNivelamentoConflict = alerts.stream().anyMatch(a -> normalize(a).contains("nivelament"));
+        if (hasNivelamentoConflict) {
+            throw new ValidationException(alerts);
+        }
+
         List<EnrollmentModel> personEnrollments = enrollmentRepository.findAllWithRelations().stream()
                 .filter(item -> Objects.equals(item.getPeople().getId(), personId))
                 .toList();
@@ -315,8 +325,8 @@ public class PeopleIntegrationService {
                 personId,
                 false,
                 true,
-                false,
-                List.of(),
+                !alerts.isEmpty(),
+                alerts,
                 buildPeopleListItem(person, personEnrollments, personCandidates)
         );
     }
@@ -401,6 +411,12 @@ public class PeopleIntegrationService {
         Long personId = person.getId();
         List<String> alerts = detectActiveConflicts(personId, classModel.getId());
 
+        // Se houver conflito de nivelamento, bloquear a operacao e retornar erro de validacao
+        boolean hasNivelamentoConflict = alerts.stream().anyMatch(a -> normalize(a).contains("nivelament"));
+        if (hasNivelamentoConflict) {
+            throw new ValidationException(alerts);
+        }
+
         List<EnrollmentModel> personEnrollments = enrollmentRepository.findAllWithRelations().stream()
                 .filter(item -> Objects.equals(item.getPeople().getId(), personId))
                 .toList();
@@ -467,7 +483,7 @@ public class PeopleIntegrationService {
         }
     }
 
-    private List<String> detectActiveConflicts(Long peopleId, Long targetClassId) {
+    public List<String> detectActiveConflicts(Long peopleId, Long targetClassId) {
         List<EnrollmentModel> enrollments = enrollmentRepository.findAllWithRelations().stream()
                 .filter(item -> Objects.equals(item.getPeople().getId(), peopleId))
                 .filter(item -> !Objects.equals(item.getClassModel().getId(), targetClassId))
@@ -485,6 +501,27 @@ public class PeopleIntegrationService {
 
             if (overlaps(targetClass, enrollment.getClassModel())) {
                 alerts.add("Conflito: aluno ja vinculado a programa simultaneo em andamento.");
+                return alerts;
+            }
+        }
+
+        // Verifica se já existe candidato em etapa de nivelamento em outra turma que se sobrepõe a esta
+        List<StageCandidateModel> otherNivelamentoCandidates = stageCandidateRepository.findAllWithRelations().stream()
+                .filter(c -> Objects.equals(c.getPeople().getId(), peopleId))
+                .filter(c -> c.getStage() != null && c.getStage().getClassModel() != null)
+                .filter(c -> !Objects.equals(c.getStage().getClassModel().getId(), targetClassId))
+                .filter(c -> normalize(c.getStage().getName()).contains("nivelament"))
+                .toList();
+
+        for (StageCandidateModel candidate : otherNivelamentoCandidates) {
+            // considera apenas candidatos que não foram reprovados
+            if (candidate.getStatus() == StageStatus.REPROVADO) {
+                continue;
+            }
+            ClassModel otherClass = candidate.getStage().getClassModel();
+            if (overlaps(targetClass, otherClass)) {
+                String code = otherClass.getCode() != null ? otherClass.getCode() : String.valueOf(otherClass.getId());
+                alerts.add(String.format("Erro: pessoa ja esta em nivelamento na turma '%s'. Nao e permitido participar de dois nivelamentos simultaneos.", code));
                 return alerts;
             }
         }
