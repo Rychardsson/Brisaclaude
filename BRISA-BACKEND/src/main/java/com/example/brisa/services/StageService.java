@@ -1,6 +1,15 @@
 package com.example.brisa.services;
 
-import com.example.brisa.dtos.stage.*;
+import com.example.brisa.dtos.stage.ApprovedImportResponseDTO;
+import com.example.brisa.dtos.stage.CandidateImportDTO;
+import com.example.brisa.dtos.stage.CandidateImportResponseDTO;
+import com.example.brisa.dtos.stage.CandidateRowErrorDTO;
+import com.example.brisa.dtos.stage.StageCandidateRequestDTO;
+import com.example.brisa.dtos.stage.StageCandidateResponseDTO;
+import com.example.brisa.dtos.stage.StageRequestDTO;
+import com.example.brisa.dtos.stage.StageResponseDTO;
+import com.example.brisa.dtos.stage.WaitlistConvokeRequestDTO;
+import com.example.brisa.dtos.stage.WaitlistConvokeResponseDTO;
 import com.example.brisa.enums.StageStatus;
 import com.example.brisa.exceptions.ConflictException;
 import com.example.brisa.exceptions.ResourceNotFoundException;
@@ -14,25 +23,41 @@ import com.example.brisa.repositories.PeopleRepository;
 import com.example.brisa.repositories.StageCandidateRepository;
 import com.example.brisa.repositories.StageRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class StageService {
-    
+
+    private static final DateTimeFormatter BRAZILIAN_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private final StageRepository stageRepository;
     private final StageCandidateRepository stageCandidateRepository;
     private final ClassRepository classRepository;
     private final PeopleRepository peopleRepository;
     private final PeopleIntegrationService peopleIntegrationService;
+    private final ExcelImportHelper excelImportHelper;
+    private final EmailService emailService;
 
     public List<StageResponseDTO> findAll() {
         return stageRepository.findAll().stream()
@@ -55,13 +80,13 @@ public class StageService {
     public Map<Long, Long> getCandidatesCountByClassId(Long classId) {
         List<Object[]> results = stageCandidateRepository.countCandidatesByClassId(classId);
         Map<Long, Long> countsMap = new HashMap<>();
-        
+
         for (Object[] result : results) {
             Long stageId = ((Number) result[0]).longValue();
             Long count = ((Number) result[1]).longValue();
             countsMap.put(stageId, count);
         }
-        
+
         return countsMap;
     }
 
@@ -114,8 +139,6 @@ public class StageService {
                 .orElseThrow(() -> new ResourceNotFoundException("Stage not found with id: " + id));
         stageRepository.delete(stage);
     }
-
-    // Stage Candidate Methods
 
     public List<StageCandidateResponseDTO> findAllCandidates() {
         return stageCandidateRepository.findAll().stream()
@@ -199,64 +222,194 @@ public class StageService {
         stageCandidateRepository.delete(candidate);
     }
 
-    // Import Candidates from Excel
-
     @Transactional
     public CandidateImportResponseDTO importCandidatesFromExcel(Long stageId, MultipartFile file) throws IOException {
-        // Valida se a etapa existe
         StageModel stage = stageRepository.findById(stageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Stage not found with id: " + stageId));
 
-        // Parse do arquivo Excel
         List<CandidateImportDTO> candidatesList = parseExcelFile(file);
-
-        // Importa os candidatos em lotes
         return importCandidatesInBatches(stage, candidatesList);
+    }
+
+    @Transactional
+    public ApprovedImportResponseDTO importApprovedCandidatesFromExcel(Long stageId, MultipartFile file) throws IOException {
+        StageModel stage = stageRepository.findById(stageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Stage not found with id: " + stageId));
+
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            if (sheet == null || sheet.getPhysicalNumberOfRows() == 0) {
+                throw new ValidationException(List.of("A planilha de aprovados esta vazia."));
+            }
+
+            Map<String, Integer> headers = excelImportHelper.mapHeaders(sheet.getRow(0));
+            Integer cpfIndex = excelImportHelper.findColumn(headers, List.of("cpf", "cpf_aluno"), 0);
+            Integer statusIndex = excelImportHelper.findColumn(headers, List.of("status", "situacao", "situacao final"), 1);
+            Integer nameIndex = excelImportHelper.findColumn(headers, List.of("nome", "nome completo", "name"), 2);
+            Integer notesIndex = excelImportHelper.findColumn(headers, List.of("observacoes", "observacoes internas", "notes"), null);
+
+            List<StageCandidateModel> existingCandidates = stageCandidateRepository.findByStageId(stageId);
+            Map<String, StageCandidateModel> candidatesByCpf = existingCandidates.stream()
+                    .filter(candidate -> candidate.getPeople() != null && candidate.getPeople().getCpf() != null)
+                    .collect(Collectors.toMap(
+                            candidate -> normalizeDocument(candidate.getPeople().getCpf()),
+                            candidate -> candidate,
+                            (left, right) -> left,
+                            LinkedHashMap::new
+                    ));
+            Map<String, StageCandidateModel> candidatesByName = existingCandidates.stream()
+                    .filter(candidate -> candidate.getPeople() != null && candidate.getPeople().getName() != null)
+                    .collect(Collectors.toMap(
+                            candidate -> normalizeText(candidate.getPeople().getName()),
+                            candidate -> candidate,
+                            (left, right) -> left,
+                            LinkedHashMap::new
+                    ));
+
+            Set<Long> processedCandidateIds = new HashSet<>();
+            List<String> warnings = new ArrayList<>();
+            int totalProcessed = 0;
+            int approvedCount = 0;
+            int waitlistCount = 0;
+            int rejectedCount = 0;
+            int conflictsCount = 0;
+
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+                if (excelImportHelper.isRowEmpty(row)) {
+                    continue;
+                }
+
+                totalProcessed++;
+                String cpf = excelImportHelper.getString(row, cpfIndex);
+                String name = excelImportHelper.getString(row, nameIndex);
+                String statusRaw = excelImportHelper.getString(row, statusIndex);
+                String notes = excelImportHelper.getString(row, notesIndex);
+
+                StageCandidateModel candidate = resolveCandidate(candidatesByCpf, candidatesByName, cpf, name);
+                if (candidate == null) {
+                    warnings.add("Linha " + (rowIndex + 1) + ": candidato nao encontrado na etapa.");
+                    continue;
+                }
+
+                StageStatus targetStatus = parseStatus(statusRaw);
+                if (targetStatus == StageStatus.APROVADO || targetStatus == StageStatus.LISTA_ESPERA) {
+                    List<String> conflicts = detectActiveConflicts(candidate, stage);
+                    if (!conflicts.isEmpty()) {
+                        targetStatus = StageStatus.EM_ANALISE;
+                        conflictsCount++;
+                        warnings.add("Linha " + (rowIndex + 1) + ": " + candidate.getPeople().getName() + " possui conflito com outro programa vigente.");
+                    }
+                }
+
+                candidate.setStatus(targetStatus);
+                if (notes != null && !notes.isBlank()) {
+                    candidate.setNotes(notes);
+                }
+                stageCandidateRepository.save(candidate);
+                processedCandidateIds.add(candidate.getId());
+
+                switch (targetStatus) {
+                    case APROVADO -> approvedCount++;
+                    case LISTA_ESPERA -> waitlistCount++;
+                    case REPROVADO -> rejectedCount++;
+                    default -> {
+                    }
+                }
+            }
+
+            for (StageCandidateModel candidate : existingCandidates) {
+                if (processedCandidateIds.contains(candidate.getId())) {
+                    continue;
+                }
+                candidate.setStatus(StageStatus.REPROVADO);
+                stageCandidateRepository.save(candidate);
+                rejectedCount++;
+            }
+
+            return new ApprovedImportResponseDTO(
+                    totalProcessed,
+                    approvedCount,
+                    waitlistCount,
+                    rejectedCount,
+                    conflictsCount,
+                    warnings
+            );
+        }
+    }
+
+    @Transactional
+    public WaitlistConvokeResponseDTO convokeWaitlist(Long stageId, WaitlistConvokeRequestDTO request) {
+        StageModel stage = stageRepository.findById(stageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Stage not found with id: " + stageId));
+
+        int requestedCount = request.getConvokeCount() == null ? 0 : request.getConvokeCount();
+        if (requestedCount <= 0) {
+            throw new ValidationException(List.of("Informe uma quantidade valida para convocacao."));
+        }
+
+        LocalDate deadline = parseDeadline(request.getDeadline());
+        if (request.getDeadline() != null && deadline == null) {
+            throw new ValidationException(List.of("Prazo para confirmacao invalido."));
+        }
+
+        List<StageCandidateModel> waitlistCandidates = stageCandidateRepository.findByStageId(stageId).stream()
+                .filter(candidate -> candidate.getStatus() == StageStatus.LISTA_ESPERA)
+                .sorted(Comparator
+                        .comparing((StageCandidateModel candidate) -> candidate.getCreatedAt(), Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(candidate -> candidate.getPeople() != null ? candidate.getPeople().getName() : "", String.CASE_INSENSITIVE_ORDER))
+                .toList();
+
+        List<StageCandidateModel> selectedCandidates = waitlistCandidates.stream()
+                .limit(requestedCount)
+                .toList();
+
+        List<String> candidateNames = new ArrayList<>();
+        for (StageCandidateModel candidate : selectedCandidates) {
+            candidate.setStatus(StageStatus.EM_ANALISE);
+            candidate.setNotes(buildWaitlistNotes(candidate.getNotes(), deadline, request.getNotes()));
+            stageCandidateRepository.save(candidate);
+            candidateNames.add(candidate.getPeople() != null ? candidate.getPeople().getName() : "Candidato");
+            sendWaitlistNotification(stage, candidate, deadline, request.getNotes());
+        }
+
+        return new WaitlistConvokeResponseDTO(requestedCount, selectedCandidates.size(), candidateNames);
     }
 
     private List<CandidateImportDTO> parseExcelFile(MultipartFile file) throws IOException {
         List<CandidateImportDTO> candidatesList = new ArrayList<>();
 
-        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
 
-            // Começa da linha 1 (pula o cabeçalho na linha 0)
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
-                if (row == null) continue;
+                if (row == null) {
+                    continue;
+                }
 
                 CandidateImportDTO candidate = new CandidateImportDTO();
+                candidate.setRow(i + 1);
+                candidate.setName(getCellValueAsString(row.getCell(0)));
+                candidate.setEmail(getCellValueAsString(row.getCell(1)));
+                candidate.setCpf(getCellValueAsString(row.getCell(2)));
+                candidate.setStatus(parseStatus(getCellValueAsString(row.getCell(3))));
+                candidate.setNotes(getCellValueAsString(row.getCell(4)));
 
-                // Coluna A (0): Nome
-                    candidate.setRow(i + 1);
-                    candidate.setName(getCellValueAsString(row.getCell(0)));
-
-                    // Coluna B (1): Email
-                    candidate.setEmail(getCellValueAsString(row.getCell(1)));
-
-                    // Coluna C (2): CPF (opcional)
-                    candidate.setCpf(getCellValueAsString(row.getCell(2)));
-
-                    // Coluna D (3): Status (opcional, padrão APROVADO)
-                    String statusStr = getCellValueAsString(row.getCell(3));
-                    candidate.setStatus(parseStatus(statusStr));
-
-                    // Coluna E (4): Observações (opcional)
-                    candidate.setNotes(getCellValueAsString(row.getCell(4)));
-
-                    // Adiciona apenas se tiver nome e email
-                    if (candidate.getName() != null && !candidate.getName().isEmpty()
-                            && candidate.getEmail() != null && !candidate.getEmail().isEmpty()) {
-                        candidatesList.add(candidate);
-                    }
+                if (candidate.getName() != null && !candidate.getName().isEmpty()
+                        && candidate.getEmail() != null && !candidate.getEmail().isEmpty()) {
+                    candidatesList.add(candidate);
                 }
+            }
         }
 
         return candidatesList;
     }
 
     private String getCellValueAsString(Cell cell) {
-        if (cell == null) return null;
+        if (cell == null) {
+            return null;
+        }
 
         return switch (cell.getCellType()) {
             case STRING -> cell.getStringCellValue().trim();
@@ -269,23 +422,27 @@ public class StageService {
 
     private StageStatus parseStatus(String statusStr) {
         if (statusStr == null || statusStr.trim().isEmpty()) {
-            return StageStatus.APROVADO; // Padrão
+            return StageStatus.APROVADO;
         }
 
-        String normalized = statusStr.trim().toUpperCase();
-        
-        // Aceita variações em português
-        if (normalized.contains("APROV")) {
+        String normalized = normalizeText(statusStr);
+        if (normalized.contains("espera")) {
+            return StageStatus.LISTA_ESPERA;
+        }
+        if (normalized.contains("analise")) {
+            return StageStatus.EM_ANALISE;
+        }
+        if (normalized.contains("aprov")) {
             return StageStatus.APROVADO;
-        } else if (normalized.contains("REPROV")) {
+        }
+        if (normalized.contains("reprov") || normalized.contains("naosele") || normalized.contains("nao selecion") || normalized.contains("desclass")) {
             return StageStatus.REPROVADO;
         }
 
-        // Tenta converter diretamente
         try {
-            return StageStatus.valueOf(normalized);
+            return StageStatus.valueOf(statusStr.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            return StageStatus.APROVADO; // Padrão se não reconhecer
+            return StageStatus.APROVADO;
         }
     }
 
@@ -297,31 +454,26 @@ public class StageService {
         int newPeopleCreated = 0;
         List<CandidateRowErrorDTO> rowErrors = new ArrayList<>();
 
-        // Extrai todos os emails de uma vez
         List<String> allEmails = candidatesList.stream()
                 .map(CandidateImportDTO::getEmail)
                 .filter(email -> email != null && !email.isEmpty())
                 .distinct()
                 .toList();
 
-        // Busca todas as pessoas existentes por email
         List<PeopleModel> existingPeople = peopleRepository.findAllByEmailIn(allEmails);
         Map<String, PeopleModel> peopleByEmail = existingPeople.stream()
-                .collect(Collectors.toMap(PeopleModel::getEmail, p -> p));
+                .collect(Collectors.toMap(PeopleModel::getEmail, person -> person));
 
-        // Busca todos os candidatos já existentes nesta etapa
         List<StageCandidateModel> existingCandidates = stageCandidateRepository.findByStageId(stage.getId());
         Set<Long> existingPeopleIds = existingCandidates.stream()
-                .map(c -> c.getPeople().getId())
+                .map(candidate -> candidate.getPeople().getId())
                 .collect(Collectors.toSet());
 
-        // Processa cada candidato
         List<StageCandidateModel> candidatesToInsert = new ArrayList<>();
 
         for (CandidateImportDTO candidateDTO : candidatesList) {
             PeopleModel person = peopleByEmail.get(candidateDTO.getEmail());
 
-            // Se a pessoa não existe, cria uma nova
             if (person == null) {
                 person = new PeopleModel();
                 person.setName(candidateDTO.getName());
@@ -334,29 +486,23 @@ public class StageService {
                 newPeopleCreated++;
             }
 
-            // Verifica se já é candidato nesta etapa
             if (existingPeopleIds.contains(person.getId())) {
                 duplicateCandidates.add(person.getName());
                 continue;
             }
 
-            // Checa conflito de nivelamento em outras turmas
             try {
                 List<String> alerts = peopleIntegrationService.detectActiveConflicts(person.getId(), stage.getClassModel().getId());
-                boolean hasNivelamentoConflict = alerts.stream().anyMatch(a -> a != null && a.toLowerCase().contains("nivelament"));
+                boolean hasNivelamentoConflict = alerts.stream().anyMatch(alert -> alert != null && alert.toLowerCase().contains("nivelament"));
                 if (hasNivelamentoConflict) {
-                    // Registra erro por linha e não cria o candidato
-                    int rowNumber = candidateDTO.getRow();
-                    rowErrors.add(new CandidateRowErrorDTO(rowNumber, alerts));
+                    rowErrors.add(new CandidateRowErrorDTO(candidateDTO.getRow(), alerts));
                     continue;
                 }
             } catch (Exception ex) {
-                int rowNumber = candidateDTO.getRow();
-                rowErrors.add(new CandidateRowErrorDTO(rowNumber, List.of("Erro ao validar conflito: " + ex.getMessage())));
+                rowErrors.add(new CandidateRowErrorDTO(candidateDTO.getRow(), List.of("Erro ao validar conflito: " + ex.getMessage())));
                 continue;
             }
 
-            // Cria o candidato
             StageCandidateModel candidate = new StageCandidateModel();
             candidate.setStage(stage);
             candidate.setPeople(person);
@@ -364,16 +510,14 @@ public class StageService {
             candidate.setNotes(candidateDTO.getNotes());
 
             candidatesToInsert.add(candidate);
-            existingPeopleIds.add(person.getId()); // Evita duplicatas no próprio lote
+            existingPeopleIds.add(person.getId());
         }
 
-        // Salva todos os candidatos de uma vez
         if (!candidatesToInsert.isEmpty()) {
             stageCandidateRepository.saveAll(candidatesToInsert);
             successfullyInserted = candidatesToInsert.size();
         }
 
-        // Monta a resposta
         CandidateImportResponseDTO response = new CandidateImportResponseDTO();
         response.setTotalProcessed(candidatesList.size());
         response.setSuccessfullyInserted(successfullyInserted);
@@ -384,5 +528,115 @@ public class StageService {
         response.setRowErrors(rowErrors);
 
         return response;
+    }
+
+    private StageCandidateModel resolveCandidate(
+            Map<String, StageCandidateModel> candidatesByCpf,
+            Map<String, StageCandidateModel> candidatesByName,
+            String cpf,
+            String name
+    ) {
+        String normalizedCpf = normalizeDocument(cpf);
+        if (!normalizedCpf.isBlank() && candidatesByCpf.containsKey(normalizedCpf)) {
+            return candidatesByCpf.get(normalizedCpf);
+        }
+
+        String normalizedName = normalizeText(name);
+        if (!normalizedName.isBlank() && candidatesByName.containsKey(normalizedName)) {
+            return candidatesByName.get(normalizedName);
+        }
+
+        return null;
+    }
+
+    private List<String> detectActiveConflicts(StageCandidateModel candidate, StageModel stage) {
+        if (candidate == null || candidate.getPeople() == null || candidate.getPeople().getId() == null) {
+            return List.of();
+        }
+
+        try {
+            return peopleIntegrationService.detectActiveConflicts(candidate.getPeople().getId(), stage.getClassModel().getId());
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    private LocalDate parseDeadline(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        try {
+            if (trimmed.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                return LocalDate.parse(trimmed);
+            }
+            if (trimmed.matches("\\d{2}/\\d{2}/\\d{4}")) {
+                return LocalDate.parse(trimmed, BRAZILIAN_DATE_FORMATTER);
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private String buildWaitlistNotes(String previousNotes, LocalDate deadline, String notes) {
+        StringBuilder builder = new StringBuilder();
+        if (previousNotes != null && !previousNotes.isBlank()) {
+            builder.append(previousNotes.trim());
+        }
+
+        if (builder.length() > 0) {
+            builder.append(" | ");
+        }
+
+        builder.append("Convocado da lista de espera");
+        if (deadline != null) {
+            builder.append(" ate ").append(deadline.format(BRAZILIAN_DATE_FORMATTER));
+        }
+        if (notes != null && !notes.isBlank()) {
+            builder.append(". ").append(notes.trim());
+        }
+
+        return builder.toString();
+    }
+
+    private void sendWaitlistNotification(StageModel stage, StageCandidateModel candidate, LocalDate deadline, String notes) {
+        if (!emailService.isMailConfigured()) {
+            return;
+        }
+
+        String recipient = candidate.getPeople() != null ? candidate.getPeople().getEmail() : null;
+        if (recipient == null || recipient.isBlank()) {
+            return;
+        }
+
+        String candidateName = candidate.getPeople().getName() == null ? "Candidato" : candidate.getPeople().getName();
+        String classCode = stage.getClassModel() != null ? stage.getClassModel().getCode() : "turma";
+        String deadlineLabel = deadline != null ? deadline.format(BRAZILIAN_DATE_FORMATTER) : "consulte o edital";
+
+        StringBuilder html = new StringBuilder();
+        html.append("<p>Ola, ").append(candidateName).append(".</p>");
+        html.append("<p>Voce foi convocado da lista de espera da turma <strong>").append(classCode).append("</strong>.</p>");
+        html.append("<p>Prazo para confirmacao: <strong>").append(deadlineLabel).append("</strong>.</p>");
+        if (notes != null && !notes.isBlank()) {
+            html.append("<p>Observacoes: ").append(notes.trim()).append("</p>");
+        }
+        html.append("<p>Se necessario, entre em contato com a equipe do programa.</p>");
+
+        try {
+            emailService.sendEmailSync(recipient, "Convocacao da lista de espera - BRISA", html.toString());
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String normalizeDocument(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replaceAll("\\D", "");
+    }
+
+    private String normalizeText(String value) {
+        return excelImportHelper.normalize(value).replace(" ", "");
     }
 }

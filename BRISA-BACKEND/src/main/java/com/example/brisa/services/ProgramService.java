@@ -36,6 +36,10 @@ public class ProgramService {
         program.setCode(programDetails.getCode());
         program.setName(programDetails.getName());
         program.setContractNumber(programDetails.getContractNumber());
+        program.setExecutorName(programDetails.getExecutorName());
+        program.setFundingEntity(programDetails.getFundingEntity());
+        program.setGeneralCoordinator(programDetails.getGeneralCoordinator());
+        program.setProgramValue(programDetails.getProgramValue());
         program.setStartDate(programDetails.getStartDate());
         program.setEndDate(programDetails.getEndDate());
         program.setTargetAudience(programDetails.getTargetAudience());
@@ -45,6 +49,11 @@ public class ProgramService {
         program.setImmersionWorkloadHours(programDetails.getImmersionWorkloadHours());
         program.setQuotaCriteria(programDetails.getQuotaCriteria());
         program.setEvaluationCriteria(programDetails.getEvaluationCriteria());
+        program.setSupportEmail(programDetails.getSupportEmail());
+        program.setOfficialWebsite(programDetails.getOfficialWebsite());
+        program.setMainLocality(programDetails.getMainLocality());
+        program.setObservations(programDetails.getObservations());
+        program.setPartnerNames(programDetails.getPartnerNames());
         
         return programRepository.save(program);
     }

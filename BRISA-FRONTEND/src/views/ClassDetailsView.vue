@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="figma-page">
     <ConfirmDialog ref="confirmDialog" />
 
@@ -484,7 +484,7 @@
                     {{ page }}
                   </button>
                 </div>
-                <button type="button" class="page-btn" :disabled="selectionProcessPage === selectionProcessTotalPages" @click="selectionProcessNextPage">Próximo</button>
+                <button type="button" class="page-btn" :disabled="selectionProcessPage === selectionProcessTotalPages" @click="selectionProcessNextPage">PrÃ³ximo</button>
               </div>
             </div>
           </article>
@@ -497,7 +497,7 @@
             <div class="px-6">
               <div class="tabs-bg flex items-center gap-1">
                 <button type="button" @click="etapasSubTab = 'nivelamento'" :class="['tab-btn', etapasSubTab === 'nivelamento' ? 'active' : '']">Nivelamento</button>
-                <button type="button" @click="etapasSubTab = 'imersao'" :class="['tab-btn', etapasSubTab === 'imersao' ? 'active' : '']">Imersão</button>
+                <button type="button" @click="etapasSubTab = 'imersao'" :class="['tab-btn', etapasSubTab === 'imersao' ? 'active' : '']">ImersÃ£o</button>
               </div>
             </div>
           </div>
@@ -571,7 +571,7 @@
           </div>
 
           <template v-if="etapasSubTab === 'nivelamento'">
-          <!-- Seção Cursos do Nivelamento -->
+          <!-- SeÃ§Ã£o Cursos do Nivelamento -->
           <article class="panel">
            <div class="panel-head">
             <h3>Cursos do Nivelamento</h3>
@@ -622,14 +622,14 @@
                <line x1="12" y1="17" x2="12.01" y2="17" />
              </svg>
              <div class="alert-copy">
-               <strong>Cursos obrigatórios com pendências</strong>
-               <p>37 alunos ainda possuem pendências em cursos obrigatórios</p>
+               <strong>Cursos obrigatÃ³rios com pendÃªncias</strong>
+               <p>37 alunos ainda possuem pendÃªncias em cursos obrigatÃ³rios</p>
              </div>
              <button type="button" class="alert-link" @click="showSendMessageModal = true">Enviar mensagem</button>
            </div>
           </article>
 
-          <!-- Seção Prova Final do Nivelamento -->
+          <!-- SeÃ§Ã£o Prova Final do Nivelamento -->
           <article class="panel">
            <div class="panel-head">
              <h3>Prova Final do Nivelamento</h3>
@@ -638,39 +638,152 @@
            <div class="exam-stats">
              <div class="exam-stat-card">
                <div class="exam-stat-label">Data da prova</div>
-               <div class="exam-stat-value">{{ overviewTimeline[5]?.date || '30/04' }}</div>
+                <div class="exam-stat-value">{{ examSummaryData?.examDate ? formatDate(examSummaryData.examDate) : (overviewTimeline[5]?.date || '--') }}</div>
              </div>
              <div class="exam-stat-card">
-               <div class="exam-stat-label">Questões</div>
-               <div class="exam-stat-value">--</div>
+               <div class="exam-stat-label">Questões mapeadas</div>
+                <div class="exam-stat-value">{{ examSummaryData?.totalQuestions || 0 }}</div>
              </div>
              <div class="exam-stat-card">
-               <div class="exam-stat-label">Duração</div>
-               <div class="exam-stat-value">--</div>
+               <div class="exam-stat-label">Participantes</div>
+                <div class="exam-stat-value">{{ examSummaryData?.totalParticipants || 0 }}</div>
              </div>
              <div class="exam-stat-card">
-               <div class="exam-stat-label">Média geral</div>
-               <div class="exam-stat-value teal">--</div>
+               <div class="exam-stat-label">MÃ©dia geral</div>
+                <div class="exam-stat-value teal">{{ examSummaryData?.averageScore != null ? Number(examSummaryData.averageScore).toFixed(1) : '--' }}</div>
              </div>
              <div class="exam-stat-card">
                <div class="exam-stat-label">Maior nota</div>
-               <div class="exam-stat-value emerald">--</div>
+                <div class="exam-stat-value emerald">{{ examSummaryData?.highestScore != null ? Number(examSummaryData.highestScore).toFixed(1) : '--' }}</div>
              </div>
              <div class="exam-stat-card">
-               <div class="exam-stat-label">Nota de corte</div>
-               <div class="exam-stat-value amber">--</div>
+               <div class="exam-stat-label">Candidatos aprovados</div>
+                <div class="exam-stat-value amber">{{ approvedRankingData?.approved?.length || 0 }}</div>
              </div>
            </div>
 
            <div class="exam-criteria">
-             <p><strong>Critério de aprovação:</strong> A aprovação no nivelamento considera nota igual ou superior a 50% da maior nota obtida na turma, além da conclusão dos cursos obrigatórios.</p>
+             <p><strong>CritÃ©rio de aprovaÃ§Ã£o:</strong> A aprovaÃ§Ã£o no nivelamento considera nota igual ou superior a 50% da maior nota obtida na turma, alÃ©m da conclusÃ£o dos cursos obrigatÃ³rios.</p>
            </div>
           </article>
 
-          <!-- Seção Alunos do Nivelamento -->
+          <!-- SeÃ§Ã£o Alunos do Nivelamento -->
           <article class="panel">
            <div class="panel-head">
              <h3>Alunos do Nivelamento</h3>
+           </div>
+
+           <div v-if="examInsightsError" class="state-box state-error" style="margin-bottom: 14px;">{{ examInsightsError }}</div>
+
+           <div v-if="examSummaryData" class="exam-insights-grid">
+             <article class="panel exam-insight-card">
+               <h4>Resumo importado da prova</h4>
+               <div class="simple-list">
+                 <div>
+                   <span>Participantes</span>
+                   <strong>{{ examSummaryData.totalParticipants || 0 }}</strong>
+                 </div>
+                 <div>
+                   <span>MÃ©dia geral</span>
+                   <strong>{{ examSummaryData.averageScore != null ? Number(examSummaryData.averageScore).toFixed(1) : '--' }}</strong>
+                 </div>
+                 <div>
+                   <span>Maior nota</span>
+                   <strong>{{ examSummaryData.highestScore != null ? Number(examSummaryData.highestScore).toFixed(1) : '--' }}</strong>
+                 </div>
+                 <div>
+                   <span>Notas zero</span>
+                   <strong>{{ examSummaryData.zeroScoreCount || 0 }}</strong>
+                 </div>
+               </div>
+             </article>
+
+             <article class="panel exam-insight-card">
+               <h4>DistribuiÃ§Ã£o de notas</h4>
+               <div class="simple-list">
+                 <div v-for="bucket in examSummaryData.scoreDistribution || []" :key="bucket.label">
+                   <span>{{ bucket.label }}</span>
+                   <strong>{{ bucket.count }}</strong>
+                 </div>
+               </div>
+             </article>
+
+             <article class="panel exam-insight-card">
+               <h4>Melhores questÃµes</h4>
+               <div class="simple-list">
+                 <div v-for="question in (examSummaryData.bestQuestions || []).slice(0, 5)" :key="`best-${question.questionNumber}`">
+                   <span>Q{{ question.questionNumber }} <small v-if="question.subject">Â· {{ question.subject }}</small></span>
+                   <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
+                 </div>
+               </div>
+             </article>
+
+             <article class="panel exam-insight-card">
+               <h4>QuestÃµes com menor desempenho</h4>
+               <div class="simple-list">
+                 <div v-for="question in (examSummaryData.worstQuestions || []).slice(0, 5)" :key="`worst-${question.questionNumber}`">
+                   <span>Q{{ question.questionNumber }} <small v-if="question.subject">Â· {{ question.subject }}</small></span>
+                   <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
+                 </div>
+               </div>
+             </article>
+           </div>
+
+           <div v-if="examRespondentProfileData" class="exam-profile-grid">
+             <article class="panel exam-insight-card">
+               <h4>Cursos de origem</h4>
+               <div class="simple-list">
+                 <div v-for="item in (examRespondentProfileData.courseDistribution || []).slice(0, 5)" :key="`course-${item.label}`">
+                   <span>{{ item.label }}</span>
+                   <strong>{{ item.count }}</strong>
+                 </div>
+               </div>
+             </article>
+
+             <article class="panel exam-insight-card">
+               <h4>Melhor acerto por curso</h4>
+               <div class="simple-list">
+                 <div v-for="item in (examRespondentProfileData.topCourseAccuracy || []).slice(0, 5)" :key="`accuracy-${item.label}`">
+                   <span>{{ item.label }}</span>
+                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
+                 </div>
+               </div>
+             </article>
+
+             <article class="panel exam-insight-card">
+               <h4>Cotas com maior desempenho</h4>
+               <div class="simple-list">
+                 <div v-for="item in (examRespondentProfileData.quotaAccuracy || []).slice(0, 5)" :key="`quota-${item.label}`">
+                   <span>{{ item.label }}</span>
+                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
+                 </div>
+               </div>
+             </article>
+
+             <article class="panel exam-insight-card">
+               <h4>Cidades com maior desempenho</h4>
+               <div class="simple-list">
+                 <div v-for="item in (examRespondentProfileData.topCityAccuracy || []).slice(0, 5)" :key="`city-${item.label}`">
+                   <span>{{ item.label }}</span>
+                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
+                 </div>
+               </div>
+             </article>
+           </div>
+
+           <div v-if="approvedRankingData" class="exam-ranking-grid">
+             <article class="panel exam-ranking-card">
+               <span>Aprovados</span>
+               <strong>{{ approvedRankingData.approved?.length || 0 }}</strong>
+             </article>
+             <article class="panel exam-ranking-card">
+               <span>Lista de espera</span>
+               <strong>{{ approvedRankingData.waitlist?.length || 0 }}</strong>
+             </article>
+             <article class="panel exam-ranking-card">
+               <span>Não selecionados</span>
+               <strong>{{ approvedRankingData.rejected?.length || 0 }}</strong>
+             </article>
            </div>
 
            <div class="students-table">
@@ -775,7 +888,7 @@
                   </div>
 
                   <div class="imersao-group-avg">
-                    <span>Média parcial:</span>
+                    <span>MÃ©dia parcial:</span>
                     <strong class="teal">{{ group.partialAverage }}</strong>
                     <span>Final:</span>
                     <strong class="teal">{{ group.finalAverage }}</strong>
@@ -792,24 +905,24 @@
                 <div v-if="imersaoExpandedGroupId === group.id" class="imersao-group-expanded">
                   <div class="imersao-group-tabs">
                     <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'resumo' }" @click="setImersaoGroupTab(group.id, 'resumo')">Resumo</button>
-                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'parcial' }" @click="setImersaoGroupTab(group.id, 'parcial')">Avaliação Parcial</button>
-                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'final' }" @click="setImersaoGroupTab(group.id, 'final')">Avaliação Final</button>
-                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'presenca' }" @click="setImersaoGroupTab(group.id, 'presenca')">Presença</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'parcial' }" @click="setImersaoGroupTab(group.id, 'parcial')">AvaliaÃ§Ã£o Parcial</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'final' }" @click="setImersaoGroupTab(group.id, 'final')">AvaliaÃ§Ã£o Final</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'presenca' }" @click="setImersaoGroupTab(group.id, 'presenca')">PresenÃ§a</button>
                   </div>
 
                   <div v-if="getImersaoGroupTab(group.id) === 'resumo'" class="imersao-group-panel">
                     <div class="imersao-group-meta">
                       <p><strong>Projeto:</strong> {{ group.project }}</p>
                       <p><strong>Empresa parceira:</strong> {{ group.partnerCompany }}</p>
-                      <p class="muted">Última atualização de notas: {{ group.lastGradesUpdate }}</p>
+                      <p class="muted">Ãšltima atualizaÃ§Ã£o de notas: {{ group.lastGradesUpdate }}</p>
                     </div>
                     <table class="imersao-group-table">
                       <thead>
                         <tr>
                           <th>Aluno</th>
-                          <th>Média Parcial</th>
-                          <th>Média Final</th>
-                          <th>Situação</th>
+                          <th>MÃ©dia Parcial</th>
+                          <th>MÃ©dia Final</th>
+                          <th>SituaÃ§Ã£o</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -829,14 +942,14 @@
                         <tr>
                           <th>Aluno</th>
                           <th>Nota parcial</th>
-                          <th>Observação</th>
+                          <th>ObservaÃ§Ã£o</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr v-for="student in group.studentsDetails" :key="`p-${student.id}`">
                           <td>{{ student.name }}</td>
                           <td :class="{ 'warning-strong': Number(student.partial) < 4 }">{{ student.partial }}</td>
-                          <td>{{ Number(student.partial) < 4 ? 'Acompanhamento necessário' : 'Desempenho esperado' }}</td>
+                          <td>{{ Number(student.partial) < 4 ? 'Acompanhamento necessÃ¡rio' : 'Desempenho esperado' }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -848,7 +961,7 @@
                         <tr>
                           <th>Aluno</th>
                           <th>Nota final</th>
-                          <th>Situação</th>
+                          <th>SituaÃ§Ã£o</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -866,8 +979,8 @@
                       <thead>
                         <tr>
                           <th>Aluno</th>
-                          <th>Última reunião</th>
-                          <th>Presença</th>
+                          <th>Ãšltima reuniÃ£o</th>
+                          <th>PresenÃ§a</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -897,11 +1010,11 @@
         <h2>Criar Nova Etapa</h2>
         <div class="form-row">
           <label for="stageName">Nome da Etapa *</label>
-          <input id="stageName" v-model="newStage.name" type="text" class="field" placeholder="Ex: Seleção, Entrevista, Prova..." />
+          <input id="stageName" v-model="newStage.name" type="text" class="field" placeholder="Ex: SeleÃ§Ã£o, Entrevista, Prova..." />
         </div>
         <div class="form-row">
-          <label for="stageDescription">Descrição</label>
-          <textarea id="stageDescription" v-model="newStage.description" class="field" rows="3" placeholder="Descrição da etapa (opcional)"></textarea>
+          <label for="stageDescription">DescriÃ§Ã£o</label>
+          <textarea id="stageDescription" v-model="newStage.description" class="field" rows="3" placeholder="DescriÃ§Ã£o da etapa (opcional)"></textarea>
         </div>
         <div class="modal-actions">
           <button class="btn-outline" @click="closeCreateStageModal">Cancelar</button>
@@ -1025,19 +1138,19 @@
                 <option value="">Selecione</option>
                 <option value="Graduação em andamento">Graduação em andamento</option>
                 <option value="Graduação concluída">Graduação concluída</option>
-                <option value="Curso técnico">Curso técnico</option>
+                <option value="Curso tÃ©cnico">Curso tÃ©cnico</option>
                 <option value="Outros cursos de exatas/tecnologia">Outros cursos de exatas/tecnologia</option>
               </select>
             </div>
             <div class="candidate-field-row">
-              <label for="regInstitution">Instituição</label>
-              <input id="regInstitution" v-model="newCandidateForm.institution" type="text" class="field" placeholder="Nome da instituição" />
+              <label for="regInstitution">InstituiÃ§Ã£o</label>
+              <input id="regInstitution" v-model="newCandidateForm.institution" type="text" class="field" placeholder="Nome da instituiÃ§Ã£o" />
             </div>
             <div class="candidate-field-row">
               <label for="regQuota">Cota</label>
               <select id="regQuota" v-model="newCandidateForm.quota" class="field">
                 <option value="">Selecione</option>
-                <option value="Ampla concorrência">Ampla concorrência</option>
+                <option value="Ampla concorrÃªncia">Ampla concorrÃªncia</option>
                 <option value="PCD/Neurodivergente">PCD/Neurodivergente</option>
                 <option value="Negro/Pardo">Negro/Pardo</option>
                 <option value="Mulher">Mulher</option>
@@ -1049,7 +1162,7 @@
               <select id="regStatus" v-model="newCandidateForm.status" class="field">
                 <option value="">Selecione</option>
                 <option value="Inscrito">Inscrito</option>
-                <option value="Em análise">Em análise</option>
+                <option value="Em anÃ¡lise">Em anÃ¡lise</option>
                 <option value="Aprovado">Aprovado</option>
                 <option value="Lista de espera">Lista de espera</option>
               </select>
@@ -1063,8 +1176,8 @@
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             <div>
-              <strong>Validação automática</strong>
-              <p>O sistema verificará automaticamente se este CPF já está vinculado a outro programa vigente.</p>
+              <strong>ValidaÃ§Ã£o automÃ¡tica</strong>
+              <p>O sistema verificarÃ¡ automaticamente se este CPF jÃ¡ estÃ¡ vinculado a outro programa vigente.</p>
             </div>
           </div>
 
@@ -1081,7 +1194,7 @@
         <!-- Import Inscricoes -->
         <div v-else-if="selectedUpdateAction === 'import-inscricoes'" class="modal-content import-inscricoes-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">â† Voltar</button>
           </div>
           <div class="modal-header-with-action">
             <h3>Importar planilha de inscritos</h3>
@@ -1100,23 +1213,33 @@
             <div class="column-item">Nome completo</div>
             <div class="column-item">CPF</div>
             <div class="column-item">E-mail</div>
-            <div class="column-item">Gênero</div>
+            <div class="column-item">GÃªnero</div>
             <div class="column-item">Data de nascimento</div>
             <div class="column-item">Cidade/UF</div>
-            <div class="column-item">Tipo de formação</div>
-            <div class="column-item">Instituição</div>
+            <div class="column-item">Tipo de formaÃ§Ã£o</div>
+            <div class="column-item">InstituiÃ§Ã£o</div>
             <div class="column-item">Cota</div>
           </div>
 
-          <div class="file-upload-area">
+          <input
+            type="file"
+            ref="fileInputImportInscricoes"
+            style="display: none"
+            accept=".xlsx,.xls,.csv"
+            @change="handleInscricoesFileChange"
+          />
+
+          <div class="file-upload-area" @click="$refs.fileInputImportInscricoes?.click()">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls, .csv (mÃ¡x. 10MB)</small>
           </div>
+
+          <div v-if="importInscricoesFile" class="selected-file-name">{{ importInscricoesFile.name }}</div>
 
           <div class="info-box info-yellow">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1125,40 +1248,57 @@
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <div>
-              <strong>Validação de conflitos</strong>
-              <p>Após o envio, o sistema verificará automaticamente se algum CPF já está vinculado a outro programa vigente e sinalizará os conflitos.</p>
+              <strong>ValidaÃ§Ã£o de conflitos</strong>
+              <p>ApÃ³s o envio, o sistema verificarÃ¡ automaticamente se algum CPF jÃ¡ estÃ¡ vinculado a outro programa vigente e sinalizarÃ¡ os conflitos.</p>
             </div>
+          </div>
+
+          <div v-if="importInscricoesError" class="state-box state-error">{{ importInscricoesError }}</div>
+          <div v-if="importInscricoesResult" class="state-box state-success">
+            Processadas: {{ importInscricoesResult.totalProcessed }} Â· Inseridas: {{ importInscricoesResult.successfullyInserted }} Â· JÃ¡ na etapa: {{ importInscricoesResult.alreadyInStage }} Â· Novas pessoas: {{ importInscricoesResult.newPeopleCreated }}
           </div>
 
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="selectedUpdateAction = null">Cancelar</button>
-            <button type="button" class="btn-primary">Importar planilha</button>
+            <button type="button" class="btn-primary" :disabled="importingInscricoes || !importInscricoesFile" @click="importSelectionCandidates">
+              {{ importingInscricoes ? 'Importando...' : 'Importar planilha' }}
+            </button>
           </div>
         </div>
 
         <!-- Import Aprovados -->
         <div v-else-if="selectedUpdateAction === 'import-aprovados'" class="modal-content import-aprovados-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">â† Voltar</button>
           </div>
           <h3>Importar planilha de aprovados</h3>
-          <p class="modal-desc">Envie uma planilha com a lista final de candidatos aprovados. O sistema atualizará automaticamente o status de cada candidato.</p>
+          <p class="modal-desc">Envie uma planilha com a lista final de candidatos aprovados. O sistema atualizarÃ¡ automaticamente o status de cada candidato.</p>
 
           <div class="columns-grid">
-            <div class="columns-grid-title">Colunas necessárias:</div>
+            <div class="columns-grid-title">Colunas necessÃ¡rias:</div>
             <div class="column-item"><strong>CPF</strong></div>
             <div class="column-item"><strong>Status</strong> (Aprovado / Lista de espera)</div>
             <div class="column-item"><strong>Nome completo</strong></div>
           </div>
 
-          <div class="file-upload-area">
+          <input
+            type="file"
+            ref="fileInputImportAprovados"
+            style="display: none"
+            accept=".xlsx,.xls,.csv"
+            @change="handleAprovadosFileChange"
+          />
+
+          <div class="file-upload-area" @click="$refs.fileInputImportAprovados?.click()">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls, .csv (mÃ¡x. 10MB)</small>
           </div>
+
+          <div v-if="importAprovadosFile" class="selected-file-name">{{ importAprovadosFile.name }}</div>
 
           <div class="info-box info-green">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1166,8 +1306,8 @@
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
             <div>
-              <strong>Atualização automática de status</strong>
-              <p>Candidatos listados na planilha terão seu status atualizado para "Aprovado" ou "Lista de espera". Os demais candidatos serão marcados como "Não selecionado".</p>
+              <strong>AtualizaÃ§Ã£o automÃ¡tica de status</strong>
+              <p>Candidatos listados na planilha terÃ£o seu status atualizado para "Aprovado" ou "Lista de espera". Os demais candidatos serÃ£o marcados como "NÃ£o selecionado".</p>
             </div>
           </div>
 
@@ -1178,55 +1318,62 @@
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <div>
-              <strong>Verificação de conflitos</strong>
-              <p>O sistema verificará se algum aprovado já está vinculado a outro programa vigente e sinalizará esses casos para análise manual.</p>
+              <strong>VerificaÃ§Ã£o de conflitos</strong>
+              <p>O sistema verificarÃ¡ se algum aprovado jÃ¡ estÃ¡ vinculado a outro programa vigente e sinalizarÃ¡ esses casos para anÃ¡lise manual.</p>
             </div>
+          </div>
+
+          <div v-if="importAprovadosError" class="state-box state-error">{{ importAprovadosError }}</div>
+          <div v-if="importAprovadosResult" class="state-box state-success">
+            Processadas: {{ importAprovadosResult.totalProcessed }} Â· Aprovados: {{ importAprovadosResult.approvedCount }} Â· Lista de espera: {{ importAprovadosResult.waitlistCount }} Â· Reprovados: {{ importAprovadosResult.rejectedCount }} Â· Conflitos: {{ importAprovadosResult.conflictsCount }}
           </div>
 
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="selectedUpdateAction = null">Cancelar</button>
-            <button type="button" class="btn-primary">Importar e atualizar</button>
+            <button type="button" class="btn-primary" :disabled="importingAprovados || !importAprovadosFile" @click="importApprovedCandidates">
+              {{ importingAprovados ? 'Importando...' : 'Importar e atualizar' }}
+            </button>
           </div>
         </div>
 
         <!-- Lista de Espera -->
         <div v-else-if="selectedUpdateAction === 'lista-espera'" class="modal-content modal-large waitlist-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">â† Voltar</button>
           </div>
           <h3>Atualizar lista de espera</h3>
 
           <div class="waitlist-stats">
             <div class="stat-item">
               <span>Candidatos em espera</span>
-              <strong>48</strong>
+              <strong>{{ selectionWaitlistCount }}</strong>
             </div>
             <div class="stat-item">
-              <span>Vagas disponíveis</span>
-              <strong class="teal-strong">250</strong>
+              <span>Vagas disponÃ­veis</span>
+              <strong class="teal-strong">{{ selectionAvailableVacancies }}</strong>
             </div>
             <div class="stat-item">
               <span>Vagas preenchidas</span>
-              <strong>250</strong>
+              <strong>{{ selectionApprovedCount }}</strong>
             </div>
           </div>
 
-          <p class="modal-desc">Gerencie convocações adicionais para preencher vagas disponíveis a partir da lista de espera.</p>
+          <p class="modal-desc">Gerencie convocaÃ§Ãµes adicionais para preencher vagas disponÃ­veis a partir da lista de espera.</p>
 
           <div class="waitlist-form-row waitlist-form-row--count">
-            <label for="convokeCount">Quantidade de convocações</label>
+            <label for="convokeCount">Quantidade de convocaÃ§Ãµes</label>
             <input id="convokeCount" v-model="waitlistForm.convokeCount" type="number" class="field" placeholder="Digite a quantidade" />
-            <small>Máximo: 48 candidatos disponíveis</small>
+            <small>Máximo: {{ selectionWaitlistCount }} candidatos disponíveis</small>
           </div>
 
           <div class="waitlist-form-row">
-            <label for="convokeDate">Prazo para confirmação</label>
+            <label for="convokeDate">Prazo para confirmaÃ§Ã£o</label>
             <input id="convokeDate" v-model="waitlistForm.convokeDate" type="text" class="field" placeholder="dd/mm/aaaa" />
           </div>
 
           <div class="waitlist-form-row">
-            <label for="convokeNotes">Observações (opcional)</label>
-            <textarea id="convokeNotes" v-model="waitlistForm.notes" class="field" rows="3" placeholder="Adicione informações relevantes sobre esta convocação..." />
+            <label for="convokeNotes">ObservaÃ§Ãµes (opcional)</label>
+            <textarea id="convokeNotes" v-model="waitlistForm.notes" class="field" rows="3" placeholder="Adicione informaÃ§Ãµes relevantes sobre esta convocaÃ§Ã£o..." />
           </div>
 
           <div class="info-box info-blue">
@@ -1236,14 +1383,21 @@
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             <div>
-              <strong>Convocação automática</strong>
-              <p>Os candidatos convocados receberão notificação por e-mail e terão seu status atualizado para "Em análise" até a confirmação.</p>
+              <strong>ConvocaÃ§Ã£o automÃ¡tica</strong>
+              <p>Os candidatos convocados receberÃ£o notificaÃ§Ã£o por e-mail e terÃ£o seu status atualizado para "Em anÃ¡lise" atÃ© a confirmaÃ§Ã£o.</p>
             </div>
+          </div>
+
+          <div v-if="waitlistError" class="state-box state-error">{{ waitlistError }}</div>
+          <div v-if="waitlistSuccess" class="state-box state-success">
+            Convocados: {{ waitlistSuccess.convokedCount }} de {{ waitlistSuccess.requestedCount }} solicitados.
           </div>
 
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="selectedUpdateAction = null">Cancelar</button>
-            <button type="button" class="btn-primary">Convocar candidatos</button>
+            <button type="button" class="btn-primary" :disabled="convokingWaitlist || !selectionWaitlistCount" @click="convokeWaitlistCandidates">
+              {{ convokingWaitlist ? 'Convocando...' : 'Convocar candidatos' }}
+            </button>
           </div>
         </div>
       </div>
@@ -1257,7 +1411,7 @@
           <input id="editStageName" v-model="editingStage.name" type="text" class="field" />
         </div>
         <div class="form-row">
-          <label for="editStageDescription">Descrição</label>
+          <label for="editStageDescription">DescriÃ§Ã£o</label>
           <textarea id="editStageDescription" v-model="editingStage.description" class="field" rows="3" />
         </div>
         <div class="modal-actions">
@@ -1285,7 +1439,7 @@
 
         <div class="modal-content submit-cursos-modal">
           <div class="modal-header-with-action" style="margin-bottom: 16px;">
-            <p class="modal-desc" style="margin: 0;">Envie a planilha com os dados de conclusão e notas dos cursos</p>
+            <p class="modal-desc" style="margin: 0;">Envie a planilha com os dados de conclusÃ£o e notas dos cursos</p>
             <a href="/Modelo_Nivelamento_Cursos.xlsx" download="Modelo_Nivelamento_Cursos.xlsx" class="ghost-btn hero-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1301,20 +1455,28 @@
             <div class="column-item"><strong>CPF</strong></div>
             <div class="column-item"><strong>Nome</strong></div>
             <div class="column-item"><strong>Curso</strong></div>
-            <div class="column-item"><strong>Percentual de conclusão</strong></div>
+            <div class="column-item"><strong>Percentual de conclusÃ£o</strong></div>
             <div class="column-item"><strong>Nota</strong></div>
             <div class="column-item"><strong>Status</strong></div>
-            <div class="column-item"><strong>Data de atualização</strong></div>
+            <div class="column-item"><strong>Data de atualizaÃ§Ã£o</strong></div>
           </div>
 
-          <div class="file-upload-area">
+          <input
+            type="file"
+            ref="fileInputSubmitCourses"
+            style="display: none"
+            accept=".xlsx,.xls,.csv"
+            @change="handleSubmitCoursesFileChange"
+          />
+
+          <div class="file-upload-area" @click="$refs.fileInputSubmitCourses?.click()">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls, .csv (mÃ¡x. 10MB)</small>
           </div>
 
           <div class="info-box info-blue">
@@ -1324,19 +1486,26 @@
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             <div>
-              <strong>Após o envio, o sistema processará:</strong>
+              <strong>ApÃ³s o envio, o sistema processarÃ¡:</strong>
               <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-                <li>Atualização dos percentuais de conclusão</li>
+                <li>AtualizaÃ§Ã£o dos percentuais de conclusÃ£o</li>
                 <li>Registro das notas obtidas</li>
-                <li>Identificação de alunos com pendências em cursos obrigatórios</li>
-                <li>Verificação de conflitos com outros programas vigentes</li>
+                <li>IdentificaÃ§Ã£o de alunos com pendÃªncias em cursos obrigatÃ³rios</li>
+                <li>VerificaÃ§Ã£o de conflitos com outros programas vigentes</li>
               </ul>
             </div>
           </div>
 
+          <div v-if="submitCoursesFile" class="selected-file-name">{{ submitCoursesFile.name }}</div>
+
+          <div v-if="submitCoursesError" class="state-box state-error">{{ submitCoursesError }}</div>
+          <div v-if="submitCoursesSuccess" class="state-box state-success">{{ submitCoursesSuccess }}</div>
+
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="showSubmitCoursesModal = false">Cancelar</button>
-            <button type="button" class="btn-primary">Submeter planilha</button>
+            <button type="button" class="btn-primary" :disabled="submittingCourses || !submitCoursesFile" @click="submitCoursesSpreadsheet">
+              {{ submittingCourses ? 'Enviando...' : 'Submeter planilha' }}
+            </button>
           </div>
         </div>
       </div>
@@ -1356,13 +1525,13 @@
         </div>
 
         <div class="modal-content submit-prova-notas-modal">
-          <p class="modal-desc">Envie a planilha com as notas finais e o desempenho por questão</p>
+          <p class="modal-desc">Envie a planilha com as notas finais e o desempenho por questÃ£o</p>
 
           <div class="columns-grid">
             <p class="columns-grid-title">A planilha deve conter as seguintes colunas:</p>
-            <div class="column-item"><strong>Obrigatórias:</strong> CPF, Nome, Nota final, Tempo de conclusão</div>
-            <div class="column-item"><strong>Questões:</strong> Q1, Q2, Q3... Q80 (respostas ou pontuação por questão)</div>
-            <div class="column-item"><strong>Opcional:</strong> Área/Assunto (para análise por tema)</div>
+            <div class="column-item"><strong>ObrigatÃ³rias:</strong> CPF, Nome, Nota final, Tempo de conclusÃ£o</div>
+            <div class="column-item"><strong>QuestÃµes:</strong> Q1, Q2, Q3... Q80 (respostas ou pontuaÃ§Ã£o por questÃ£o)</div>
+            <div class="column-item"><strong>Opcional:</strong> Ãrea/Assunto (para anÃ¡lise por tema)</div>
           </div>
 
           <input
@@ -1370,6 +1539,7 @@
             ref="fileInputTestGrades"
             style="display: none"
             accept=".xlsx,.xls,.csv"
+            @change="handleSubmitProvaFileChange"
           />
 
           <div class="file-upload-area" @click="$refs.fileInputTestGrades?.click()">
@@ -1379,8 +1549,10 @@
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls, .csv (mÃ¡x. 10MB)</small>
           </div>
+
+          <div v-if="submitProvaFile" class="selected-file-name">{{ submitProvaFile.name }}</div>
 
           <div class="info-box">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1389,29 +1561,34 @@
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             <div>
-              <strong>Após o envio, o sistema processará:</strong>
+              <strong>ApÃ³s o envio, o sistema processarÃ¡:</strong>
               <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-                <li>Atualização das notas finais dos alunos</li>
-                <li>Cálculo do desempenho por questão</li>
-                <li>Análise de pontos fortes e fracos</li>
-                <li>Identificação de questões com baixo desempenho</li>
+                <li>AtualizaÃ§Ã£o das notas finais dos alunos</li>
+                <li>CÃ¡lculo do desempenho por questÃ£o</li>
+                <li>AnÃ¡lise de pontos fortes e fracos</li>
+                <li>IdentificaÃ§Ã£o de questÃµes com baixo desempenho</li>
               </ul>
             </div>
           </div>
 
+          <div v-if="submitProvaError" class="state-box state-error">{{ submitProvaError }}</div>
+          <div v-if="submitProvaSuccess" class="state-box state-success">{{ submitProvaSuccess }}</div>
+
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="showSubmitProvaNotasModal = false">Cancelar</button>
-            <button type="button" class="btn-primary">Submeter notas</button>
+            <button type="button" class="btn-primary" :disabled="submittingProva || !submitProvaFile" @click="submitExamSpreadsheet">
+              {{ submittingProva ? 'Enviando...' : 'Submeter notas' }}
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Modal: Import Students from Imersão -->
+    <!-- Modal: Import Students from ImersÃ£o -->
     <div v-if="showImportImersaoModal" class="modal-overlay" @click="showImportImersaoModal = false">
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
-          <h2>Importar alunos da imersão</h2>
+          <h2>Importar alunos da imersÃ£o</h2>
           <button type="button" class="modal-close" @click="showImportImersaoModal = false">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -1426,6 +1603,7 @@
             ref="fileInputImportImersao"
             style="display: none"
             accept=".xlsx,.xls,.csv"
+            @change="handleImportImersaoFileChange"
           />
 
           <div class="file-upload-area" @click="$refs.fileInputImportImersao?.click()">
@@ -1434,9 +1612,11 @@
               <polyline points="7 10 12 5 17 10" />
               <line x1="12" y1="5" x2="12" y2="17" />
             </svg>
-            <p>Envie a planilha com os alunos da imersão</p>
+            <p>Envie a planilha com os alunos da imersÃ£o</p>
             <small>Formatos aceitos: .xlsx, .xls, .csv</small>
           </div>
+
+          <div v-if="importImersaoFile" class="selected-file-name">{{ importImersaoFile.name }}</div>
 
           <div class="info-box info-yellow">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1445,20 +1625,25 @@
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <div>
-              <strong>Validação automática de conflitos</strong>
-              <p>O sistema verificará se algum aluno já está vinculado a outro programa vigente.</p>
+              <strong>ValidaÃ§Ã£o automÃ¡tica de conflitos</strong>
+              <p>O sistema verificarÃ¡ se algum aluno jÃ¡ estÃ¡ vinculado a outro programa vigente.</p>
             </div>
           </div>
         </div>
 
+        <div v-if="importImersaoError" class="state-box state-error">{{ importImersaoError }}</div>
+        <div v-if="importImersaoSuccess" class="state-box state-success">{{ importImersaoSuccess }}</div>
+
         <div class="modal-actions-footer import-imersao-footer">
           <button type="button" class="btn-outline" @click="showImportImersaoModal = false">Cancelar</button>
-          <button type="button" class="btn-primary">Importar</button>
+          <button type="button" class="btn-primary" :disabled="importingImersao || !importImersaoFile" @click="importImersaoStudents">
+            {{ importingImersao ? 'Importando...' : 'Importar' }}
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Modal: Submit Imersão Grades -->
+    <!-- Modal: Submit ImersÃ£o Grades -->
     <div v-if="showSubmitNotasImersaoModal" class="modal-overlay" @click="showSubmitNotasImersaoModal = false">
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
@@ -1472,7 +1657,7 @@
         </div>
 
         <div class="modal-content submit-imersao-notas-modal">
-          <div class="submit-imersao-type-label">Tipo de avaliação</div>
+          <div class="submit-imersao-type-label">Tipo de avaliaÃ§Ã£o</div>
 
           <div class="submit-imersao-type-tabs">
             <button
@@ -1481,7 +1666,7 @@
               :class="{ active: tipoAvaliacaoImersao === 'parcial' }"
               @click="tipoAvaliacaoImersao = 'parcial'"
             >
-              Avaliação Parcial
+              AvaliaÃ§Ã£o Parcial
             </button>
             <button
               type="button"
@@ -1489,7 +1674,7 @@
               :class="{ active: tipoAvaliacaoImersao === 'final' }"
               @click="tipoAvaliacaoImersao = 'final'"
             >
-              Avaliação Final
+              AvaliaÃ§Ã£o Final
             </button>
           </div>
 
@@ -1518,11 +1703,11 @@
       </div>
     </div>
 
-    <!-- Modal: Update Attendance (Imersão) -->
+    <!-- Modal: Update Attendance (ImersÃ£o) -->
     <div v-if="showAtualizarPresencaImersaoModal" class="modal-overlay" @click="showAtualizarPresencaImersaoModal = false">
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
-          <h2>Atualizar presença</h2>
+          <h2>Atualizar presenÃ§a</h2>
           <button type="button" class="modal-close" @click="showAtualizarPresencaImersaoModal = false">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -1541,7 +1726,7 @@
             </div>
 
             <div class="presenca-field">
-              <label for="presenca-reuniao">Reunião semanal</label>
+              <label for="presenca-reuniao">ReuniÃ£o semanal</label>
               <select id="presenca-reuniao" v-model="imersaoPresencaForm.meetingDate" class="field">
                 <option v-for="meeting in presencaMeetingOptions" :key="meeting.value" :value="meeting.value">{{ meeting.label }}</option>
               </select>
@@ -1550,7 +1735,7 @@
 
           <div class="presenca-list-head">
             <strong>Alunos do grupo</strong>
-            <span>Marque presença ou ausência na data selecionada.</span>
+            <span>Marque presenÃ§a ou ausÃªncia na data selecionada.</span>
           </div>
 
           <div class="presenca-list">
@@ -1580,7 +1765,7 @@
 
         <div class="modal-actions-footer update-presenca-footer">
           <button type="button" class="btn-outline" @click="showAtualizarPresencaImersaoModal = false">Cancelar</button>
-          <button type="button" class="btn-primary">Salvar presença</button>
+          <button type="button" class="btn-primary">Salvar presenÃ§a</button>
         </div>
       </div>
     </div>
@@ -1599,17 +1784,17 @@
         </div>
 
         <div class="modal-content send-message-modal">
-          <p class="modal-desc">Comunique os alunos sobre pendências na conclusão dos cursos obrigatórios do nivelamento.</p>
+          <p class="modal-desc">Comunique os alunos sobre pendÃªncias na conclusÃ£o dos cursos obrigatÃ³rios do nivelamento.</p>
 
           <div class="send-message-section">
-            <label class="section-label">Destinatários</label>
+            <label class="section-label">DestinatÃ¡rios</label>
             <div class="radio-option">
               <input type="radio" id="all-students" name="recipients" value="all" v-model="sendMessageRecipients" />
               <label for="all-students">Todos os alunos do nivelamento</label>
             </div>
             <div class="radio-option">
               <input type="radio" id="pending-students" name="recipients" value="pending" v-model="sendMessageRecipients" />
-              <label for="pending-students">Apenas alunos com cursos obrigatórios pendentes</label>
+              <label for="pending-students">Apenas alunos com cursos obrigatÃ³rios pendentes</label>
             </div>
 
             <div class="stats-grid">
@@ -1618,11 +1803,11 @@
                 <span class="stat-value">37</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Com pendências:</span>
+                <span class="stat-label">Com pendÃªncias:</span>
                 <span class="stat-value pending">37</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Sem pendências:</span>
+                <span class="stat-label">Sem pendÃªncias:</span>
                 <span class="stat-value">0</span>
               </div>
             </div>
@@ -1633,7 +1818,7 @@
             <input
               id="email-subject"
               type="text"
-              placeholder="Pendência na conclusão dos cursos obrigatórios"
+              placeholder="PendÃªncia na conclusÃ£o dos cursos obrigatÃ³rios"
               class="text-input"
               v-model="sendMessageSubject"
             />
@@ -1645,7 +1830,7 @@
               id="message-body"
               class="textarea-input"
               rows="6"
-              placeholder="Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo."
+              placeholder="OlÃ¡, identificamos que vocÃª ainda possui pendÃªncias em um ou mais cursos obrigatÃ³rios da etapa de Nivelamento. A conclusÃ£o desses cursos Ã© necessÃ¡ria para continuar no processo. Acesse a plataforma e regularize sua situaÃ§Ã£o dentro do prazo."
               v-model="sendMessageBody"
             />
           </div>
@@ -1664,7 +1849,7 @@
           <div>
             <h2>{{ selectedCourseItem?.name || 'Detalhes do curso' }}</h2>
             <div class="course-details-badges">
-              <span v-if="selectedCourseItem?.required" class="course-badge course-badge-required">Obrigatório</span>
+              <span v-if="selectedCourseItem?.required" class="course-badge course-badge-required">ObrigatÃ³rio</span>
               <span v-if="selectedCourseItem?.knowledgeArea" class="course-badge">{{ selectedCourseItem.knowledgeArea }}</span>
             </div>
           </div>
@@ -1679,15 +1864,15 @@
         <div class="modal-content course-details-content">
           <div class="course-detail-stats">
             <div class="course-detail-stat">
-              <div class="course-detail-label">Carga horária</div>
+              <div class="course-detail-label">Carga horÃ¡ria</div>
               <div class="course-detail-value">{{ selectedCourseItem?.workloadHours ? `${selectedCourseItem.workloadHours}h` : '--' }}</div>
             </div>
             <div class="course-detail-stat">
-              <div class="course-detail-label">Média de conclusão</div>
+              <div class="course-detail-label">MÃ©dia de conclusÃ£o</div>
               <div class="course-detail-value teal">{{ selectedCourseItem?.completionPct || 0 }}%</div>
             </div>
             <div class="course-detail-stat">
-              <div class="course-detail-label">Concluídos</div>
+              <div class="course-detail-label">ConcluÃ­dos</div>
               <div class="course-detail-value">{{ selectedCourseItem?.completedCount || 0 }}</div>
             </div>
             <div class="course-detail-stat">
@@ -1703,8 +1888,8 @@
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <div class="alert-copy">
-              <strong>Alunos com pendência</strong>
-              <p>{{ selectedCourseItem?.pendingCount || 0 }} alunos ainda não concluíram este curso</p>
+              <strong>Alunos com pendÃªncia</strong>
+              <p>{{ selectedCourseItem?.pendingCount || 0 }} alunos ainda nÃ£o concluÃ­ram este curso</p>
             </div>
             <button type="button" class="alert-link" @click="openCoursePendingMessage">Enviar mensagem</button>
           </div>
@@ -1735,57 +1920,58 @@ import { enrollmentService } from '@/services/enrollmentService';
 import { peopleService } from '@/services/peopleService';
 import { stageService } from '@/services/stageService';
 import { courseService } from '@/services/courseService';
+import { examService } from '@/services/examService';
 import { groupService } from '@/services/groupService';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import GroupCreateModal from '@/components/GroupCreateModal.vue';
 
-const cycle = ['Inscrição', 'Seleção', 'Nivelamento', 'Imersão', 'Encerrado'];
-const overviewCycle = ['Inscrição', 'Processo Seletivo', 'Nivelamento', 'Prova', 'Imersão', 'Avaliação Final', 'Encerramento'];
+const cycle = ['InscriÃ§Ã£o', 'SeleÃ§Ã£o', 'Nivelamento', 'ImersÃ£o', 'Encerrado'];
+const overviewCycle = ['InscriÃ§Ã£o', 'Processo Seletivo', 'Nivelamento', 'Prova', 'ImersÃ£o', 'AvaliaÃ§Ã£o Final', 'Encerramento'];
 const overviewStageCards = [
   {
     title: 'Processo Seletivo',
-    status: 'Concluído',
+    status: 'ConcluÃ­do',
     statusClass: 'pill-green',
     items: [
       { label: 'Inscritos', value: '612' },
       { label: 'Vagas nivelamento', value: '250' },
-      { label: 'Pendências doc.', value: '22', valueClass: 'warning-strong' },
+      { label: 'PendÃªncias doc.', value: '22', valueClass: 'warning-strong' },
       { label: 'Conflitos', value: '3', valueClass: 'warning-strong' },
     ],
   },
   {
     title: 'Nivelamento',
-    status: 'Concluído',
+    status: 'ConcluÃ­do',
     statusClass: 'pill-green',
     items: [
       { label: 'Selecionados', value: '250' },
       { label: 'Ativos', value: '229' },
-      { label: 'Cursos obrigatórios', value: '6' },
+      { label: 'Cursos obrigatÃ³rios', value: '6' },
       { label: 'Prova final', value: '22/10/2025' },
     ],
   },
   {
-    title: 'Imersão',
+    title: 'ImersÃ£o',
     status: 'Em andamento',
     statusClass: 'pill-teal',
     items: [
       { label: 'Aprovados', value: '50' },
       { label: 'Alunos ativos', value: '44' },
       { label: 'Grupos formados', value: '10' },
-      { label: 'Avaliação Final', value: '30/11/2025' },
+      { label: 'AvaliaÃ§Ã£o Final', value: '30/11/2025' },
     ],
   },
 ];
 const overviewTimeline = [
-  { label: 'Período de Inscrição', date: '01/02 - 28/02', status: 'Concluído' },
-  { label: 'Divulgação Resultado Preliminar', date: '05/03', status: 'Concluído' },
-  { label: 'Período de Recursos', date: '06/03 - 10/03', status: 'Concluído' },
-  { label: 'Resultado Final', date: '15/03', status: 'Concluído' },
-  { label: 'Confirmação de Participação', date: '16/03 - 20/03', status: 'Concluído' },
-  { label: 'Nivelamento', date: '21/03 - 30/04', status: 'Concluído' },
+  { label: 'PerÃ­odo de InscriÃ§Ã£o', date: '01/02 - 28/02', status: 'ConcluÃ­do' },
+  { label: 'DivulgaÃ§Ã£o Resultado Preliminar', date: '05/03', status: 'ConcluÃ­do' },
+  { label: 'PerÃ­odo de Recursos', date: '06/03 - 10/03', status: 'ConcluÃ­do' },
+  { label: 'Resultado Final', date: '15/03', status: 'ConcluÃ­do' },
+  { label: 'ConfirmaÃ§Ã£o de ParticipaÃ§Ã£o', date: '16/03 - 20/03', status: 'ConcluÃ­do' },
+  { label: 'Nivelamento', date: '21/03 - 30/04', status: 'ConcluÃ­do' },
 ];
 const quotaDistribution = [
-  { label: 'Ampla Concorrência', value: 45, color: '#3b82f6' },
+  { label: 'Ampla ConcorrÃªncia', value: 45, color: '#3b82f6' },
   { label: 'Mulheres', value: 25, color: '#a855f7' },
   { label: 'Negros/Pardos', value: 15, color: '#f59e0b' },
   { label: 'PCD/Neurodivergente', value: 10, color: '#14b8a6' },
@@ -1795,18 +1981,18 @@ const genderDistribution = [
   { label: 'Feminino', value: 42 },
   { label: 'Masculino', value: 56 },
   { label: 'Outro', value: 1 },
-  { label: 'Não inf.', value: 1 },
+  { label: 'NÃ£o inf.', value: 1 },
 ];
 const cityDistribution = [
-  { label: 'Maceió - AL', value: 32 },
+  { label: 'MaceiÃ³ - AL', value: 32 },
   { label: 'Arapiraca - AL', value: 8 },
   { label: 'Rio Largo - AL', value: 5 },
-  { label: 'Outros municípios', value: 5 },
+  { label: 'Outros municÃ­pios', value: 5 },
 ];
 const educationDistribution = [
-  { label: 'Graduação em andamento', value: 28 },
-  { label: 'Graduação concluída', value: 15 },
-  { label: 'Curso técnico', value: 5 },
+  { label: 'GraduaÃ§Ã£o em andamento', value: 28 },
+  { label: 'GraduaÃ§Ã£o concluÃ­da', value: 15 },
+  { label: 'Curso tÃ©cnico', value: 5 },
   { label: 'Outros cursos', value: 2 },
 ];
 const overviewUpdates = [
@@ -1814,7 +2000,7 @@ const overviewUpdates = [
     action: 'Planilha de notas da prova importada',
     author: 'Ana Souza',
     date: '24/10/2025 14:32',
-    status: 'Concluído',
+    status: 'ConcluÃ­do',
     statusClass: 'pill-green',
     dotClass: 'dot-green',
   },
@@ -1822,15 +2008,15 @@ const overviewUpdates = [
     action: 'Dados dos cursos atualizados',
     author: 'Carlos Lima',
     date: '21/10/2025 09:18',
-    status: 'Concluído',
+    status: 'ConcluÃ­do',
     statusClass: 'pill-green',
     dotClass: 'dot-green',
   },
   {
-    action: 'Lista de aprovados para imersão atualizada',
+    action: 'Lista de aprovados para imersÃ£o atualizada',
     author: 'Mariana Torres',
     date: '30/10/2025 16:05',
-    status: 'Concluído',
+    status: 'ConcluÃ­do',
     statusClass: 'pill-green',
     dotClass: 'dot-green',
   },
@@ -1838,12 +2024,12 @@ const overviewUpdates = [
     action: 'Contratos pendentes identificados',
     author: 'Sistema',
     date: '05/11/2025 10:44',
-    status: 'Atenção',
+    status: 'AtenÃ§Ã£o',
     statusClass: 'pill-amber',
     dotClass: 'dot-amber',
   },
   {
-    action: 'Notas da avaliação parcial aguardando envio',
+    action: 'Notas da avaliaÃ§Ã£o parcial aguardando envio',
     author: 'Sistema',
     date: '25/02/2026 08:20',
     status: 'Pendente',
@@ -1861,7 +2047,7 @@ const overviewTopCards = {
 };
 
 const selectionQuotaLabels = [
-  'Ampla Concorrência',
+  'Ampla ConcorrÃªncia',
   'PCD/Neurodivergente',
   'Negro/Pardo',
   'Mulheres',
@@ -1886,7 +2072,7 @@ export default {
     const peopleError = ref(null);
     const activeTab = ref('visao-geral');
     const tabs = [
-      { id: 'visao-geral', label: 'Visão Geral' },
+      { id: 'visao-geral', label: 'VisÃ£o Geral' },
       { id: 'pessoas', label: 'Pessoas' },
       { id: 'processo-seletivo', label: 'Processo Seletivo' },
       { id: 'etapas', label: 'Etapas' },
@@ -1910,14 +2096,24 @@ export default {
     const tipoAvaliacaoImersao = ref('parcial');
     const showSendMessageModal = ref(false);
     const sendMessageRecipients = ref('all');
-    const sendMessageSubject = ref('Pendência na conclusão dos cursos obrigatórios');
-    const sendMessageBody = ref('Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.');
+    const sendMessageSubject = ref('PendÃªncia na conclusÃ£o dos cursos obrigatÃ³rios');
+    const sendMessageBody = ref('OlÃ¡, identificamos que vocÃª ainda possui pendÃªncias em um ou mais cursos obrigatÃ³rios da etapa de Nivelamento. A conclusÃ£o desses cursos Ã© necessÃ¡ria para continuar no processo. Acesse a plataforma e regularize sua situaÃ§Ã£o dentro do prazo.');
     const showCourseDetailsModal = ref(false);
     const selectedCourseItem = ref(null);
     const showGroupCreateModal = ref(false);
     const selectedUpdateAction = ref(null);
+    const selectionStageCandidates = ref([]);
+    const selectionCandidatesLoading = ref(false);
     const registeringCandidate = ref(false);
     const registrationError = ref('');
+    const importInscricoesFile = ref(null);
+    const importingInscricoes = ref(false);
+    const importInscricoesError = ref('');
+    const importInscricoesResult = ref(null);
+    const importAprovadosFile = ref(null);
+    const importingAprovados = ref(false);
+    const importAprovadosError = ref('');
+    const importAprovadosResult = ref(null);
     const newCandidateForm = ref({
       name: '',
       cpf: '',
@@ -1935,6 +2131,26 @@ export default {
       convokeDate: '',
       notes: '',
     });
+    const convokingWaitlist = ref(false);
+    const waitlistError = ref('');
+    const waitlistSuccess = ref(null);
+    const submitCoursesFile = ref(null);
+    const submittingCourses = ref(false);
+    const submitCoursesError = ref('');
+    const submitCoursesSuccess = ref('');
+    const submitProvaFile = ref(null);
+    const submittingProva = ref(false);
+    const submitProvaError = ref('');
+    const submitProvaSuccess = ref('');
+    const importImersaoFile = ref(null);
+    const importingImersao = ref(false);
+    const importImersaoError = ref('');
+    const importImersaoSuccess = ref('');
+    const examSummaryData = ref(null);
+    const examRespondentProfileData = ref(null);
+    const approvedRankingData = ref(null);
+    const examInsightsLoading = ref(false);
+    const examInsightsError = ref('');
     const imersaoMetricsCards = ref([
       { label: 'Total de grupos', value: '0', valueClass: '' },
       { label: 'Total de alunos', value: '0', valueClass: 'teal-strong' },
@@ -2012,7 +2228,7 @@ export default {
       const raw = String(value ?? '').trim();
       const normalized = normalizeText(raw);
       if (!normalized || raw === '-') return '-';
-      if (normalized.includes('ampla')) return 'Ampla Concorrência';
+      if (normalized.includes('ampla')) return 'Ampla ConcorrÃªncia';
       if (normalized.includes('pcd') || normalized.includes('neuro')) return 'PCD/Neurodivergente';
       if (normalized.includes('negro') || normalized.includes('pardo')) return 'Negro/Pardo';
       if (normalized.includes('mulher')) return 'Mulheres';
@@ -2058,10 +2274,10 @@ export default {
 
     const mapCycle = (value) => {
       const normalized = normalizeText(value);
-      if (normalized.includes('inscri')) return 'Inscrição';
-      if (normalized.includes('sele')) return 'Seleção';
+      if (normalized.includes('inscri')) return 'InscriÃ§Ã£o';
+      if (normalized.includes('sele')) return 'SeleÃ§Ã£o';
       if (normalized.includes('nivel')) return 'Nivelamento';
-      if (normalized.includes('imers')) return 'Imersão';
+      if (normalized.includes('imers')) return 'ImersÃ£o';
       if (normalized.includes('encer')) return 'Encerrado';
       return '';
     };
@@ -2069,7 +2285,7 @@ export default {
     const classStatusLabel = computed(() => {
       const value = normalizeText(classData.value?.status);
       if (value.includes('encerr')) return 'Encerrado';
-      if (value.includes('inscri') || value.includes('espera')) return 'Inscrição aberta';
+      if (value.includes('inscri') || value.includes('espera')) return 'InscriÃ§Ã£o aberta';
       if (value.includes('andamento') || value.includes('ativo') || value.includes('active')) return 'Em andamento';
       return classData.value?.status || 'Sem status';
     });
@@ -2093,21 +2309,21 @@ export default {
       return maxIndex;
     });
 
-    const currentStageLabel = computed(() => cycle[currentStageIndex.value] || 'Inscrição');
-    const nextStageLabel = computed(() => cycle[currentStageIndex.value + 1] || 'Ciclo concluído');
+    const currentStageLabel = computed(() => cycle[currentStageIndex.value] || 'InscriÃ§Ã£o');
+    const nextStageLabel = computed(() => cycle[currentStageIndex.value + 1] || 'Ciclo concluÃ­do');
     const progressPct = computed(() => Math.round((currentStageIndex.value / (cycle.length - 1)) * 100));
     const totalCandidates = computed(() => Object.values(stageCandidatesCount.value || {}).reduce((sum, item) => sum + Number(item || 0), 0));
-    const classModelLabel = computed(() => classData.value?.model || classData.value?.modality || 'Híbrido');
+    const classModelLabel = computed(() => classData.value?.model || classData.value?.modality || 'HÃ­brido');
     const classWorkloadLabel = computed(() => {
       const workload = classData.value?.workload || classData.value?.totalHours;
       return workload ? `${workload}h` : '480h';
     });
     const classPeriodLabel = computed(() => {
-      if (!classData.value?.startDate || !classData.value?.endDate) return 'Ago/2025 → Jun/2026';
+      if (!classData.value?.startDate || !classData.value?.endDate) return 'Ago/2025 â†’ Jun/2026';
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const start = new Date(classData.value.startDate);
       const end = new Date(classData.value.endDate);
-      return `${months[start.getMonth()]}/${start.getFullYear()} → ${months[end.getMonth()]}/${end.getFullYear()}`;
+      return `${months[start.getMonth()]}/${start.getFullYear()} â†’ ${months[end.getMonth()]}/${end.getFullYear()}`;
     });
     const partnerLabel = computed(
       () =>
@@ -2131,7 +2347,7 @@ export default {
       return location.name || '-';
     });
     const currentStagePeriod = computed(() => classData.value?.stagePeriod || '17/11/2025 a 18/05/2026');
-    const currentStageMilestone = computed(() => classData.value?.nextMilestone || 'Avaliação parcial');
+    const currentStageMilestone = computed(() => classData.value?.nextMilestone || 'AvaliaÃ§Ã£o parcial');
     const currentStageMilestoneDate = computed(() => classData.value?.nextMilestoneDate || '03/03/2026');
     const overviewCurrentCycleIndex = computed(() => {
       const normalized = normalizeText(classData.value?.currentStage || classData.value?.status || '');
@@ -2192,8 +2408,8 @@ export default {
 
     const openSendMessageModal = (options = {}) => {
       const { subject, body, recipients } = options;
-      sendMessageSubject.value = subject ?? 'Pendência na conclusão dos cursos obrigatórios';
-      sendMessageBody.value = body ?? 'Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.';
+      sendMessageSubject.value = subject ?? 'PendÃªncia na conclusÃ£o dos cursos obrigatÃ³rios';
+      sendMessageBody.value = body ?? 'OlÃ¡, identificamos que vocÃª ainda possui pendÃªncias em um ou mais cursos obrigatÃ³rios da etapa de Nivelamento. A conclusÃ£o desses cursos Ã© necessÃ¡ria para continuar no processo. Acesse a plataforma e regularize sua situaÃ§Ã£o dentro do prazo.';
       sendMessageRecipients.value = recipients ?? 'all';
       showSendMessageModal.value = true;
     };
@@ -2202,8 +2418,8 @@ export default {
       if (!selectedCourseItem.value) return;
       const courseName = selectedCourseItem.value?.name || 'este curso';
       openSendMessageModal({
-        subject: `Pendência no curso ${courseName}`,
-        body: `Olá, identificamos que você ainda possui pendência no curso "${courseName}" do nivelamento. A conclusão desse curso é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.`,
+        subject: `PendÃªncia no curso ${courseName}`,
+        body: `OlÃ¡, identificamos que vocÃª ainda possui pendÃªncia no curso "${courseName}" do nivelamento. A conclusÃ£o desse curso Ã© necessÃ¡ria para continuar no processo. Acesse a plataforma e regularize sua situaÃ§Ã£o dentro do prazo.`,
         recipients: 'pending',
       });
     };
@@ -2264,7 +2480,7 @@ export default {
       }
       if (normalized.includes('pend')) return { label: 'Pendente', className: 'status-pending' };
       if (normalized.includes('conclu') || normalized.includes('realizado') || normalized.includes('finaliz')) {
-        return { label: 'Concluída', className: 'status-done' };
+        return { label: 'ConcluÃ­da', className: 'status-done' };
       }
       return { label: 'Ativa', className: 'status-active' };
     };
@@ -2360,6 +2576,31 @@ export default {
     });
 
     const selectionProcessBaseRows = computed(() => {
+      if (selectionStageCandidates.value.length > 0) {
+        return [...selectionStageCandidates.value]
+          .map((candidate) => {
+            const meta = selectionStatusMeta(candidate.status, candidate.notes);
+            return {
+              id: candidate.id,
+              peopleId: candidate.peopleId,
+              name: candidate.peopleName || '-',
+              cpf: candidate.peopleCpf || '',
+              email: candidate.peopleEmail || '-',
+              gender: formatGender(candidate.peopleGender),
+              age: formatAge(candidate.peopleBirthDate),
+              quota: normalizeQuotaLabel(candidate.peopleQuotaCategory || '-'),
+              city: formatCity({ city: candidate.peopleCity, state: candidate.peopleState }),
+              education: formatEducation(candidate.peopleEducationLevel),
+              educationLevel: candidate.peopleEducationLevel || '-',
+              conflict: meta.conflict,
+              status: meta.label,
+              statusClass: meta.className,
+              notes: candidate.notes || '',
+            };
+          })
+          .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
+      }
+
       const totalRows = classPeopleRows.value.length;
       const conflictCount = selectionConflictPeopleIds.value.size;
       const eligibleRows = Math.max(totalRows - conflictCount, 0);
@@ -2371,7 +2612,7 @@ export default {
 
       return classPeopleRows.value.map((row) => {
         const conflict = selectionConflictPeopleIds.value.has(row.id);
-        let status = 'Não selecionado';
+        let status = 'NÃ£o selecionado';
         let statusClass = 'status-inactive';
 
         if (conflict) {
@@ -2430,7 +2671,11 @@ export default {
     });
 
     const selectionConflictCount = computed(() => selectionProcessBaseRows.value.filter((row) => row.conflict).length);
+    const selectionApprovedCount = computed(() => selectionProcessBaseRows.value.filter((row) => row.status === 'Aprovado').length);
     const selectionWaitlistCount = computed(() => selectionProcessBaseRows.value.filter((row) => row.status === 'Lista de espera').length);
+    const selectionAvailableVacancies = computed(() =>
+      Math.max(Number(classData.value?.defaultLevelingCapacity ?? 250) - selectionApprovedCount.value, 0)
+    );
     const selectionProcessTotalPages = computed(() => {
       const total = Math.ceil(selectionProcessRows.value.length / selectionProcessPageSize);
       return Math.max(total, 1);
@@ -2467,7 +2712,7 @@ export default {
         valueClass: 'teal-strong',
       },
       {
-        label: 'Data final de inscrição',
+        label: 'Data final de inscriÃ§Ã£o',
         value: formatDate(classData.value?.applicationEndDate || classData.value?.endDate),
         valueClass: '',
       },
@@ -2479,9 +2724,10 @@ export default {
     ]);
     const selectionConflictSummary = computed(() => {
       const count = selectionConflictCount.value;
+      if (!count) return 'Nenhum conflito de inscriÃ§Ã£o identificado';
       return `${count} ${count === 1 ? 'aluno encontrado' : 'alunos encontrados'} em outro programa vigente`;
     });
-    const selectionConflictButtonLabel = computed(() => (selectionConflictOnly.value ? 'Ver todos →' : 'Ver conflitos →'));
+    const selectionConflictButtonLabel = computed(() => (selectionConflictOnly.value ? 'Ver todos â†’' : 'Ver conflitos â†’'));
     const selectionProcessPageSummary = computed(() => {
       const total = selectionProcessRows.value.length;
       if (!total) return 'Nenhum inscrito encontrado';
@@ -2493,7 +2739,7 @@ export default {
       showUpdateSelectionModal.value = true;
     };
 
-    // ── Nivelamento : carregar cursos, progressões e estatísticas ─────────────
+    // â”€â”€ Nivelamento : carregar cursos, progressÃµes e estatÃ­sticas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const courses = ref([]);
     const progressions = ref([]);
     const assignments = ref([]);
@@ -2526,9 +2772,9 @@ export default {
       return courses.value.map(course => {
         const courseProgressions = progressions.value.filter(p => p.course?.id === course.id);
         const total = courseProgressions.length || 1;
-        const notStarted = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('não iniciado') || p.status === 'não iniciado').length;
+        const notStarted = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('nÃ£o iniciado') || p.status === 'nÃ£o iniciado').length;
         const inProgress = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('em andamento') || p.status === 'em andamento').length;
-        const completed = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('concluído') || p.status === 'concluído').length;
+        const completed = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('concluÃ­do') || p.status === 'concluÃ­do').length;
         const pending = Math.max(total - completed, 0);
         const workloadHours = Number(course.workloadHours || course.workload || course.hourLoad || course.cargaHoraria || 0);
         const avgCompletion = courseProgressions.length ? Math.round((courseProgressions.reduce((acc, p) => acc + Number(p.completionPercentage || p.completionPct || p.completion || 0), 0)) / total) : 0; // eslint-disable-line
@@ -2643,13 +2889,16 @@ export default {
           const info = classData.value?.lastEmailSent;
           if (info && info.date) {
             const d = new Date(info.date);
-            return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} por ${info.author || '—'} → ${info.count || 0} alunos com pendências`;
+            return `${d.toLocaleDateString('pt-BR')} Ã s ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} por ${info.author || 'â€”'} â†’ ${info.count || 0} alunos com pendÃªncias`;
           }
           return 'Nenhum e-mail enviado recentemente';
         });
 
         watch(() => activeTab.value, (tab) => {
-          if (tab === 'etapas') loadNivelamentoData();
+          if (tab === 'etapas') {
+            loadNivelamentoData();
+            loadExamInsights();
+          }
         });
 
         watch(
@@ -2719,7 +2968,7 @@ export default {
               return {
                 id: group.id,
                 name: group.projectTheme || group.name || '-',
-                status: hasStudents ? 'OK' : 'Atenção',
+                status: hasStudents ? 'OK' : 'AtenÃ§Ã£o',
                 statusClass: hasStudents ? 'is-ok' : 'is-warning',
                 mentor: group.leaderName || group.leader || '-',
                 project: group.projectTheme || group.project || '-',
@@ -2770,6 +3019,12 @@ export default {
     const closeUpdateSelectionModal = () => {
       showUpdateSelectionModal.value = false;
       selectedUpdateAction.value = null;
+      importInscricoesError.value = '';
+      importInscricoesResult.value = null;
+      importAprovadosError.value = '';
+      importAprovadosResult.value = null;
+      waitlistError.value = '';
+      waitlistSuccess.value = null;
     };
 
     const peopleStageOptions = computed(() => [...new Set(classPeopleRows.value.map((row) => row.stage).filter((item) => item && item !== '-'))]);
@@ -2825,10 +3080,261 @@ export default {
       return pages;
     });
 
+    const buildApprovedRankingPayload = () => {
+      const totalVacancies = Number(classData.value?.defaultLevelingCapacity ?? 250);
+      const amplaConcorrenciaSeats = Math.round(totalVacancies * 0.45);
+      const mulheresSeats = Math.round(totalVacancies * 0.25);
+      const negroPardoSeats = Math.round(totalVacancies * 0.15);
+      const pcdSeats = Math.round(totalVacancies * 0.10);
+      const age45Seats = Math.max(totalVacancies - amplaConcorrenciaSeats - mulheresSeats - negroPardoSeats - pcdSeats, 0);
+
+      return {
+        totalVacancies,
+        pointsPerCompletedCourse: 1,
+        bonusPerPriorityCity: 2,
+        priorityCities: ['MaceiÃ³ - AL', 'Arapiraca - AL', 'Rio Largo - AL'],
+        amplaConcorrenciaSeats,
+        pcdSeats,
+        negroPardoSeats,
+        mulheresSeats,
+        age45Seats,
+      };
+    };
+
+    const loadSelectionStageCandidates = async () => {
+      if (!firstSelectionStageId.value) {
+        selectionStageCandidates.value = [];
+        return;
+      }
+
+      selectionCandidatesLoading.value = true;
+      try {
+        const data = await stageService.getCandidatesByStageId(firstSelectionStageId.value);
+        selectionStageCandidates.value = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.error('Erro ao carregar candidatos da seleÃ§Ã£o:', err);
+        selectionStageCandidates.value = [];
+      } finally {
+        selectionCandidatesLoading.value = false;
+      }
+    };
+
+    const loadExamInsights = async () => {
+      examInsightsLoading.value = true;
+      examInsightsError.value = '';
+      try {
+        const [summary, respondentProfile, ranking] = await Promise.all([
+          examService.getSummary(classId.value).catch(() => null),
+          examService.getRespondentProfile(classId.value).catch(() => null),
+          examService.calculateApprovedRanking(classId.value, buildApprovedRankingPayload()).catch(() => null),
+        ]);
+
+        examSummaryData.value = summary;
+        examRespondentProfileData.value = respondentProfile;
+        approvedRankingData.value = ranking;
+      } catch (err) {
+        examSummaryData.value = null;
+        examRespondentProfileData.value = null;
+        approvedRankingData.value = null;
+        examInsightsError.value = err.response?.data?.message || err.message || 'Erro ao carregar dados da prova.';
+      } finally {
+        examInsightsLoading.value = false;
+      }
+    };
+
+    const formatImportWarnings = (warnings = []) => {
+      if (!Array.isArray(warnings) || warnings.length === 0) return '';
+      return ` Avisos: ${warnings.slice(0, 3).join(' | ')}`;
+    };
+
+    const handleInscricoesFileChange = (event) => {
+      importInscricoesFile.value = event.target.files?.[0] || null;
+      importInscricoesError.value = '';
+      importInscricoesResult.value = null;
+    };
+
+    const handleAprovadosFileChange = (event) => {
+      importAprovadosFile.value = event.target.files?.[0] || null;
+      importAprovadosError.value = '';
+      importAprovadosResult.value = null;
+    };
+
+    const handleSubmitCoursesFileChange = (event) => {
+      submitCoursesFile.value = event.target.files?.[0] || null;
+      submitCoursesError.value = '';
+      submitCoursesSuccess.value = '';
+    };
+
+    const handleSubmitProvaFileChange = (event) => {
+      submitProvaFile.value = event.target.files?.[0] || null;
+      submitProvaError.value = '';
+      submitProvaSuccess.value = '';
+    };
+
+    const handleImportImersaoFileChange = (event) => {
+      importImersaoFile.value = event.target.files?.[0] || null;
+      importImersaoError.value = '';
+      importImersaoSuccess.value = '';
+    };
+
+    const importSelectionCandidates = async () => {
+      if (!firstSelectionStageId.value) {
+        importInscricoesError.value = 'Nenhuma etapa de seleÃ§Ã£o foi encontrada para esta turma.';
+        return;
+      }
+      if (!importInscricoesFile.value) {
+        importInscricoesError.value = 'Selecione uma planilha de inscritos para continuar.';
+        return;
+      }
+
+      importingInscricoes.value = true;
+      importInscricoesError.value = '';
+      importInscricoesResult.value = null;
+      try {
+        const formData = new FormData();
+        formData.append('file', importInscricoesFile.value);
+        const result = await stageService.importCandidates(firstSelectionStageId.value, formData);
+        importInscricoesResult.value = result;
+        await loadStages();
+        await loadSelectionProcessContext();
+      } catch (err) {
+        importInscricoesError.value = err.response?.data?.message || err.message || 'Erro ao importar inscritos.';
+      } finally {
+        importingInscricoes.value = false;
+      }
+    };
+
+    const importApprovedCandidates = async () => {
+      if (!firstSelectionStageId.value) {
+        importAprovadosError.value = 'Nenhuma etapa de seleÃ§Ã£o foi encontrada para esta turma.';
+        return;
+      }
+      if (!importAprovadosFile.value) {
+        importAprovadosError.value = 'Selecione uma planilha de aprovados para continuar.';
+        return;
+      }
+
+      importingAprovados.value = true;
+      importAprovadosError.value = '';
+      importAprovadosResult.value = null;
+      try {
+        const formData = new FormData();
+        formData.append('file', importAprovadosFile.value);
+        const result = await stageService.importApprovedCandidates(firstSelectionStageId.value, formData);
+        importAprovadosResult.value = result;
+        await loadStages();
+        await loadSelectionProcessContext();
+      } catch (err) {
+        importAprovadosError.value = err.response?.data?.message || err.message || 'Erro ao importar aprovados.';
+      } finally {
+        importingAprovados.value = false;
+      }
+    };
+
+    const convokeWaitlistCandidates = async () => {
+      if (!firstSelectionStageId.value) {
+        waitlistError.value = 'Nenhuma etapa de seleÃ§Ã£o foi encontrada para esta turma.';
+        return;
+      }
+      if (!waitlistForm.value.convokeCount) {
+        waitlistError.value = 'Informe quantos candidatos devem ser convocados.';
+        return;
+      }
+
+      convokingWaitlist.value = true;
+      waitlistError.value = '';
+      waitlistSuccess.value = null;
+      try {
+        const result = await stageService.convokeWaitlist(firstSelectionStageId.value, {
+          convokeCount: Number(waitlistForm.value.convokeCount),
+          deadline: parseBrazilianDate(waitlistForm.value.convokeDate) || waitlistForm.value.convokeDate || null,
+          notes: waitlistForm.value.notes || null,
+        });
+        waitlistSuccess.value = result;
+        await loadStages();
+        await loadSelectionProcessContext();
+      } catch (err) {
+        waitlistError.value = err.response?.data?.message || err.message || 'Erro ao convocar lista de espera.';
+      } finally {
+        convokingWaitlist.value = false;
+      }
+    };
+
+    const submitCoursesSpreadsheet = async () => {
+      if (!submitCoursesFile.value) {
+        submitCoursesError.value = 'Selecione uma planilha de cursos para continuar.';
+        return;
+      }
+
+      submittingCourses.value = true;
+      submitCoursesError.value = '';
+      submitCoursesSuccess.value = '';
+      try {
+        const formData = new FormData();
+        formData.append('file', submitCoursesFile.value);
+        const result = await courseService.importProgressionsFromExcel(classId.value, formData);
+        submitCoursesSuccess.value = `Processadas: ${result.totalProcessed}. Criadas: ${result.createdProgressions}. Atualizadas: ${result.updatedProgressions}. Notas atualizadas: ${result.updatedGrades}. Ignoradas: ${result.skippedRows}.`;
+        await loadNivelamentoData();
+      } catch (err) {
+        submitCoursesError.value = err.response?.data?.message || err.message || 'Erro ao importar progressÃµes.';
+      } finally {
+        submittingCourses.value = false;
+      }
+    };
+
+    const submitExamSpreadsheet = async () => {
+      if (!submitProvaFile.value) {
+        submitProvaError.value = 'Selecione uma planilha da prova para continuar.';
+        return;
+      }
+
+      submittingProva.value = true;
+      submitProvaError.value = '';
+      submitProvaSuccess.value = '';
+      try {
+        const formData = new FormData();
+        formData.append('file', submitProvaFile.value);
+        const result = await examService.importResults(classId.value, formData);
+        submitProvaSuccess.value = `Participantes processados: ${result.participantsProcessed}. QuestÃµes detectadas: ${result.questionsDetected}.${formatImportWarnings(result.warnings)}`;
+        await loadExamInsights();
+      } catch (err) {
+        submitProvaError.value = err.response?.data?.message || err.message || 'Erro ao importar resultados da prova.';
+      } finally {
+        submittingProva.value = false;
+      }
+    };
+
+    const importImersaoStudents = async () => {
+      if (!imersaoStageId.value) {
+        importImersaoError.value = 'Nenhuma etapa de imersÃ£o foi encontrada para esta turma.';
+        return;
+      }
+      if (!importImersaoFile.value) {
+        importImersaoError.value = 'Selecione uma planilha de alunos da imersÃ£o para continuar.';
+        return;
+      }
+
+      importingImersao.value = true;
+      importImersaoError.value = '';
+      importImersaoSuccess.value = '';
+      try {
+        const formData = new FormData();
+        formData.append('file', importImersaoFile.value);
+        const result = await stageService.importCandidates(imersaoStageId.value, formData);
+        importImersaoSuccess.value = `Processadas: ${result.totalProcessed}. Inseridas: ${result.successfullyInserted}. Novas pessoas: ${result.newPeopleCreated}.`;
+        await loadStages();
+      } catch (err) {
+        importImersaoError.value = err.response?.data?.message || err.message || 'Erro ao importar alunos da imersÃ£o.';
+      } finally {
+        importingImersao.value = false;
+      }
+    };
+
     const loadStages = async () => {
       try {
         stages.value = await stageService.getByClassId(classId.value);
         stageCandidatesCount.value = await stageService.getCandidatesCountByClassId(classId.value);
+        await loadSelectionStageCandidates();
       } catch (err) {
         console.error('Erro ao carregar etapas:', err);
       }
@@ -2868,7 +3374,13 @@ export default {
       error.value = null;
       try {
         classData.value = await classService.getById(classId.value);
-        await Promise.all([loadStages(), loadClassPeople(), loadSelectionProcessContext()]);
+        await Promise.all([
+          loadStages(),
+          loadClassPeople(),
+          loadSelectionProcessContext(),
+          loadNivelamentoData(),
+          loadExamInsights(),
+        ]);
       } catch (err) {
         error.value = `Erro ao carregar detalhes da turma: ${err.response?.data?.message || err.message}`;
       } finally {
@@ -2946,8 +3458,8 @@ export default {
     const displayStageName = (name) => {
       if (!name) return '';
       const normalized = name.normalize('NFD').replace(/\p{Diacritic}/gu, '').toUpperCase();
-      if (normalized === 'SELECAO') return 'SELEÇÃO';
-      if (normalized === 'IMERSAO') return 'IMERSÃO';
+      if (normalized === 'SELECAO') return 'SELEÃ‡ÃƒO';
+      if (normalized === 'IMERSAO') return 'IMERSÃƒO';
       return name;
     };
 
@@ -3058,9 +3570,38 @@ export default {
       return `${year}-${month}-${day}`;
     };
 
+    const selectionStage = computed(() =>
+      (stages.value || []).find((item) => normalizeText(item?.name).includes('selec'))
+      || (stages.value || [])[0]
+    );
+
+    const imersaoStage = computed(() =>
+      (stages.value || []).find((item) => normalizeText(item?.name).includes('imers'))
+      || null
+    );
+
+    const imersaoStageId = computed(() => imersaoStage.value?.id || null);
+
+    const selectionStatusMeta = (status, notes = '') => {
+      const normalizedStatus = String(status || '').toUpperCase();
+      const normalizedNotes = normalizeText(notes);
+      const hasConflict = normalizedNotes.includes('conflit') || normalizedNotes.includes('outroprograma');
+
+      if (normalizedStatus === 'APROVADO') return { label: 'Aprovado', className: 'status-active', conflict: hasConflict };
+      if (normalizedStatus === 'LISTA_ESPERA') return { label: 'Lista de espera', className: 'status-pending', conflict: hasConflict };
+      if (normalizedStatus === 'EM_ANALISE') return { label: 'Em anÃ¡lise', className: 'status-pending', conflict: hasConflict };
+      if (normalizedStatus === 'REPROVADO') return { label: 'NÃ£o selecionado', className: 'status-inactive', conflict: hasConflict };
+
+      return {
+        label: status ? String(status) : 'Sem status',
+        className: 'status-inactive',
+        conflict: hasConflict,
+      };
+    };
+
     const firstSelectionStageId = computed(() => {
       const stage = (stages.value || []).find((item) => normalizeText(item?.name) === 'selecao')
-        || (stages.value || []).find((item) => normalizeText(item?.name) === 'seleção')
+        || (stages.value || []).find((item) => normalizeText(item?.name) === 'seleÃ§Ã£o')
         || (stages.value || [])[0];
 
       return stage?.id || null;
@@ -3083,12 +3624,12 @@ export default {
       try {
         const birthDate = parseBrazilianDate(newCandidateForm.value.birthDate);
         if (!birthDate) {
-          throw new Error('Informe uma data de nascimento válida no formato dd/mm/aaaa.');
+          throw new Error('Informe uma data de nascimento vÃ¡lida no formato dd/mm/aaaa.');
         }
 
         const stageId = firstSelectionStageId.value;
         if (!stageId) {
-          throw new Error('Nenhuma etapa disponível para vincular o candidato.');
+          throw new Error('Nenhuma etapa disponÃ­vel para vincular o candidato.');
         }
 
         await peopleService.createLink({
@@ -3261,6 +3802,8 @@ export default {
       selectionProcessTotalPages,
       selectionProcessVisiblePages,
       selectionQuotaCards,
+      selectionApprovedCount,
+      selectionAvailableVacancies,
       selectionWaitlistCount,
       paginatedSelectionProcessRows,
       toggleSelectionConflicts,
@@ -3294,10 +3837,50 @@ export default {
       etapasSubTab,
       lastEmailInfo,
       totalCandidates,
+      selectionCandidatesLoading,
       updateStage,
       updatingStage,
       selectedUpdateAction,
       waitlistForm,
+      convokingWaitlist,
+      waitlistError,
+      waitlistSuccess,
+      convokeWaitlistCandidates,
+      importInscricoesFile,
+      importingInscricoes,
+      importInscricoesError,
+      importInscricoesResult,
+      handleInscricoesFileChange,
+      importSelectionCandidates,
+      importAprovadosFile,
+      importingAprovados,
+      importAprovadosError,
+      importAprovadosResult,
+      handleAprovadosFileChange,
+      importApprovedCandidates,
+      submitCoursesFile,
+      submittingCourses,
+      submitCoursesError,
+      submitCoursesSuccess,
+      handleSubmitCoursesFileChange,
+      submitCoursesSpreadsheet,
+      submitProvaFile,
+      submittingProva,
+      submitProvaError,
+      submitProvaSuccess,
+      handleSubmitProvaFileChange,
+      submitExamSpreadsheet,
+      importImersaoFile,
+      importingImersao,
+      importImersaoError,
+      importImersaoSuccess,
+      handleImportImersaoFileChange,
+      importImersaoStudents,
+      examSummaryData,
+      examRespondentProfileData,
+      approvedRankingData,
+      examInsightsLoading,
+      examInsightsError,
       imersaoMetricsCards,
       imersaoGroups,
       imersaoExpandedGroupId,
@@ -4215,6 +4798,19 @@ export default {
 
 .state-error {
   color: var(--danger-700);
+}
+
+.state-success {
+  color: #047857;
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.selected-file-name {
+  margin-top: 10px;
+  color: var(--brand-900);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .modal-overlay {
@@ -5376,7 +5972,7 @@ export default {
 }
 
 .column-item:before {
-  content: '●';
+  content: 'â—';
   color: var(--teal-500);
   font-size: 10px;
 }
@@ -6251,6 +6847,51 @@ export default {
   line-height: 1.5;
 }
 
+.exam-insights-grid,
+.exam-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.exam-insight-card {
+  padding: 14px;
+}
+
+.exam-insight-card h4 {
+  margin: 0 0 12px;
+  color: var(--brand-900);
+  font-size: 15px;
+}
+
+.exam-ranking-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.exam-ranking-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.exam-ranking-card span {
+  color: var(--slate-600);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.exam-ranking-card strong {
+  color: var(--brand-900);
+  font-size: 26px;
+  line-height: 1;
+}
+
 /* Students table styling */
 .students-table table {
   width: 100%;
@@ -6335,6 +6976,10 @@ export default {
   .presenca-row { flex-direction: column; align-items: flex-start; }
   .imersao-group-tabs { overflow-x: auto; white-space: nowrap; }
   .imersao-group-table { display: block; overflow-x: auto; }
+  .exam-insights-grid,
+  .exam-profile-grid,
+  .exam-ranking-grid { grid-template-columns: 1fr; }
 }
 
 </style>
+

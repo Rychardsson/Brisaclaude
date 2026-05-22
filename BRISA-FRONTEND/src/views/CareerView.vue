@@ -769,16 +769,6 @@ const programOptions = computed(() => {
     });
   });
 
-  if (!realCareerRows.value.length) {
-    demoCareerRows.value.forEach((row) => {
-      if (!row.programId || known.has(String(row.programId))) return;
-      known.set(String(row.programId), {
-        id: String(row.programId),
-        label: row.programName || `Programa ${row.programId}`
-      });
-    });
-  }
-
   return Array.from(known.values()).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 });
 
@@ -793,17 +783,6 @@ const classOptions = computed(() => {
       label: `${classItem.code || `Turma ${classItem.id}`} | ${classItem.program?.name || 'Programa'}`
     }));
 
-  if (!realCareerRows.value.length) {
-    demoCareerRows.value.forEach((row) => {
-      if (selectedProgramId.value && row.programId !== selectedProgramId.value) return;
-      if (items.some((item) => item.id === row.classId)) return;
-      items.push({
-        id: row.classId,
-        label: `${row.classCode} | ${row.programName}`
-      });
-    });
-  }
-
   return items.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 });
 
@@ -817,17 +796,6 @@ const automationClassOptions = computed(() => {
       id: String(classItem.id),
       label: `${classItem.code || `Turma ${classItem.id}`} | ${classItem.program?.name || 'Programa'}`
     }));
-
-  if (!realCareerRows.value.length) {
-    demoCareerRows.value.forEach((row) => {
-      if (automationScopeProgramId.value && row.programId !== automationScopeProgramId.value) return;
-      if (items.some((item) => item.id === row.classId)) return;
-      items.push({
-        id: row.classId,
-        label: `${row.classCode} | ${row.programName}`
-      });
-    });
-  }
 
   return items.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 });
@@ -862,12 +830,6 @@ const realCareerRows = computed(() => {
       return compareDateValues(right.completionDate, left.completionDate);
     });
 });
-
-const demoCareerRows = computed(() => []);
-
-const displayingDemoData = computed(() => false);
-
-const demoBannerMessage = computed(() => '');
 
 const careerRows = computed(() => realCareerRows.value);
 

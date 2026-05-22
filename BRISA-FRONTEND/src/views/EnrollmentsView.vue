@@ -1,14 +1,14 @@
-<template>
+﻿<template>
   <div class="enrollments-view">
     <section class="page-card">
       <div class="header">
         <div>
-          <h1>Matrículas</h1>
+          <h1>MatrÃ­culas</h1>
           <p v-if="filterByClass" class="subtitle">
             Turma: {{ currentClass?.code || 'Carregando...' }} - {{ currentClass?.program?.name || 'Programa' }}
           </p>
           <p v-else class="subtitle">
-            Acompanhe vínculos de pessoas com turmas, papéis acadêmicos e situação atual.
+            Acompanhe vÃ­nculos de pessoas com turmas, papÃ©is acadÃªmicos e situaÃ§Ã£o atual.
           </p>
         </div>
 
@@ -39,7 +39,7 @@
         />
 
         <select v-model="filterRole" class="filter-select">
-          <option value="">Todos os papéis</option>
+          <option value="">Todos os papÃ©is</option>
           <option v-for="role in academicRoles" :key="role.id" :value="role.name">
             {{ formatRoleLabel(role.name) }}
           </option>
@@ -47,10 +47,10 @@
       </div>
 
       <div class="summary-row">
-        <span class="summary-pill">{{ filteredEnrollments.length }} matrícula(s)</span>
+        <span class="summary-pill">{{ filteredEnrollments.length }} matrÃ­cula(s)</span>
       </div>
 
-      <div v-if="loading" class="state-box">Carregando matrículas...</div>
+      <div v-if="loading" class="state-box">Carregando matrÃ­culas...</div>
       <div v-else-if="error" class="state-box state-box-error">{{ error }}</div>
 
       <div v-else class="table-container">
@@ -62,10 +62,11 @@
               <th>Email</th>
               <th>Papel</th>
               <th>Status</th>
-              <th>Matrícula</th>
-              <th>Conclusão</th>
+              <th>MatrÃ­cula</th>
+              <th>ConclusÃ£o</th>
+              <th>FrequÃªncia</th>
               <th>Nota</th>
-              <th>Ações</th>
+              <th>AÃ§Ãµes</th>
             </tr>
           </thead>
           <tbody>
@@ -85,6 +86,7 @@
               </td>
               <td>{{ formatDate(enrollment.enrollmentDate) }}</td>
               <td>{{ formatDate(enrollment.completionDate) }}</td>
+              <td>{{ formatFrequency(enrollment.frequency) }}</td>
               <td>{{ formatGrade(enrollment.grade) }}</td>
               <td class="actions">
                 <button type="button" class="btn-view" @click="openPerson(enrollment)">Pessoa</button>
@@ -95,16 +97,16 @@
         </table>
 
         <div v-if="filteredEnrollments.length === 0" class="no-data">
-          Nenhuma matrícula encontrada.
+          Nenhuma matrÃ­cula encontrada.
         </div>
       </div>
     </section>
 
     <div v-if="showUploadModal" class="modal-overlay" @click="closeUploadModal">
       <div class="modal-content" @click.stop>
-        <h2>Importar matrículas via Excel</h2>
+        <h2>Importar matrÃ­culas via Excel</h2>
         <p class="modal-copy">
-          Selecione uma planilha `.xlsx` ou `.xls` para criar ou atualizar matrículas em lote.
+          Selecione uma planilha `.xlsx` ou `.xls` para criar ou atualizar matrÃ­culas em lote.
         </p>
 
         <div class="upload-area">
@@ -131,9 +133,9 @@
 
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
       <div class="modal-content modal-content-wide" @click.stop>
-        <h2>Editar matrícula</h2>
+        <h2>Editar matrÃ­cula</h2>
         <p class="modal-copy">
-          Ajuste status, papel acadêmico e datas da matrícula selecionada.
+          Ajuste status, papel acadÃªmico e datas da matrÃ­cula selecionada.
         </p>
 
         <div class="person-summary">
@@ -143,7 +145,7 @@
 
         <div class="form-grid">
           <label class="field">
-            <span>Papel acadêmico</span>
+            <span>Papel acadÃªmico</span>
             <select v-model="editForm.roleId">
               <option value="">Selecione</option>
               <option v-for="role in academicRoles" :key="role.id" :value="String(role.id)">
@@ -163,16 +165,21 @@
           </label>
 
           <label class="field">
-            <span>Data da matrícula</span>
+            <span>Data da matrÃ­cula</span>
             <input v-model="editForm.enrollmentDate" type="date" />
           </label>
 
           <label class="field">
-            <span>Data de conclusão</span>
+            <span>Data de conclusÃ£o</span>
             <input v-model="editForm.completionDate" type="date" />
           </label>
 
-          <label class="field field-full">
+          <label class="field">
+            <span>Frequência (%)</span>
+            <input v-model="editForm.frequency" type="number" min="0" max="100" step="0.1" />
+          </label>
+
+          <label class="field">
             <span>Nota final</span>
             <input v-model="editForm.grade" type="number" min="0" max="10" step="0.1" />
           </label>
@@ -184,7 +191,7 @@
         <div class="modal-actions">
           <button type="button" class="btn-secondary" @click="closeEditModal">Fechar</button>
           <button type="button" class="btn-primary" :disabled="savingEdit" @click="saveEnrollment">
-            {{ savingEdit ? 'Salvando...' : 'Salvar alterações' }}
+            {{ savingEdit ? 'Salvando...' : 'Salvar alteraÃ§Ãµes' }}
           </button>
         </div>
       </div>
@@ -199,7 +206,7 @@ import { academicRoleService } from '@/services/academicRoleService';
 import { classService } from '@/services/classService';
 import { enrollmentService } from '@/services/enrollmentService';
 
-const DEFAULT_STATUS_OPTIONS = ['Pendente', 'Em andamento', 'Realizado', 'Não-realizado'];
+const DEFAULT_STATUS_OPTIONS = ['Pendente', 'Em andamento', 'Realizado', 'NÃ£o-realizado'];
 
 export default {
   name: 'EnrollmentsView',
@@ -232,6 +239,7 @@ export default {
       status: '',
       enrollmentDate: '',
       completionDate: '',
+      frequency: '',
       grade: ''
     });
 
@@ -270,13 +278,13 @@ export default {
     );
 
     const editingEnrollmentLabel = computed(() =>
-      editingEnrollment.value?.people?.name || 'Matrícula selecionada'
+      editingEnrollment.value?.people?.name || 'MatrÃ­cula selecionada'
     );
 
     const editingEnrollmentMeta = computed(() => {
       const role = formatRoleLabel(editingEnrollment.value?.academicRole?.name);
       const classCode = editingEnrollment.value?.classModel?.code || currentClass.value?.code || '-';
-      return `${role} • ${classCode}`;
+      return `${role} â€¢ ${classCode}`;
     });
 
     const resetEditMessages = () => {
@@ -307,7 +315,7 @@ export default {
         enrollments.value = Array.isArray(enrollmentsData) ? enrollmentsData : [];
         currentClass.value = classData;
       } catch (err) {
-        error.value = `Erro ao carregar matrículas: ${err.response?.data?.message || err.message}`;
+        error.value = `Erro ao carregar matrÃ­culas: ${err.response?.data?.message || err.message}`;
       } finally {
         loading.value = false;
       }
@@ -339,6 +347,11 @@ export default {
       return Number(grade).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
     };
 
+    const formatFrequency = (frequency) => {
+      if (frequency === null || frequency === undefined || frequency === '') return '-';
+      return `${Number(frequency).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%`;
+    };
+
     const formatRoleLabel = (role) => {
       if (!role) return '-';
       const normalized = String(role).toUpperCase();
@@ -362,7 +375,7 @@ export default {
       const normalized = String(status || '').toLowerCase();
       if (normalized === 'realizado') return 'status-completed';
       if (normalized === 'em andamento') return 'status-in-progress';
-      if (normalized === 'não-realizado' || normalized === 'nao-realizado') return 'status-not-completed';
+      if (normalized === 'nÃ£o-realizado' || normalized === 'nao-realizado') return 'status-not-completed';
       return 'status-pending';
     };
 
@@ -392,6 +405,7 @@ export default {
         status: enrollment.status || '',
         enrollmentDate: formatDateInput(enrollment.enrollmentDate),
         completionDate: formatDateInput(enrollment.completionDate),
+        frequency: enrollment.frequency ?? '',
         grade: enrollment.grade ?? ''
       };
       resetEditMessages();
@@ -402,7 +416,7 @@ export default {
       if (!selectedEnrollmentId.value) return;
 
       if (!editForm.value.roleId || !editForm.value.enrollmentDate) {
-        editError.value = 'Informe pelo menos o papel acadêmico e a data da matrícula.';
+        editError.value = 'Informe pelo menos o papel acadÃªmico e a data da matrÃ­cula.';
         return;
       }
 
@@ -415,16 +429,17 @@ export default {
           enrollmentDate: editForm.value.enrollmentDate,
           status: editForm.value.status || null,
           completionDate: editForm.value.completionDate || null,
+          frequency: editForm.value.frequency === '' ? null : Number(editForm.value.frequency),
           grade: editForm.value.grade === '' ? null : Number(editForm.value.grade)
         });
 
-        editSuccess.value = 'Matrícula atualizada com sucesso.';
+        editSuccess.value = 'MatrÃ­cula atualizada com sucesso.';
         await loadEnrollments();
         setTimeout(() => {
           closeEditModal();
         }, 900);
       } catch (err) {
-        editError.value = `Erro ao salvar matrícula: ${err.response?.data?.message || err.message}`;
+        editError.value = `Erro ao salvar matrÃ­cula: ${err.response?.data?.message || err.message}`;
       } finally {
         savingEdit.value = false;
       }
@@ -500,6 +515,7 @@ export default {
       statusOptions,
       formatCPF,
       formatDate,
+      formatFrequency,
       formatGrade,
       formatRoleLabel,
       getRoleClass,
@@ -889,3 +905,4 @@ tbody tr:hover {
   }
 }
 </style>
+

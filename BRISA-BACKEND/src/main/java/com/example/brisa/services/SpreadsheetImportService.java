@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -80,6 +81,18 @@ public class SpreadsheetImportService {
             Integer idxInstitutionName = excelImportHelper.findColumn(headers, List.of("instituicao", "instituição", "parceiro", "partner", "institution"), null);
             Integer idxInstitutionCode = excelImportHelper.findColumn(headers, List.of("codigo instituicao", "código instituição", "institution code", "institutioncode", "sigla instituicao", "sigla instituição"), null);
 
+            Integer idxExecutorName = excelImportHelper.findColumn(headers, List.of("executora", "executor", "executor name", "executorname"), null);
+            Integer idxFundingEntity = excelImportHelper.findColumn(headers, List.of("entidade fomento", "entidade de fomento", "funding entity", "fundingentity"), null);
+            Integer idxGeneralCoordinator = excelImportHelper.findColumn(headers, List.of("coordenador geral", "general coordinator", "generalcoordinator"), null);
+            Integer idxProgramValue = excelImportHelper.findColumn(headers, List.of("valor programa", "valor do programa", "program value", "programvalue"), null);
+            Integer idxSupportEmail = excelImportHelper.findColumn(headers, List.of("email suporte", "e-mail suporte", "support email", "supportemail"), null);
+            Integer idxOfficialWebsite = excelImportHelper.findColumn(headers, List.of("site oficial", "official website", "officialwebsite"), null);
+            Integer idxMainLocality = excelImportHelper.findColumn(headers, List.of("localidade", "main locality", "mainlocality"), null);
+            Integer idxObservations = excelImportHelper.findColumn(headers, List.of("observacoes", "observações", "observation", "observations"), null);
+            Integer idxPartnerNames = excelImportHelper.findColumn(headers, List.of("parceiros", "partner names", "partnernames"), null);
+
+            Integer idxFrequency = excelImportHelper.findColumn(headers, List.of("frequencia", "frequência", "frequency"), 9);
+
             for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                 Row row = sheet.getRow(rowIndex);
                 if (excelImportHelper.isRowEmpty(row)) {
@@ -118,23 +131,41 @@ public class SpreadsheetImportService {
                 LocalDate startDate = excelImportHelper.getDate(row, idxStartDate);
                 LocalDate endDate = excelImportHelper.getDate(row, idxEndDate);
                 String targetAudience = excelImportHelper.getString(row, idxTargetAudience);
+                String executorName = excelImportHelper.getString(row, idxExecutorName);
+                String fundingEntity = excelImportHelper.getString(row, idxFundingEntity);
+                String generalCoordinator = excelImportHelper.getString(row, idxGeneralCoordinator);
+                Double programValue = excelImportHelper.getDouble(row, idxProgramValue);
                 String levelingModality = excelImportHelper.getString(row, idxLevelingModality);
                 String levelingDuration = excelImportHelper.getString(row, idxLevelingDuration);
                 String immersionDuration = excelImportHelper.getString(row, idxImmersionDuration);
                 Integer immersionWorkload = excelImportHelper.getInteger(row, idxImmersionWorkload);
                 String quotaCriteria = excelImportHelper.getString(row, idxQuotaCriteria);
                 String evaluationCriteria = excelImportHelper.getString(row, idxEvaluationCriteria);
+                String supportEmail = excelImportHelper.getString(row, idxSupportEmail);
+                String officialWebsite = excelImportHelper.getString(row, idxOfficialWebsite);
+                String mainLocality = excelImportHelper.getString(row, idxMainLocality);
+                String observations = excelImportHelper.getString(row, idxObservations);
+                String partnerNames = excelImportHelper.getString(row, idxPartnerNames);
 
                 if (contractNumber != null) program.setContractNumber(contractNumber);
                 if (startDate != null) program.setStartDate(startDate);
                 if (endDate != null) program.setEndDate(endDate);
                 if (targetAudience != null) program.setTargetAudience(targetAudience);
+                if (executorName != null) program.setExecutorName(executorName);
+                if (fundingEntity != null) program.setFundingEntity(fundingEntity);
+                if (generalCoordinator != null) program.setGeneralCoordinator(generalCoordinator);
+                if (programValue != null) program.setProgramValue(BigDecimal.valueOf(programValue));
                 if (levelingModality != null) program.setLevelingModality(levelingModality);
                 if (levelingDuration != null) program.setLevelingDuration(levelingDuration);
                 if (immersionDuration != null) program.setImmersionDuration(immersionDuration);
                 if (immersionWorkload != null) program.setImmersionWorkloadHours(immersionWorkload);
                 if (quotaCriteria != null) program.setQuotaCriteria(quotaCriteria);
                 if (evaluationCriteria != null) program.setEvaluationCriteria(evaluationCriteria);
+                if (supportEmail != null) program.setSupportEmail(supportEmail);
+                if (officialWebsite != null) program.setOfficialWebsite(officialWebsite);
+                if (mainLocality != null) program.setMainLocality(mainLocality);
+                if (observations != null) program.setObservations(observations);
+                if (partnerNames != null) program.setPartnerNames(partnerNames);
 
                 ProgramModel savedProgram = programRepository.save(program);
 
@@ -395,6 +426,7 @@ public class SpreadsheetImportService {
             Integer idxStatus = excelImportHelper.findColumn(headers, List.of("status"), 6);
             Integer idxCompletionDate = excelImportHelper.findColumn(headers, List.of("data conclusao", "data conclusão", "completion date", "completiondate"), 7);
             Integer idxGrade = excelImportHelper.findColumn(headers, List.of("nota", "grade"), 8);
+            Integer idxFrequency = excelImportHelper.findColumn(headers, List.of("frequencia", "frequência", "frequency"), 9);
 
             for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                 Row row = sheet.getRow(rowIndex);
@@ -464,6 +496,7 @@ public class SpreadsheetImportService {
                 LocalDate completionDate = excelImportHelper.getDate(row, idxCompletionDate);
                 String status = normalizeEnrollmentStatus(excelImportHelper.getString(row, idxStatus));
                 Double grade = excelImportHelper.getDouble(row, idxGrade);
+                Double frequency = excelImportHelper.getDouble(row, idxFrequency);
 
                 if (enrollmentDate != null) {
                     enrollment.setEnrollmentDate(enrollmentDate);
@@ -473,6 +506,7 @@ public class SpreadsheetImportService {
                 if (completionDate != null) enrollment.setCompletionDate(completionDate);
                 if (status != null) enrollment.setStatus(status);
                 if (grade != null) enrollment.setGrade(grade);
+                if (frequency != null) enrollment.setFrequency(frequency);
 
                 enrollmentRepository.save(enrollment);
 
@@ -740,3 +774,4 @@ public class SpreadsheetImportService {
     private record ResolvedEntity<T>(T entity, boolean created) {
     }
 }
+

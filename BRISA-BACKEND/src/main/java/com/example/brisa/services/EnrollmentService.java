@@ -79,6 +79,7 @@ public class EnrollmentService {
         enrollment.setStatus(enrollmentDetails.getStatus());
         enrollment.setCompletionDate(enrollmentDetails.getCompletionDate());
         enrollment.setGrade(enrollmentDetails.getGrade());
+        enrollment.setFrequency(enrollmentDetails.getFrequency());
         
         if (enrollmentDetails.getAcademicRole() != null && enrollmentDetails.getAcademicRole().getId() != null) {
             AcademicRoleModel role = academicRoleRepository.findById(enrollmentDetails.getAcademicRole().getId())

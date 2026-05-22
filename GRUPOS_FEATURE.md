@@ -416,7 +416,7 @@ GET /api/classes/3/immersion-students
    - Frequência: Uma por semana no `weeklyMeetingDay`
 
 2. **Filtro de Alunos**:
-   - Frontend carrega automáticamente alunos da imersão
+   - Frontend carrega automaticamente alunos da imersão
    - Backend valida que selecionados estão realmente na imersão
    - Usa `StageCandidateModel` com `stage.name = "imersao"`
 
@@ -426,10 +426,10 @@ GET /api/classes/3/immersion-students
      - `people_project_groups` (todos os membros)
    - O grupo em si é deletado
 
-4. **Conventions**:
-   - Use `groupService` para todas as chamadas API no frontend
-   - Frontend passa `classId` em todas as chamadas
-   - Backend valida `classId` antes de processar
+4. **Convenções**:
+   - Use `groupService` para todas as chamadas de API no frontend
+   - O frontend passa `classId` em todas as chamadas
+   - O backend valida `classId` antes de processar
    - Respostas sempre incluem `message` + `data`
 
 ---

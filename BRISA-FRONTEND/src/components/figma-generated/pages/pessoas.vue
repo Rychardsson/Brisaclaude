@@ -1117,21 +1117,22 @@ const educationStatusOptions = computed(() => {
 });
 
 const normalize = (value) => (value ?? '').toString().toLowerCase();
+const normalizeKey = (value) => normalize(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const hasValue = (value) => !!(value ?? '').toString().trim();
 const enrollmentPersonId = (enrollment) => enrollment?.people?.id ?? enrollment?.peopleId ?? enrollment?.personId ?? null;
 const enrollmentClassId = (enrollment) => enrollment?.classModel?.id ?? enrollment?.turmaId ?? enrollment?.classId ?? enrollment?.turma?.id ?? enrollment?.class_id ?? null;
 const enrollmentProgramId = (enrollment) => enrollment?.classModel?.program?.id ?? enrollment?.programId ?? enrollment?.program?.id ?? enrollment?.programaId ?? null;
 
 const stageLabel = (name) => {
-  const normalized = normalize(name);
-  if (normalized.includes('imersao')) return 'Imersao';
+  const normalized = normalizeKey(name);
+  if (normalized.includes('imersao')) return 'Imersão';
   if (normalized.includes('nivelamento')) return 'Nivelamento';
-  if (normalized.includes('selecao') || normalized.includes('inscricao')) return 'Inscricao';
+  if (normalized.includes('selecao') || normalized.includes('inscricao')) return 'Inscrição';
   return name || '-';
 };
 
 const stagePriority = (label) => {
-  const normalized = normalize(label);
+  const normalized = normalizeKey(label);
   if (normalized.includes('imersao')) return 0;
   if (normalized.includes('nivelamento')) return 1;
   if (normalized.includes('inscricao') || normalized.includes('selecao')) return 2;

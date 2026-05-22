@@ -208,6 +208,35 @@ public class StageController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @PostMapping("/{stageId}/candidates/import/approved")
+    public ResponseEntity<ApprovedImportResponseDTO> importApprovedCandidatesFromExcel(
+            @PathVariable Long stageId,
+            @RequestParam("file") MultipartFile file) {
+
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String fileName = file.getOriginalFilename();
+        if (fileName == null || (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls"))) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            return ResponseEntity.ok(stageService.importApprovedCandidatesFromExcel(stageId, file));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/{stageId}/waitlist/convoke")
+    public ResponseEntity<WaitlistConvokeResponseDTO> convokeWaitlist(
+            @PathVariable Long stageId,
+            @RequestBody WaitlistConvokeRequestDTO requestDTO
+    ) {
+        return ResponseEntity.ok(stageService.convokeWaitlist(stageId, requestDTO));
+    }
     
     private UUID getUserId() {
         try {

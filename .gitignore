@@ -9,3 +9,6 @@ Brisa-ONE/
 .playwright-mcp
 *.png
 backend-career-run*.log
+
+# Docker – variáveis de ambiente (contém segredos)
+.env
