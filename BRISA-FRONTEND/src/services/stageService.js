@@ -139,5 +139,27 @@ export const stageService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  async importApprovedCandidates(stageId, formData) {
+    try {
+      const response = await api.post(`/stages/${stageId}/candidates/import/approved`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async convokeWaitlist(stageId, payload) {
+    try {
+      const response = await api.post(`/stages/${stageId}/waitlist/convoke`, payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };

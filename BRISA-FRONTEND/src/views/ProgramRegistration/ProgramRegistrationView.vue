@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="program-registration-view">
     
     <div v-if="activeDatePicker" class="picker-overlay" @click="closeDatePicker"></div>
@@ -9,7 +9,7 @@
         <div class="modal-header">
           <div>
             <h3>Adicionar Nova Etapa</h3> 
-            <p class="modal-subtitle">Configure as informações da nova etapa do processo seletivo</p> 
+            <p class="modal-subtitle">Configure as informaÃ§Ãµes da nova etapa do processo seletivo</p> 
           </div>
           <button class="btn-close-modal" @click="closeNewStageModal">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -23,16 +23,16 @@
           <div class="form-row two-cols">
             <div class="form-group">
               <label>Nome da Etapa <span class="required">*</span></label> 
-              <input v-model="newStageForm.title" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Entrevista Técnica" class="form-input"/>
+              <input v-model="newStageForm.title" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Entrevista TÃ©cnica" class="form-input"/>
             </div>
             <div class="form-group">
               <label>Tipo</label> 
-              <input v-model="newStageForm.type" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Avaliação" class="form-input"/>
+              <input v-model="newStageForm.type" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: AvaliaÃ§Ã£o" class="form-input"/>
             </div>
           </div>
 
           <div class="form-group">
-            <label>Descrição</label> 
+            <label>DescriÃ§Ã£o</label> 
             <textarea v-model="newStageForm.desc" placeholder="Descreva brevemente o objetivo desta etapa..." class="form-textarea" rows="2"></textarea>
           </div>
 
@@ -42,13 +42,13 @@
               <select v-model="newStageForm.modality" class="form-input form-select">
                 <option value="Online">Online</option>
                 <option value="Presencial">Presencial</option>
-                <option value="Híbrida">Híbrida</option>
-                <option value="Remota Assíncrona">Remota Assíncrona</option>
+                <option value="HÃ­brida">HÃ­brida</option>
+                <option value="Remota AssÃ­ncrona">Remota AssÃ­ncrona</option>
               </select>
             </div>
             
             <div class="form-group" style="margin-bottom: 0;">
-              <label>Duração</label>
+              <label>DuraÃ§Ã£o</label>
               <div class="duration-input-group">
                 <input v-model="newStageForm.durationValue" @keydown.enter="$event.target.blur()" type="number" min="1" placeholder="Ex: 15" class="form-input"/>
                 <select v-model="newStageForm.durationUnit" class="form-input form-select min-w-select">
@@ -78,7 +78,7 @@
         <div class="modal-header">
           <div>
             <h3>Editar Etapa</h3>
-            <p class="modal-subtitle">Configure as informações da etapa do processo seletivo</p>
+            <p class="modal-subtitle">Configure as informaÃ§Ãµes da etapa do processo seletivo</p>
           </div>
           <button class="btn-close-modal" @click="closeEditStageModal">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -101,7 +101,7 @@
           </div>
 
           <div class="form-group">
-            <label>Descrição</label>
+            <label>DescriÃ§Ã£o</label>
             <textarea v-model="editStageForm.desc" class="form-textarea" rows="2"></textarea>
           </div>
 
@@ -111,13 +111,13 @@
               <select v-model="editStageForm.modality" class="form-input form-select">
                 <option value="Online">Online</option>
                 <option value="Presencial">Presencial</option>
-                <option value="Híbrida">Híbrida</option>
-                <option value="Remota Assíncrona">Remota Assíncrona</option>
+                <option value="HÃ­brida">HÃ­brida</option>
+                <option value="Remota AssÃ­ncrona">Remota AssÃ­ncrona</option>
               </select>
             </div>
             
             <div class="form-group" style="margin-bottom: 0;">
-              <label>Duração</label>
+              <label>DuraÃ§Ã£o</label>
               <div class="duration-input-group">
                 <input v-model="editStageForm.durationValue" @keydown.enter="$event.target.blur()" type="number" min="1" class="form-input"/>
                 <select v-model="editStageForm.durationUnit" class="form-input form-select min-w-select">
@@ -146,7 +146,7 @@
         <div class="modal-header">
           <div>
             <h3>Excluir Etapa</h3>
-            <p class="modal-subtitle">Esta ação não poderá ser desfeita.</p>
+            <p class="modal-subtitle">Esta aÃ§Ã£o nÃ£o poderÃ¡ ser desfeita.</p>
           </div>
           <button class="btn-close-modal" @click="cancelDeleteStage">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -172,7 +172,7 @@
         <div class="modal-header">
           <div>
             <h3>Reiniciar Cadastro</h3>
-            <p class="modal-subtitle">Esta ação não poderá ser desfeita.</p>
+            <p class="modal-subtitle">Esta aÃ§Ã£o nÃ£o poderÃ¡ ser desfeita.</p>
           </div>
           <button class="btn-close-modal" @click="cancelRestartRegistration">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -197,7 +197,7 @@
       <div class="modal-content modal-sm" @click.stop>
         <div class="modal-header">
           <div>
-            <h3>Cadastro concluído</h3>
+            <h3>Cadastro concluÃ­do</h3>
             <p class="modal-subtitle">Programa cadastrado com sucesso.</p>
           </div>
           <button class="btn-close-modal" @click="closePublishSuccessModal">
@@ -223,7 +223,7 @@
         <div class="modal-header">
           <div>
             <h3>Adicionar Campo Personalizado</h3>
-            <p class="modal-subtitle">Crie um novo campo para o formulário de inscrição</p>
+            <p class="modal-subtitle">Crie um novo campo para o formulÃ¡rio de inscriÃ§Ã£o</p>
           </div>
           <button class="btn-close-modal" @click="closeCustomFieldModal">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -236,8 +236,8 @@
         <div class="modal-body">
           <div class="form-group relative">
             <label>Nome do Campo <span class="required">*</span></label>
-            <input v-model="customFieldForm.name" @input="customFieldFormError = false" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Link do Portfólio, Gênero, etc." :class="['form-input', { 'input-error': customFieldFormError }]"/>
-            <span v-if="customFieldFormError" class="error-text">O campo de Nome não pode ficar vazio.</span>
+            <input v-model="customFieldForm.name" @input="customFieldFormError = false" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Link do PortfÃ³lio, GÃªnero, etc." :class="['form-input', { 'input-error': customFieldFormError }]"/>
+            <span v-if="customFieldFormError" class="error-text">O campo de Nome nÃ£o pode ficar vazio.</span>
           </div>
              
           <div class="form-row two-cols" style="margin-bottom: 0;">
@@ -246,14 +246,14 @@
               <select v-model="customFieldForm.type" class="form-input form-select">
                 <option value="text">Texto Curto</option>
                 <option value="textarea">Texto Longo</option>
-                <option value="number">Número</option>
+                <option value="number">NÃºmero</option>
                 <option value="url">Link / URL</option>
-                <option value="select">Múltipla Escolha</option>
+                <option value="select">MÃºltipla Escolha</option>
               </select>
             </div>
                
             <div class="form-group" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center;">
-              <label>Campo Obrigatório?</label>
+              <label>Campo ObrigatÃ³rio?</label>
               <label class="toggle-switch" style="margin-top: 4px;">
                 <input type="checkbox" v-model="customFieldForm.required" class="toggle-input">
                 <span class="toggle-slider"></span>
@@ -274,7 +274,7 @@
         <div class="modal-header">
           <div>
             <h3>Adicionar Documento</h3>
-            <p class="modal-subtitle">Configure o novo documento exigido na inscrição</p>
+            <p class="modal-subtitle">Configure o novo documento exigido na inscriÃ§Ã£o</p>
           </div>
           <button class="btn-close-modal" @click="closeCustomDocumentModal">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -287,8 +287,8 @@
         <div class="modal-body">
           <div class="form-group relative">
             <label>Nome do Documento <span class="required">*</span></label>
-            <input v-model="customDocumentForm.name" @input="customDocumentFormError = false" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Histórico Escolar, Carta de Recomendação, etc." :class="['form-input', { 'input-error': customDocumentFormError }]"/>
-            <span v-if="customDocumentFormError" class="error-text">O nome do documento não pode ficar vazio.</span>
+            <input v-model="customDocumentForm.name" @input="customDocumentFormError = false" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: HistÃ³rico Escolar, Carta de RecomendaÃ§Ã£o, etc." :class="['form-input', { 'input-error': customDocumentFormError }]"/>
+            <span v-if="customDocumentFormError" class="error-text">O nome do documento nÃ£o pode ficar vazio.</span>
           </div>
           
           <div class="form-row two-cols" style="margin-bottom: 0; align-items: flex-start;">
@@ -303,7 +303,7 @@
             </div>
             
             <div class="form-group" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: flex-start;">
-              <label>Documento Obrigatório?</label>
+              <label>Documento ObrigatÃ³rio?</label>
               <label class="toggle-switch" style="margin-top: 4px;">
                 <input type="checkbox" v-model="customDocumentForm.required" class="toggle-input">
                 <span class="toggle-slider"></span>
@@ -338,18 +338,18 @@
           <div class="form-row" style="display: grid; grid-template-columns: 3fr 1fr; gap: 16px; margin-bottom: 16px;">
             <div class="form-group relative" style="margin-bottom: 0;">
               <label>Nome do Curso <span class="required">*</span></label>
-              <input v-model="newCourseForm.name" @input="newCourseFormError = false" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Lógica de Programação II" :class="['form-input', { 'input-error': newCourseFormError }]"/>
-              <span v-if="newCourseFormError" class="error-text">O nome do curso não pode ficar vazio.</span>
+              <input v-model="newCourseForm.name" @input="newCourseFormError = false" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: LÃ³gica de ProgramaÃ§Ã£o II" :class="['form-input', { 'input-error': newCourseFormError }]"/>
+              <span v-if="newCourseFormError" class="error-text">O nome do curso nÃ£o pode ficar vazio.</span>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label>Carga Horária</label>
+              <label>Carga HorÃ¡ria</label>
               <input v-model="newCourseForm.hours" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: 40h" class="form-input"/>
             </div>
           </div>
              
           <div class="form-row" style="display: flex; align-items: flex-start; gap: 32px; margin-bottom: 0;">
             <div class="form-group" style="margin-bottom: 0;">
-              <label>Obrigatório?</label>
+              <label>ObrigatÃ³rio?</label>
               <label class="toggle-switch" style="margin-top: 4px;">
                 <input type="checkbox" v-model="newCourseForm.required" class="toggle-input">
                 <span class="toggle-slider"></span>
@@ -383,7 +383,7 @@
       <div class="header-left">
         <div style="display: flex; align-items: center; gap: 12px;">
           <h1>{{ isEditMode ? 'Editar Programa' : 'Cadastro de Programa' }}</h1>
-          <span v-if="isEditMode" style="background-color: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">Modo Edição</span>
+          <span v-if="isEditMode" style="background-color: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">Modo EdiÃ§Ã£o</span>
         </div>
         <p class="subtitle">{{ isEditMode ? 'Altere os dados do programa' : 'Configure e publique novos editais' }}</p>
       </div>
@@ -536,7 +536,7 @@
           @update-status="handleRevisionStatus" 
         /> <div v-if="currentStep < 6" class="form-actions-footer">
            <button v-if="currentStep > 1" class="btn-footer-back" @click="prevStep">Voltar</button>
-           <button class="btn-footer-continue ml-auto" @click="nextStep">Continuar →</button>
+           <button class="btn-footer-continue ml-auto" @click="nextStep">Continuar â†’</button>
         </div>
 
       </div>
@@ -568,7 +568,7 @@
          <div class="summary-block">
             <span class="summary-label">Status</span>
             <span :class="['status-badge', isDraftSaved ? 'badge-saved' : 'badge-unsaved']" style="display: inline-block;">
-              {{ isDraftSaved ? 'Rascunho Salvo' : 'Rascunho Não Salvo' }}
+              {{ isDraftSaved ? 'Rascunho Salvo' : 'Rascunho NÃ£o Salvo' }}
             </span>
          </div>
          
@@ -590,7 +590,7 @@
          </div>
          
          <div class="summary-footer">
-            Última atualização: Hoje às {{ lastUpdatedTime }}
+            Ãšltima atualizaÃ§Ã£o: Hoje Ã s {{ lastUpdatedTime }}
          </div>
          
       </div>
@@ -599,7 +599,7 @@
 </template>
 
 <script>
-// Importação dos componentes filhos que representam o conteúdo de cada etapa (aba) do formulário
+// ImportaÃ§Ã£o dos componentes filhos que representam o conteÃºdo de cada etapa (aba) do formulÃ¡rio
 import DataProgramRegistrationView from './components/DataProgramRegistrationView.vue';
 import EstructureProgramRegistrationView from './components/EstructureProgramRegistrationView.vue';
 import FirstStageProgramRegistrationView from './components/FirstStageProgramRegistrationView.vue';
@@ -617,72 +617,72 @@ export default {
     DataProgramRegistrationView, EstructureProgramRegistrationView, FirstStageProgramRegistrationView, SecondStageProgramRegistrationView, ThirdStageProgramRegistrationView, RevisionProgramRegistrationView
   },
   
-  // Variáveis de estado global da aplicação
+  // VariÃ¡veis de estado global da aplicaÃ§Ã£o
   data() {
     return {
-      lastUpdatedTime: '', // Armazena a string com o horário da última modificação (ex: "14:30")
-      currentStep: 1, // Controla qual das 6 abas está ativa e visível no momento
-      isDraftSaved: false, // Flag que controla se a pílula verde de "Rascunho Salvo" deve aparecer
-      stepStatuses: ['pending', 'pending', 'pending', 'pending', 'pending', 'pending'], // Status de validação de cada etapa para pintar as bolinhas laterais ('pending', 'warning', 'completed')
+      lastUpdatedTime: '', // Armazena a string com o horÃ¡rio da Ãºltima modificaÃ§Ã£o (ex: "14:30")
+      currentStep: 1, // Controla qual das 6 abas estÃ¡ ativa e visÃ­vel no momento
+      isDraftSaved: false, // Flag que controla se a pÃ­lula verde de "Rascunho Salvo" deve aparecer
+      stepStatuses: ['pending', 'pending', 'pending', 'pending', 'pending', 'pending'], // Status de validaÃ§Ã£o de cada etapa para pintar as bolinhas laterais ('pending', 'warning', 'completed')
       
-      isRevisionValid: false, // Flag que controla se a aba 6 está 100% validada sem erros
+      isRevisionValid: false, // Flag que controla se a aba 6 estÃ¡ 100% validada sem erros
       isEditMode: false, // Flag que controla se estamos editando um programa existente
-      editingProgramId: null, // ID do programa sendo editado (se aplicável)
+      editingProgramId: null, // ID do programa sendo editado (se aplicÃ¡vel)
 
-      // Textos exibidos nos botões do menu lateral esquerdo
-      stepTitles: ['Dados do Programa', 'Estrutura das Etapas', 'Etapa 0 — Inscrição', 'Etapa 1 — Nivelamento', 'Etapa 2 — Imersão', 'Revisão Final'],
-      stepDescs: ['Informações gerais', 'Definição do fluxo', 'Formulário e elegibilidade', 'Cursos e avaliação', 'Projetos e benefícios', 'Validar e publicar'],
+      // Textos exibidos nos botÃµes do menu lateral esquerdo
+      stepTitles: ['Dados do Programa', 'Estrutura das Etapas', 'Etapa 0 â€” InscriÃ§Ã£o', 'Etapa 1 â€” Nivelamento', 'Etapa 2 â€” ImersÃ£o', 'RevisÃ£o Final'],
+      stepDescs: ['InformaÃ§Ãµes gerais', 'DefiniÃ§Ã£o do fluxo', 'FormulÃ¡rio e elegibilidade', 'Cursos e avaliaÃ§Ã£o', 'Projetos e benefÃ­cios', 'Validar e publicar'],
       
-      programService, // Importa o serviço de programa
+      programService, // Importa o serviÃ§o de programa
       newPartnerName: '', // Armazena temporariamente o texto digitado no input de adicionar parceiro (Aba 1)
-      emailTouched: false, // Controla se o usuário já focou no campo de e-mail para ativar a validação de erro (Aba 1)
+      emailTouched: false, // Controla se o usuÃ¡rio jÃ¡ focou no campo de e-mail para ativar a validaÃ§Ã£o de erro (Aba 1)
       
-      // OBJETO: Aba 1 - Informações gerais do edital
+      // OBJETO: Aba 1 - InformaÃ§Ãµes gerais do edital
       formData: { 
-        programName: '', batchName: '', executor: '', objective: '', partners: [], location: '', supportEmail: '', officialWebsite: '', publishDate: '', startDate: '', endDate: '', inscStart: '', inscEnd: '', nivStart: '', nivEnd: '', nivExamDate: '', imerStart: '', imerEnd: '', status: 'Rascunho', observations: '' 
+        programName: '', batchName: '', executor: '', fundingEntity: '', generalCoordinator: '', programValue: '', objective: '', partners: [], location: '', supportEmail: '', officialWebsite: '', publishDate: '', startDate: '', endDate: '', inscStart: '', inscEnd: '', nivStart: '', nivEnd: '', nivExamDate: '', imerStart: '', imerEnd: '', status: 'Rascunho', observations: '' 
       },
       
-      // OBJETO: Aba 3 - Configuração do formulário de inscrição, documentos e cotas
+      // OBJETO: Aba 3 - ConfiguraÃ§Ã£o do formulÃ¡rio de inscriÃ§Ã£o, documentos e cotas
       inscriptionForm: {
-        title: 'Inscrição', type: 'Inscrição / Triagem', desc: 'Etapa de inscrições e triagem inicial dos candidatos', situation: 'Obrigatória', targetAudience: '', educationReqs: '', requireLinkedin: false, requireCPF: true, singleRegistration: true,
+        title: 'InscriÃ§Ã£o', type: 'InscriÃ§Ã£o / Triagem', desc: 'Etapa de inscriÃ§Ãµes e triagem inicial dos candidatos', situation: 'ObrigatÃ³ria', targetAudience: '', educationReqs: '', requireLinkedin: false, requireCPF: true, singleRegistration: true,
         fields: [
-          { name: 'Nome completo', required: true }, { name: 'E-mail', required: true }, { name: 'CPF', required: true }, { name: 'Data de nascimento', required: true }, { name: 'Telefone', required: true }, { name: 'LinkedIn', required: false }, { name: 'Município', required: true }, { name: 'Estado', required: true }, { name: 'Formação', required: true }, { name: 'Instituição de ensino', required: false }, { name: 'Grau de escolaridade', required: true },
+          { name: 'Nome completo', required: true }, { name: 'E-mail', required: true }, { name: 'CPF', required: true }, { name: 'Data de nascimento', required: true }, { name: 'Telefone', required: true }, { name: 'LinkedIn', required: false }, { name: 'MunicÃ­pio', required: true }, { name: 'Estado', required: true }, { name: 'FormaÃ§Ã£o', required: true }, { name: 'InstituiÃ§Ã£o de ensino', required: false }, { name: 'Grau de escolaridade', required: true },
         ],
         documents: [
           { name: 'Documento de identidade', types: 'PDF, JPG', required: true }, { name: 'CPF', types: 'PDF, JPG', required: true }, { name: 'Comprovante de escolaridade', types: 'PDF', required: true },
         ],
         quotas: { ampla: 50, pcd: 10, negros: 30, mulheres: 0, age45: 10, singleQuota: true, revertUnfilled: true },
-        classification: { active: true, count: 250, criteria: 'Ordem de inscrição', tiebreaker: '', waitlist: true, allowAppeals: true, appealDeadline: '' }
+        classification: { active: true, count: 250, criteria: 'Ordem de inscriÃ§Ã£o', tiebreaker: '', waitlist: true, allowAppeals: true, appealDeadline: '' }
       },
       
-      // OBJETO: Aba 4 - Configuração do Nivelamento (cursos, prova final e pesos)
+      // OBJETO: Aba 4 - ConfiguraÃ§Ã£o do Nivelamento (cursos, prova final e pesos)
       nivelamentoForm: {
-        title: 'Nivelamento', modality: 'Remota Assíncrona', workload: '172h', platform: '',
+        title: 'Nivelamento', modality: 'Remota AssÃ­ncrona', workload: '172h', platform: '',
         courses: [
-          { name: 'Introdução à plataforma', hours: '2h', required: true, scores: false, status: 'Ativo' },
-          { name: 'Lógica de programação', hours: '40h', required: true, scores: true, status: 'Ativo' },
-          { name: 'Programação Python', hours: '60h', required: true, scores: true, status: 'Ativo' },
-          { name: 'Organização de computadores', hours: '30h', required: true, scores: true, status: 'Ativo' },
+          { name: 'IntroduÃ§Ã£o Ã  plataforma', hours: '2h', required: true, scores: false, status: 'Ativo' },
+          { name: 'LÃ³gica de programaÃ§Ã£o', hours: '40h', required: true, scores: true, status: 'Ativo' },
+          { name: 'ProgramaÃ§Ã£o Python', hours: '60h', required: true, scores: true, status: 'Ativo' },
+          { name: 'OrganizaÃ§Ã£o de computadores', hours: '30h', required: true, scores: true, status: 'Ativo' },
           { name: 'Banco de dados', hours: '40h', required: true, scores: true, status: 'Ativo' },
-          { name: 'Empreendedorismo e gerência de projetos', hours: '20h', required: false, scores: true, status: 'Ativo' },
+          { name: 'Empreendedorismo e gerÃªncia de projetos', hours: '20h', required: false, scores: true, status: 'Ativo' },
           { name: 'Desenvolvimento mobile', hours: '30h', required: false, scores: true, status: 'Ativo' },
           { name: 'Business Intelligence', hours: '25h', required: false, scores: true, status: 'Ativo' },
           { name: 'Big Data', hours: '30h', required: false, scores: true, status: 'Ativo' },
-          { name: 'Inteligência Artificial', hours: '35h', required: false, scores: true, status: 'Ativo' },
+          { name: 'InteligÃªncia Artificial', hours: '35h', required: false, scores: true, status: 'Ativo' },
           { name: 'IoT', hours: '20h', required: false, scores: true, status: 'Ativo' },
           { name: 'Engenharia de Requisitos', hours: '15h', required: false, scores: true, status: 'Ativo' },
           { name: 'Treinamento de IA', hours: '25h', required: false, scores: true, status: 'Ativo' },
           { name: 'UI/UX', hours: '30h', required: false, scores: true, status: 'Ativo' },
         ],
         completionRules: { requireActivities: true, requireMinScore: true, minScoreValue: '70', requireFinalEval: true },
-        finalExam: { active: true, time: '', duration: 120, questionsCount: 50, type: 'Múltipla Escolha', sequential: true, allowBack: false, mandatorySubmit: true },
+        finalExam: { active: true, time: '', duration: 120, questionsCount: 50, type: 'MÃºltipla Escolha', sequential: true, allowBack: false, mandatorySubmit: true },
         grading: { examWeight: 70, optionalWeight: 30, bonusLocation: 5, minPassingScore: 50, cutOffRule: false, approvedCount: 50, generatePrelimList: true, allowAppeals: true, generateFinalList: true },
-        certification: { active: true, criteria: 'Aprovação na etapa', defaultText: '' }
+        certification: { active: true, criteria: 'AprovaÃ§Ã£o na etapa', defaultText: '' }
       },
 
-      // OBJETO: Aba 5 - Configurações da Etapa de Imersão
+      // OBJETO: Aba 5 - ConfiguraÃ§Ãµes da Etapa de ImersÃ£o
       imersaoForm: {
-        nome: 'Imersão', modalidade: 'Híbrida', cargaHoraria: 960, duracaoMeses: 6, mediaHoras: 40,
+        nome: 'ImersÃ£o', modalidade: 'HÃ­brida', cargaHoraria: 960, duracaoMeses: 6, mediaHoras: 40,
         local: '', nomeProfessor: '',
         hasProjetos: true, hasGrupos: true, minGroup: 3, maxGroup: 5, orientador: 'vinculado',
         presenca: {
@@ -705,7 +705,7 @@ export default {
         }
       },
 
-      // Variáveis de controle para abertura e dados temporários dos Modais (Popups)
+      // VariÃ¡veis de controle para abertura e dados temporÃ¡rios dos Modais (Popups)
       showNewStageModal: false,
       newStageForm: { title: '', type: '', modality: 'Online', durationValue: '', durationUnit: 'dias', slots: '', desc: '' },
       showEditStageModal: false,
@@ -737,19 +737,19 @@ export default {
         prazoDevolucaoNotebook: '' 
       },     
 
-      // Componentes de inteligência e navegação do Calendário Customizado
-      activeDatePicker: null, // Guarda o nome do campo (ex: 'startDate') que está com o calendário aberto
-      calendarDate: new Date(), // Mês e ano âncora exibidos no topo do calendário aberto
-      weekDays: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
-      monthNames: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+      // Componentes de inteligÃªncia e navegaÃ§Ã£o do CalendÃ¡rio Customizado
+      activeDatePicker: null, // Guarda o nome do campo (ex: 'startDate') que estÃ¡ com o calendÃ¡rio aberto
+      calendarDate: new Date(), // MÃªs e ano Ã¢ncora exibidos no topo do calendÃ¡rio aberto
+      weekDays: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'SÃ¡b'],
+      monthNames: ['Janeiro', 'Fevereiro', 'MarÃ§o', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
     };
   },
 
   // Lifecycle Hook: Executado assim que a tela termina de ser montada no navegador
   mounted() { 
-    this.updateLastModifiedTime(); // Inicializa o relógio
+    this.updateLastModifiedTime(); // Inicializa o relÃ³gio
     
-    // Verificar se estamos em modo de edição
+    // Verificar se estamos em modo de ediÃ§Ã£o
     const programIdToEdit = this.$route.query.edit;
     if (programIdToEdit) {
       this.isEditMode = true;
@@ -778,13 +778,13 @@ export default {
       const savedNivelamento = localStorage.getItem('draftNivelamentoForm');
       if (savedNivelamento) this.nivelamentoForm = JSON.parse(savedNivelamento);
       
-      // Mescla segura (Safe Merge) para evitar erro no Vue caso o rascunho antigo não tenha os objetos filhos novos da Aba 5
+      // Mescla segura (Safe Merge) para evitar erro no Vue caso o rascunho antigo nÃ£o tenha os objetos filhos novos da Aba 5
       const savedImersao = localStorage.getItem('draftImersaoForm');
       if (savedImersao) {
         const parsedImersao = JSON.parse(savedImersao);
         this.imersaoForm = {
-          ...this.imersaoForm, // Mantém os defaults (incluindo as chaves novas)
-          ...parsedImersao, // Sobrescreve com o que já foi salvo
+          ...this.imersaoForm, // MantÃ©m os defaults (incluindo as chaves novas)
+          ...parsedImersao, // Sobrescreve com o que jÃ¡ foi salvo
           presenca: { ...this.imersaoForm.presenca, ...(parsedImersao.presenca || {}) },
           avaliacoes: { ...this.imersaoForm.avaliacoes, ...(parsedImersao.avaliacoes || {}) },
           beneficios: { ...this.imersaoForm.beneficios, ...(parsedImersao.beneficios || {}) }
@@ -795,21 +795,21 @@ export default {
       if (savedStageList) {
         this.stageList = JSON.parse(savedStageList);
       } else {
-        this.restoreDefaultStages(); // Fallback de segurança se a lista corromper
+        this.restoreDefaultStages(); // Fallback de seguranÃ§a se a lista corromper
       }
       
       const savedDisplayDates = localStorage.getItem('draftDisplayDates');
       if (savedDisplayDates) this.displayDates = JSON.parse(savedDisplayDates);
     } else {
-      // Caso seja a primeira vez abrindo a página (sem rascunho)
+      // Caso seja a primeira vez abrindo a pÃ¡gina (sem rascunho)
       this.currentStep = 1;
       this.restoreDefaultStages(); 
     }
   },
 
-  // Watchers vigiam propriedades. Se elas mudarem, executam a função interna
+  // Watchers vigiam propriedades. Se elas mudarem, executam a funÃ§Ã£o interna
   watch: {
-    // Bloco de sincronização: Quando o sistema altera a data formato ISO (BD), atualiza a data visual da tela (DD/MM/AAAA)
+    // Bloco de sincronizaÃ§Ã£o: Quando o sistema altera a data formato ISO (BD), atualiza a data visual da tela (DD/MM/AAAA)
     'formData.publishDate'(val) { this.displayDates.publishDate = this.formatDateDisplay(val); },
     'formData.startDate'(val) { this.displayDates.startDate = this.formatDateDisplay(val); },
     'formData.endDate'(val) { this.displayDates.endDate = this.formatDateDisplay(val); },
@@ -822,7 +822,7 @@ export default {
     'formData.imerEnd'(val) { this.displayDates.imerEnd = this.formatDateDisplay(val); },
     'imersaoForm.beneficios.prazoDevolucaoNotebook'(val) { this.displayDates.prazoDevolucaoNotebook = this.formatDateDisplay(val); },
     
-    // Deep Watchers: Detectam qualquer digitação dentro de objetos complexos para atualizar o relógio e remover o status "Salvo"
+    // Deep Watchers: Detectam qualquer digitaÃ§Ã£o dentro de objetos complexos para atualizar o relÃ³gio e remover o status "Salvo"
     formData: { handler() { this.updateLastModifiedTime(); this.isDraftSaved = false; }, deep: true },
     inscriptionForm: { handler() { this.updateLastModifiedTime(); this.isDraftSaved = false; }, deep: true },
     nivelamentoForm: { handler() { this.updateLastModifiedTime(); this.isDraftSaved = false; }, deep: true },
@@ -830,21 +830,21 @@ export default {
     stageList: { handler() { this.updateLastModifiedTime(); this.isDraftSaved = false; }, deep: true }
   },
 
-  // Propriedades Computadas (variáveis inteligentes recalculadas automaticamente)
+  // Propriedades Computadas (variÃ¡veis inteligentes recalculadas automaticamente)
   computed: {
-    // Filtra e conta os cursos obrigatórios da Aba 4
+    // Filtra e conta os cursos obrigatÃ³rios da Aba 4
     reqCoursesCount() { return this.nivelamentoForm.courses.filter(c => c.required).length; },
     
     // Filtra e conta os cursos opcionais da Aba 4
     optCoursesCount() { return this.nivelamentoForm.courses.filter(c => !c.required).length; },
     
-    // Verifica usando regex se o e-mail digitado possui formato válido
+    // Verifica usando regex se o e-mail digitado possui formato vÃ¡lido
     isEmailInvalid() {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return this.formData.supportEmail && !emailRegex.test(this.formData.supportEmail);
     },
     
-    // Motor geométrico do calendário: gera as casas nulas para deslocar os dias da semana e preenche até o dia 31/30
+    // Motor geomÃ©trico do calendÃ¡rio: gera as casas nulas para deslocar os dias da semana e preenche atÃ© o dia 31/30
     calendarDays() {
       const year = this.calendarDate.getFullYear();
       const month = this.calendarDate.getMonth();
@@ -858,16 +858,16 @@ export default {
   },
 
   methods: {
-    // Escuta a emissão de evento da aba 6 para saber se ela já passou nas verificações automáticas
+    // Escuta a emissÃ£o de evento da aba 6 para saber se ela jÃ¡ passou nas verificaÃ§Ãµes automÃ¡ticas
     handleRevisionStatus(isValid) {
       this.isRevisionValid = isValid;
-      // Se estivermos vendo a tela 6 no momento, forçamos a atualização da bolinha visual
+      // Se estivermos vendo a tela 6 no momento, forÃ§amos a atualizaÃ§Ã£o da bolinha visual
       if (this.currentStep === 6) {
         this.stepStatuses[5] = isValid ? 'completed' : 'warning';
       }
     },
 
-    // Pega a hora atual do sistema operacional e formata com dois dígitos
+    // Pega a hora atual do sistema operacional e formata com dois dÃ­gitos
     updateLastModifiedTime() {
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, '0');
@@ -875,11 +875,11 @@ export default {
       this.lastUpdatedTime = `${hours}:${minutes}`;
     },
     
-    // Avalia a aba sendo exibida no momento para determinar se preencheu o mínimo necessário (Altera bolinha pra amarelo/azul)
+    // Avalia a aba sendo exibida no momento para determinar se preencheu o mÃ­nimo necessÃ¡rio (Altera bolinha pra amarelo/azul)
     validateCurrentStep() {
       let isValid = true;
       if (this.currentStep === 1) {
-        isValid = !!(this.formData.programName && this.formData.batchName && this.formData.executor && this.formData.objective && this.formData.supportEmail && this.displayDates.startDate && this.displayDates.endDate);
+        isValid = !!(this.formData.programName && this.formData.batchName && this.formData.executor && this.formData.fundingEntity && this.formData.generalCoordinator && this.formData.programValue && this.formData.objective && this.formData.supportEmail && this.displayDates.startDate && this.displayDates.endDate);
       } else if (this.currentStep === 2) {
         isValid = this.stageList.length > 0;
       } else if (this.currentStep === 3) {
@@ -889,7 +889,7 @@ export default {
       } else if (this.currentStep === 5) {
         isValid = !!(this.imersaoForm.nome && this.displayDates.imerStart && this.displayDates.imerEnd);
       } else if (this.currentStep === 6) {
-        // Agora a aba 6 só fica azul de fato se todas as validações forem concluídas!
+        // Agora a aba 6 sÃ³ fica azul de fato se todas as validaÃ§Ãµes forem concluÃ­das!
         isValid = this.isRevisionValid;
       }
       this.stepStatuses[this.currentStep - 1] = isValid ? 'completed' : 'warning';
@@ -908,12 +908,12 @@ export default {
       localStorage.setItem('draftDisplayDates', JSON.stringify(this.displayDates));
     },
 
-    // Abre o Modal de Confirmação de Limpeza
+    // Abre o Modal de ConfirmaÃ§Ã£o de Limpeza
     restartRegistration() {
       this.showRestartConfirmModal = true;
     },
     
-    // Esconde o Modal de Confirmação de Limpeza sem fazer nada
+    // Esconde o Modal de ConfirmaÃ§Ã£o de Limpeza sem fazer nada
     cancelRestartRegistration() {
       this.showRestartConfirmModal = false;
     },
@@ -921,7 +921,7 @@ export default {
       this.showPublishSuccessModal = false;
     },
     
-    // Função "Destrutiva" (Nuke): Limpa o LocalStorage e redefine todas as variáveis do State para os seus valores limpos originais
+    // FunÃ§Ã£o "Destrutiva" (Nuke): Limpa o LocalStorage e redefine todas as variÃ¡veis do State para os seus valores limpos originais
     executeRestartRegistration() {
       localStorage.removeItem('programDraftStep');
       localStorage.removeItem('draftStepStatuses');
@@ -938,47 +938,47 @@ export default {
       this.isRevisionValid = false;
       
       this.formData = { 
-        programName: '', batchName: '', executor: '', objective: '', partners: [], location: '', supportEmail: '', officialWebsite: '', publishDate: '', startDate: '', endDate: '', inscStart: '', inscEnd: '', nivStart: '', nivEnd: '', nivExamDate: '', imerStart: '', imerEnd: '', status: 'Rascunho', observations: '' 
+        programName: '', batchName: '', executor: '', fundingEntity: '', generalCoordinator: '', programValue: '', objective: '', partners: [], location: '', supportEmail: '', officialWebsite: '', publishDate: '', startDate: '', endDate: '', inscStart: '', inscEnd: '', nivStart: '', nivEnd: '', nivExamDate: '', imerStart: '', imerEnd: '', status: 'Rascunho', observations: '' 
       };
 
       this.inscriptionForm = {
-        title: 'Inscrição', type: 'Inscrição / Triagem', desc: 'Etapa de inscrições e triagem inicial dos candidatos', situation: 'Obrigatória', targetAudience: '', educationReqs: '', requireLinkedin: false, requireCPF: true, singleRegistration: true,
+        title: 'InscriÃ§Ã£o', type: 'InscriÃ§Ã£o / Triagem', desc: 'Etapa de inscriÃ§Ãµes e triagem inicial dos candidatos', situation: 'ObrigatÃ³ria', targetAudience: '', educationReqs: '', requireLinkedin: false, requireCPF: true, singleRegistration: true,
         fields: [
-          { name: 'Nome completo', required: true }, { name: 'E-mail', required: true }, { name: 'CPF', required: true }, { name: 'Data de nascimento', required: true }, { name: 'Telefone', required: true }, { name: 'LinkedIn', required: false }, { name: 'Município', required: true }, { name: 'Estado', required: true }, { name: 'Formação', required: true }, { name: 'Instituição de ensino', required: false }, { name: 'Grau de escolaridade', required: true },
+          { name: 'Nome completo', required: true }, { name: 'E-mail', required: true }, { name: 'CPF', required: true }, { name: 'Data de nascimento', required: true }, { name: 'Telefone', required: true }, { name: 'LinkedIn', required: false }, { name: 'MunicÃ­pio', required: true }, { name: 'Estado', required: true }, { name: 'FormaÃ§Ã£o', required: true }, { name: 'InstituiÃ§Ã£o de ensino', required: false }, { name: 'Grau de escolaridade', required: true },
         ],
         documents: [
           { name: 'Documento de identidade', types: 'PDF, JPG', required: true }, { name: 'CPF', types: 'PDF, JPG', required: true }, { name: 'Comprovante de escolaridade', types: 'PDF', required: true },
         ],
         quotas: { ampla: 50, pcd: 10, negros: 30, mulheres: 0, age45: 10, singleQuota: true, revertUnfilled: true },
-        classification: { active: true, count: 250, criteria: 'Ordem de inscrição', tiebreaker: '', waitlist: true, allowAppeals: true, appealDeadline: '' }
+        classification: { active: true, count: 250, criteria: 'Ordem de inscriÃ§Ã£o', tiebreaker: '', waitlist: true, allowAppeals: true, appealDeadline: '' }
       };
 
       this.nivelamentoForm = {
-        title: 'Nivelamento', modality: 'Remota Assíncrona', workload: '172h', platform: '',
+        title: 'Nivelamento', modality: 'Remota AssÃ­ncrona', workload: '172h', platform: '',
         courses: [
-          { name: 'Introdução à plataforma', hours: '2h', required: true, scores: false, status: 'Ativo' },
-          { name: 'Lógica de programação', hours: '40h', required: true, scores: true, status: 'Ativo' },
-          { name: 'Programação Python', hours: '60h', required: true, scores: true, status: 'Ativo' },
-          { name: 'Organização de computadores', hours: '30h', required: true, scores: true, status: 'Ativo' },
+          { name: 'IntroduÃ§Ã£o Ã  plataforma', hours: '2h', required: true, scores: false, status: 'Ativo' },
+          { name: 'LÃ³gica de programaÃ§Ã£o', hours: '40h', required: true, scores: true, status: 'Ativo' },
+          { name: 'ProgramaÃ§Ã£o Python', hours: '60h', required: true, scores: true, status: 'Ativo' },
+          { name: 'OrganizaÃ§Ã£o de computadores', hours: '30h', required: true, scores: true, status: 'Ativo' },
           { name: 'Banco de dados', hours: '40h', required: true, scores: true, status: 'Ativo' },
-          { name: 'Empreendedorismo e gerência de projetos', hours: '20h', required: false, scores: true, status: 'Ativo' },
+          { name: 'Empreendedorismo e gerÃªncia de projetos', hours: '20h', required: false, scores: true, status: 'Ativo' },
           { name: 'Desenvolvimento mobile', hours: '30h', required: false, scores: true, status: 'Ativo' },
           { name: 'Business Intelligence', hours: '25h', required: false, scores: true, status: 'Ativo' },
           { name: 'Big Data', hours: '30h', required: false, scores: true, status: 'Ativo' },
-          { name: 'Inteligência Artificial', hours: '35h', required: false, scores: true, status: 'Ativo' },
+          { name: 'InteligÃªncia Artificial', hours: '35h', required: false, scores: true, status: 'Ativo' },
           { name: 'IoT', hours: '20h', required: false, scores: true, status: 'Ativo' },
           { name: 'Engenharia de Requisitos', hours: '15h', required: false, scores: true, status: 'Ativo' },
           { name: 'Treinamento de IA', hours: '25h', required: false, scores: true, status: 'Ativo' },
           { name: 'UI/UX', hours: '30h', required: false, scores: true, status: 'Ativo' },
         ],
         completionRules: { requireActivities: true, requireMinScore: true, minScoreValue: '70', requireFinalEval: true },
-        finalExam: { active: true, time: '', duration: 120, questionsCount: 50, type: 'Múltipla Escolha', sequential: true, allowBack: false, mandatorySubmit: true },
+        finalExam: { active: true, time: '', duration: 120, questionsCount: 50, type: 'MÃºltipla Escolha', sequential: true, allowBack: false, mandatorySubmit: true },
         grading: { examWeight: 70, optionalWeight: 30, bonusLocation: 5, minPassingScore: 50, cutOffRule: false, approvedCount: 50, generatePrelimList: true, allowAppeals: true, generateFinalList: true },
-        certification: { active: true, criteria: 'Aprovação na etapa', defaultText: '' }
+        certification: { active: true, criteria: 'AprovaÃ§Ã£o na etapa', defaultText: '' }
       };
 
       this.imersaoForm = {
-        nome: 'Imersão', modalidade: 'Híbrida', cargaHoraria: 960, duracaoMeses: 6, mediaHoras: 40,
+        nome: 'ImersÃ£o', modalidade: 'HÃ­brida', cargaHoraria: 960, duracaoMeses: 6, mediaHoras: 40,
         local: '', nomeProfessor: '',
         hasProjetos: true, hasGrupos: true, minGroup: 3, maxGroup: 5, orientador: 'vinculado',
         presenca: {
@@ -1003,41 +1003,41 @@ export default {
 
       this.displayDates = { publishDate: '', startDate: '', endDate: '', inscStart: '', inscEnd: '', nivStart: '', nivEnd: '', nivExamDate: '', imerStart: '', imerEnd: '', prazoDevolucaoNotebook: '' };
       
-      this.restoreDefaultStages(); // Reinicia também os cards da linha do tempo da etapa 2
+      this.restoreDefaultStages(); // Reinicia tambÃ©m os cards da linha do tempo da etapa 2
       this.updateLastModifiedTime();
       
       window.scrollTo({ top: 0, behavior: 'smooth' }); // Joga a tela pro topo suavemente
       this.cancelRestartRegistration(); // Fecha o modal
     },
 
-    // Funções de Navegação e Pulo de Tela que acionam a Validação e o Salvamento Automático
+    // FunÃ§Ãµes de NavegaÃ§Ã£o e Pulo de Tela que acionam a ValidaÃ§Ã£o e o Salvamento AutomÃ¡tico
     nextStep() { this.validateCurrentStep(); if (this.currentStep < 6) { this.currentStep++; } this.saveDraft(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
     prevStep() { this.validateCurrentStep(); if (this.currentStep > 1) { this.currentStep--; } this.saveDraft(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
     goToStep(num) { this.validateCurrentStep(); this.currentStep = num; this.saveDraft(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
     
-    // Preenchimento padrão automático para o array da Aba 2 (Estruturas)
+    // Preenchimento padrÃ£o automÃ¡tico para o array da Aba 2 (Estruturas)
     restoreDefaultStages() {
       this.stageList = [
-        { id: 0, title: 'Inscrição', type: 'Inscrição / Triagem', desc: 'Etapa de inscrições e triagem inicial dos candidatos', modality: 'Online', duration: '30 dias', slots: 'Ilimitado', isDefault: true },
-        { id: 1, title: 'Nivelamento', type: 'Capacitação', desc: 'Cursos online e avaliação teórica', modality: 'Remota Assíncrona', duration: '3 meses', slots: '250 vagas', isDefault: true },
-        { id: 2, title: 'Imersão', type: 'Projeto Prático', desc: 'Desenvolvimento de projetos em grupos', modality: 'Híbrida', duration: '6 meses', slots: '50 vagas', isDefault: true }
+        { id: 0, title: 'InscriÃ§Ã£o', type: 'InscriÃ§Ã£o / Triagem', desc: 'Etapa de inscriÃ§Ãµes e triagem inicial dos candidatos', modality: 'Online', duration: '30 dias', slots: 'Ilimitado', isDefault: true },
+        { id: 1, title: 'Nivelamento', type: 'CapacitaÃ§Ã£o', desc: 'Cursos online e avaliaÃ§Ã£o teÃ³rica', modality: 'Remota AssÃ­ncrona', duration: '3 meses', slots: '250 vagas', isDefault: true },
+        { id: 2, title: 'ImersÃ£o', type: 'Projeto PrÃ¡tico', desc: 'Desenvolvimento de projetos em grupos', modality: 'HÃ­brida', duration: '6 meses', slots: '50 vagas', isDefault: true }
       ];
     },
     
-    // Funções de Modais da Etapa 2 (Abertura, Fechamento, Edição, Adição)
+    // FunÃ§Ãµes de Modais da Etapa 2 (Abertura, Fechamento, EdiÃ§Ã£o, AdiÃ§Ã£o)
     openNewStageModal() { this.showNewStageModal = true; },
     closeNewStageModal() { this.showNewStageModal = false; this.newStageForm = { title: '', type: '', modality: 'Online', durationValue: '', durationUnit: 'dias', slots: '', desc: '' }; },
     saveNewStage() {
        if(!this.newStageForm.title) return; 
-       const nextId = this.stageList.length > 0 ? Math.max(...this.stageList.map(s => s.id)) + 1 : 0; // Calcula o proximo ID (Index) autoincrementável
-       const finalDuration = this.newStageForm.durationValue ? `${this.newStageForm.durationValue} ${this.newStageForm.durationUnit}` : ''; // Une input com select pra texto contínuo
+       const nextId = this.stageList.length > 0 ? Math.max(...this.stageList.map(s => s.id)) + 1 : 0; // Calcula o proximo ID (Index) autoincrementÃ¡vel
+       const finalDuration = this.newStageForm.durationValue ? `${this.newStageForm.durationValue} ${this.newStageForm.durationUnit}` : ''; // Une input com select pra texto contÃ­nuo
        this.stageList.push({ id: nextId, title: this.newStageForm.title, type: this.newStageForm.type, desc: this.newStageForm.desc, modality: this.newStageForm.modality, duration: finalDuration, slots: this.newStageForm.slots, isDefault: false });
        this.closeNewStageModal();
     },
     openEditStageModal(stage) {
        this.editStageForm = { ...stage }; 
        if (stage.duration) {
-          const parts = stage.duration.split(' '); // Split reversa para jogar para a interface que tem separação Input e Select
+          const parts = stage.duration.split(' '); // Split reversa para jogar para a interface que tem separaÃ§Ã£o Input e Select
           this.editStageForm.durationValue = parts[0] || '';
           this.editStageForm.durationUnit = parts[1] || 'dias';
        }
@@ -1064,8 +1064,8 @@ export default {
       const nextId = this.stageList.length > 0 ? Math.max(...this.stageList.map(s => s.id)) + 1 : 0;
       const duplicatedStage = { ...stage };
       duplicatedStage.id = nextId;
-      duplicatedStage.title = `${stage.title} (Cópia)`; 
-      duplicatedStage.isDefault = false; // Tira badge de que é raiz do sistema
+      duplicatedStage.title = `${stage.title} (CÃ³pia)`; 
+      duplicatedStage.isDefault = false; // Tira badge de que Ã© raiz do sistema
       const originalIndex = this.stageList.findIndex(s => s.id === stage.id);
       if (originalIndex !== -1) {
         this.stageList.splice(originalIndex + 1, 0, duplicatedStage); // Insere logo abaixo de quem foi duplicado
@@ -1074,7 +1074,7 @@ export default {
       }
     },
     
-    // Funções do Modal da Etapa 3 (Inscrição: Custom Fields)
+    // FunÃ§Ãµes do Modal da Etapa 3 (InscriÃ§Ã£o: Custom Fields)
     openCustomFieldModal() { this.showCustomFieldModal = true; },
     closeCustomFieldModal() {
       this.showCustomFieldModal = false;
@@ -1087,10 +1087,10 @@ export default {
       this.closeCustomFieldModal();
     },
     
-    // Funções do Modal da Etapa 3 (Inscrição: Custom Documents)
+    // FunÃ§Ãµes do Modal da Etapa 3 (InscriÃ§Ã£o: Custom Documents)
     toggleDocType(type) {
       const index = this.customDocumentForm.types.indexOf(type);
-      if (index > -1) { this.customDocumentForm.types.splice(index, 1); } // Se já tem, apaga do array visual (unselect)
+      if (index > -1) { this.customDocumentForm.types.splice(index, 1); } // Se jÃ¡ tem, apaga do array visual (unselect)
       else { this.customDocumentForm.types.push(type); } // Se n tem, injeta
       this.customDocumentTypeError = false;
     },
@@ -1109,7 +1109,7 @@ export default {
       this.closeCustomDocumentModal();
     },
     
-    // Funções do Modal da Etapa 4 (Nivelamento: Novo Curso)
+    // FunÃ§Ãµes do Modal da Etapa 4 (Nivelamento: Novo Curso)
     openNewCourseModal() { this.showNewCourseModal = true; },
     closeNewCourseModal() {
       this.showNewCourseModal = false;
@@ -1122,7 +1122,7 @@ export default {
       this.closeNewCourseModal();
     },
     
-    // Parceiros (Pílulas Aba 1)
+    // Parceiros (PÃ­lulas Aba 1)
     addPartner() { 
       if (this.newPartnerName.trim() && !this.formData.partners.includes(this.newPartnerName.trim())) { 
         this.formData.partners.push(this.newPartnerName.trim()); 
@@ -1131,16 +1131,16 @@ export default {
     },
     removePartner(idx) { this.formData.partners.splice(idx, 1); },
     
-    // CALENDÁRIO MASTER: Lógica de Motor, Popups e Máscaras de String
+    // CALENDÃRIO MASTER: LÃ³gica de Motor, Popups e MÃ¡scaras de String
     openDatePicker(f) { 
-        if (this.activeDatePicker === f) { this.closeDatePicker(); return; } // Toggle: Se clicou no que já ta aberto, fecha
+        if (this.activeDatePicker === f) { this.closeDatePicker(); return; } // Toggle: Se clicou no que jÃ¡ ta aberto, fecha
         this.activeDatePicker = f; 
         const exist = this.formData[f] || this.displayDates[f]; // Ajuste para buscar de displayDates caso o form pai n possua
         if (exist && exist.includes('-')) { 
           const [y, m, d] = exist.split('-'); 
           this.calendarDate = new Date(y, m - 1, d); // Abre o foco visual focado onde vc preencheu antes
         } else { 
-          this.calendarDate = new Date(); // Senão, abre foco visual baseando no relógio atual do seu sistema operacional
+          this.calendarDate = new Date(); // SenÃ£o, abre foco visual baseando no relÃ³gio atual do seu sistema operacional
         } 
     },
     closeDatePicker() { this.activeDatePicker = null; },
@@ -1151,7 +1151,7 @@ export default {
       const day = String(d).padStart(2, '0'); 
       const formattedIso = `${y}-${m}-${day}`;
       
-      // Salva tanto no modelo para backend quanto no modelo de exibição
+      // Salva tanto no modelo para backend quanto no modelo de exibiÃ§Ã£o
       if(this.formData[this.activeDatePicker] !== undefined) {
          this.formData[this.activeDatePicker] = formattedIso;
       } else if (this.activeDatePicker === 'prazoDevolucaoNotebook') {
@@ -1162,16 +1162,16 @@ export default {
     prevMonth() { this.calendarDate = new Date(this.calendarDate.getFullYear(), this.calendarDate.getMonth() - 1, 1); },
     nextMonth() { this.calendarDate = new Date(this.calendarDate.getFullYear(), this.calendarDate.getMonth() + 1, 1); },
     
-    // Funções injetadas para processamento de strings (Máscaras de inputs via RegEx)
+    // FunÃ§Ãµes injetadas para processamento de strings (MÃ¡scaras de inputs via RegEx)
     formatDateDisplay(s) { 
       if (!s) return ''; 
-      if (s.includes('/')) return s; // Já está formatado
+      if (s.includes('/')) return s; // JÃ¡ estÃ¡ formatado
       const parts = s.split('-'); 
       if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`; // Inverte de ymd pra dmy
       return s;
     },
     parseDateInput(f) {
-      let v = this.displayDates[f] ? this.displayDates[f].replace(/\D/g, '') : ''; // RegEx que destrói tudo o que não for número digitado
+      let v = this.displayDates[f] ? this.displayDates[f].replace(/\D/g, '') : ''; // RegEx que destrÃ³i tudo o que nÃ£o for nÃºmero digitado
       if (v.length >= 2) { 
         let d = parseInt(v.substring(0, 2)); 
         if (d > 31) v = '31' + v.substring(2); 
@@ -1190,7 +1190,7 @@ export default {
       if (v.length === 8) { 
         const d = v.substring(0, 2); const m = v.substring(2, 4); const y = v.substring(4, 8);
         const obj = new Date(y, m - 1, d); 
-        // Checa se o dia geométrico que vc inseriu existiu de fato no calendário gregoriano
+        // Checa se o dia geomÃ©trico que vc inseriu existiu de fato no calendÃ¡rio gregoriano
         if (obj.getFullYear() == y && obj.getMonth() == m - 1 && obj.getDate() == d) { 
           if(this.formData[f] !== undefined) {
              this.formData[f] = `${y}-${m}-${d}`; 
@@ -1236,7 +1236,7 @@ export default {
       this.imersaoForm.presenca.horarioPadrao = fmt;
     },
     
-    // Funções de injeção CSS do calendário
+    // FunÃ§Ãµes de injeÃ§Ã£o CSS do calendÃ¡rio
     isSelectedDay(f, d) { 
       if (!d) return false; 
       let formVal = this.formData[f];
@@ -1251,19 +1251,19 @@ export default {
       return day && t.getFullYear() === this.calendarDate.getFullYear() && t.getMonth() === this.calendarDate.getMonth() && t.getDate() === day; 
     },
 
-    // Publica o programa após validação final
+    // Publica o programa apÃ³s validaÃ§Ã£o final
     async publishProgram() {
       console.log('Publicando edital...', this.formData);
       
       try {
-        // Validação básica dos campos obrigatórios
+        // ValidaÃ§Ã£o bÃ¡sica dos campos obrigatÃ³rios
         if (!this.formData.programName || !this.formData.programName.trim()) {
-          alert('Nome do programa é obrigatório.');
+          alert('Nome do programa Ã© obrigatÃ³rio.');
           return;
         }
         
         if (!this.formData.startDate || !this.formData.endDate) {
-          alert('Datas de início e fim são obrigatórias.');
+          alert('Datas de inÃ­cio e fim sÃ£o obrigatÃ³rias.');
           return;
         }
 
@@ -1271,11 +1271,20 @@ export default {
         const programData = {
           name: this.formData.programName.trim(),
           contractNumber: this.formData.batchName || this.formData.programName,
+          executorName: this.formData.executor || '',
+          fundingEntity: this.formData.fundingEntity || '',
+          generalCoordinator: this.formData.generalCoordinator || '',
+          programValue: this.formData.programValue === '' ? null : Number(this.formData.programValue),
           startDate: this.formData.startDate,
           endDate: this.formData.endDate,
           targetAudience: this.formData.objective || '',
           quotaCriteria: JSON.stringify(this.inscriptionForm.quotas),
-          evaluationCriteria: JSON.stringify(this.nivelamentoForm.grading)
+          evaluationCriteria: JSON.stringify(this.nivelamentoForm.grading),
+          supportEmail: this.formData.supportEmail || '',
+          officialWebsite: this.formData.officialWebsite || '',
+          mainLocality: this.formData.location || '',
+          observations: this.formData.observations || '',
+          partnerNames: (this.formData.partners || []).join('; ')
         };
 
         let programId;
@@ -1313,14 +1322,14 @@ export default {
         };
 
         if (!this.isEditMode) {
-          // Só criar nova classe se estamos criando um novo programa
+          // SÃ³ criar nova classe se estamos criando um novo programa
           const classResponse = await this.programService.createClassFromProgram(programId, classData);
           console.log('Edital (classe) criado com sucesso:', classResponse);
         } else {
-          console.log('Em modo de edição - classe não foi criada novamente');
+          console.log('Em modo de ediÃ§Ã£o - classe nÃ£o foi criada novamente');
         }
         
-        this.executeRestartRegistration(); // Limpa o formulário após publicação
+        this.executeRestartRegistration(); // Limpa o formulÃ¡rio apÃ³s publicaÃ§Ã£o
         this.showPublishSuccessModal = true;
       } catch (error) {
         console.error('Erro ao publicar edital:', error);
@@ -1329,41 +1338,53 @@ export default {
       }
     },
 
-    // Carrega os dados do programa para edição
+    // Carrega os dados do programa para ediÃ§Ã£o
     async loadProgramForEdit() {
       try {
         const program = await this.programService.getById(this.editingProgramId);
-        console.log('Programa carregado para edição:', program);
+        console.log('Programa carregado para ediÃ§Ã£o:', program);
         
-        // Mapear dados do programa para as estruturas de formulário
+        // Mapear dados do programa para as estruturas de formulÃ¡rio
         this.mapProgramToFormData(program);
         
-        // Marcar como rascunho não salvo para indicar que está carregado
+        // Marcar como rascunho nÃ£o salvo para indicar que estÃ¡ carregado
         this.isDraftSaved = true;
         this.currentStep = 1;
       } catch (error) {
-        console.error('Erro ao carregar programa para edição:', error);
+        console.error('Erro ao carregar programa para ediÃ§Ã£o:', error);
         alert('Erro ao carregar programa: ' + (error.response?.data?.message || error.message));
         // Redirecionar para programas em caso de erro
         this.$router.push('/programs');
       }
     },
 
-    // Mapeia dados do programa da API para as estruturas de formulário da tela
+    // Mapeia dados do programa da API para as estruturas de formulÃ¡rio da tela
     mapProgramToFormData(program) {
       // Aba 1 - Dados gerais do programa
       this.formData.programName = program.name || '';
       this.formData.batchName = program.contractNumber || '';
+      this.formData.executor = program.executorName || '';
+      this.formData.fundingEntity = program.fundingEntity || '';
+      this.formData.generalCoordinator = program.generalCoordinator || '';
+      this.formData.programValue = program.programValue ?? '';
       this.formData.objective = program.targetAudience || '';
+      this.formData.location = program.mainLocality || '';
+      this.formData.supportEmail = program.supportEmail || '';
+      this.formData.officialWebsite = program.officialWebsite || '';
+      this.formData.observations = program.observations || '';
+      this.formData.partners = (program.partnerNames || '')
+        .split(/[;,]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
       this.formData.startDate = program.startDate || '';
       this.formData.endDate = program.endDate || '';
       
-      // Tentar parsear critérios de quota e avaliação
+      // Tentar parsear critÃ©rios de quota e avaliaÃ§Ã£o
       if (program.quotaCriteria) {
         try {
           this.inscriptionForm.quotas = JSON.parse(program.quotaCriteria);
         } catch (e) {
-          console.warn('Não foi possível parsear quotaCriteria');
+          console.warn('NÃ£o foi possÃ­vel parsear quotaCriteria');
         }
       }
       
@@ -1371,7 +1392,7 @@ export default {
         try {
           this.nivelamentoForm.grading = JSON.parse(program.evaluationCriteria);
         } catch (e) {
-          console.warn('Não foi possível parsear evaluationCriteria');
+          console.warn('NÃ£o foi possÃ­vel parsear evaluationCriteria');
         }
       }
       
@@ -1386,173 +1407,174 @@ export default {
 <style>
 * { box-sizing: border-box; } /* Aplica box-sizing para todos os elementos */
 .program-registration-view { min-height: 100vh; background-color: #fafbfd; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; } /* Estilo principal da tela de registro */
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; } /* Cabeçalho da página */
-.header-left h1 { font-size: 22px; font-weight: 600; color: #1a233a; margin: 0 0 4px 0; } /* Título principal do cabeçalho */
-.subtitle { color: #6b7280; margin: 0; font-size: 13px; } /* Subtítulo do cabeçalho */
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; } /* CabeÃ§alho da pÃ¡gina */
+.header-left h1 { font-size: 22px; font-weight: 600; color: #1a233a; margin: 0 0 4px 0; } /* TÃ­tulo principal do cabeÃ§alho */
+.subtitle { color: #6b7280; margin: 0; font-size: 13px; } /* SubtÃ­tulo do cabeÃ§alho */
 .registration-container { display: grid; grid-template-columns: 260px 1fr 280px; gap: 32px; align-items: start; } /* Grid principal dividindo as 3 colunas */
 .sidebar { position: sticky; top: 90px; height: fit-content; max-height: calc(100vh - 110px); overflow-y: auto; } /* Barra lateral esquerda fixa */
 .steps { display: flex; flex-direction: column; } /* Container dos passos na barra lateral */
-.step { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; } /* Estilo de cada passo (botão) */
+.step { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; } /* Estilo de cada passo (botÃ£o) */
 .step:hover { background-color: #f3f4f6; } /* Efeito hover no passo */
 .step.active { background-color: #e0f2fe; border: 1px solid #bae6fd; } /* Estilo do passo ativo (selecionado) */
-.step-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #0288d1; color: white; transition: all 0.2s; } /* Ícone circular do passo */
-.step-icon.outline { background-color: #f3f4f6; color: #9ca3af; } /* Ícone de passo inativo/futuro */
-.step.completed .step-icon { background-color: #0288d1; color: white; } /* Ícone de passo concluído */
-.step.warning .step-icon { background-color: #f59e0b; color: white; } /* Ícone de passo com aviso (incompleto) */
+.step-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #0288d1; color: white; transition: all 0.2s; } /* Ãcone circular do passo */
+.step-icon.outline { background-color: #f3f4f6; color: #9ca3af; } /* Ãcone de passo inativo/futuro */
+.step.completed .step-icon { background-color: #0288d1; color: white; } /* Ãcone de passo concluÃ­do */
+.step.warning .step-icon { background-color: #f59e0b; color: white; } /* Ãcone de passo com aviso (incompleto) */
 .step-label { display: flex; flex-direction: column; } /* Container do texto do passo */
-.step-title { font-size: 14px; font-weight: 500; color: #1a233a; transition: color 0.2s; } /* Título do passo */
-.step.active .step-title, .step.completed .step-title { color: #000000; } /* Cor do título para ativo/concluído */
-.step-desc { font-size: 13px; color: #6b7280; transition: color 0.2s; } /* Descrição do passo */
-.step.active .step-desc, .step.completed .step-desc { color: #000000; } /* Cor da descrição para ativo/concluído */
+.step-title { font-size: 14px; font-weight: 500; color: #1a233a; transition: color 0.2s; } /* TÃ­tulo do passo */
+.step.active .step-title, .step.completed .step-title { color: #000000; } /* Cor do tÃ­tulo para ativo/concluÃ­do */
+.step-desc { font-size: 13px; color: #6b7280; transition: color 0.2s; } /* DescriÃ§Ã£o do passo */
+.step.active .step-desc, .step.completed .step-desc { color: #000000; } /* Cor da descriÃ§Ã£o para ativo/concluÃ­do */
 .step-divider { width: 1px; height: 16px; background-color: #e5e7eb; margin-left: 32px; } /* Linha conectora entre os passos */
 .sidebar::-webkit-scrollbar, .summary-sidebar::-webkit-scrollbar { width: 4px; } /* Largura da barra de rolagem customizada */
 .sidebar::-webkit-scrollbar-thumb, .summary-sidebar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; } /* Cor e formato da barra de rolagem */
-.content { display: flex; flex-direction: column; justify-content: space-between; min-height: calc(100vh - 120px); } /* Coluna central de conteúdo */
+.content { display: flex; flex-direction: column; justify-content: space-between; min-height: calc(100vh - 120px); } /* Coluna central de conteÃºdo */
 .step-container { display: flex; flex-direction: column; gap: 12px; } /* Container interno da etapa atual */
-.step-header h2 { font-size: 20px; color: #1a233a; margin: 0 0 4px 0; } /* Título da etapa no topo do conteúdo */
-.step-header p { margin: 0; color: #6b7280; font-size: 14px; } /* Subtítulo da etapa no topo do conteúdo */
-.card-section { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px 24px; } /* Estilo dos cartões brancos de formulário */
-.section-title { margin-bottom: 16px; } /* Margem inferior do título da seção */
-.section-title h3 { font-size: 17px; font-weight: 600; color: #1a233a; margin: 0 0 4px 0; } /* Título h3 de cada cartão */
-.section-title p { font-size: 15px; color: #6b7280; margin: 0; } /* Descrição de cada cartão */
-.form-row { display: flex; gap: 16px; width: 100%; } /* Linha do formulário (flexbox) */
+.step-header h2 { font-size: 20px; color: #1a233a; margin: 0 0 4px 0; } /* TÃ­tulo da etapa no topo do conteÃºdo */
+.step-header p { margin: 0; color: #6b7280; font-size: 14px; } /* SubtÃ­tulo da etapa no topo do conteÃºdo */
+.card-section { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px 24px; } /* Estilo dos cartÃµes brancos de formulÃ¡rio */
+.section-title { margin-bottom: 16px; } /* Margem inferior do tÃ­tulo da seÃ§Ã£o */
+.section-title h3 { font-size: 17px; font-weight: 600; color: #1a233a; margin: 0 0 4px 0; } /* TÃ­tulo h3 de cada cartÃ£o */
+.section-title p { font-size: 15px; color: #6b7280; margin: 0; } /* DescriÃ§Ã£o de cada cartÃ£o */
+.form-row { display: flex; gap: 16px; width: 100%; } /* Linha do formulÃ¡rio (flexbox) */
 .form-row.two-cols > .form-group { flex: 1; } /* Linha com 2 colunas divididas igualmente */
 .three-cols-special { display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 16px; } /* Linha com 3 colunas proporcionais */
 .form-group { margin-bottom: 16px; position: relative; } /* Container para label e input */
 .form-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #374151; } /* Estilo dos labels dos inputs */
-.required { color: #ef4444; } /* Asterisco vermelho para campos obrigatórios */
+.required { color: #ef4444; } /* Asterisco vermelho para campos obrigatÃ³rios */
 .form-input, .form-textarea { width: 100%; padding: 10px 12px; border: 1px solid transparent; border-radius: 6px; background-color: #f9fafb; font-family: inherit; font-size: 14px; color: #1a233a; transition: all 0.2s; } /* Estilo global de inputs e textareas */
-.form-select { appearance: auto; cursor: pointer; padding-left: 8px; } /* Estilo específico para dropdowns (select) */
+.form-select { appearance: auto; cursor: pointer; padding-left: 8px; } /* Estilo especÃ­fico para dropdowns (select) */
 .form-input:focus, .form-textarea:focus { outline: none; background-color: white; box-shadow: 0 0 0 1px #3b82f6; } /* Efeito de foco nos inputs */
 .form-input::placeholder, .form-textarea::placeholder { color: #9ca3af; } /* Cor do texto de placeholder */
 .form-textarea { resize: vertical; } /* Permite redimensionar textarea apenas na vertical */
 .form-input.input-error { background-color: #fef2f2; box-shadow: 0 0 0 1px #ef4444; } /* Estilo de erro para inputs */
 .error-text { display: block; color: #ef4444; font-size: 11px; margin-top: 6px; font-weight: 500; } /* Mensagem de erro abaixo do input */
-.duration-input-group { display: flex; gap: 8px; width: 100%; } /* Grupo flex para input de duração e unidade */
-.duration-input-group input { flex: 1; } /* Input numérico expandido no grupo de duração */
-.duration-input-group select { flex: 1; min-width: 100px; } /* Dropdown expandido no grupo de duração */
+.duration-input-group { display: flex; gap: 8px; width: 100%; } /* Grupo flex para input de duraÃ§Ã£o e unidade */
+.duration-input-group input { flex: 1; } /* Input numÃ©rico expandido no grupo de duraÃ§Ã£o */
+.duration-input-group select { flex: 1; min-width: 100px; } /* Dropdown expandido no grupo de duraÃ§Ã£o */
 .partner-input-row { display: flex; gap: 12px; align-items: center; } /* Linha para input de parceiros */
 .partner-input-row .form-input { flex: 1; } /* Input expandido na linha de parceiros */
-.btn-add-partner { display: flex; align-items: center; gap: 6px; background-color: #1e1b4b; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; } /* Botão de adicionar parceiro */
-.partner-tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; } /* Container para as tags/pílulas de parceiros */
+.btn-add-partner { display: flex; align-items: center; gap: 6px; background-color: #1e1b4b; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; } /* BotÃ£o de adicionar parceiro */
+.partner-tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; } /* Container para as tags/pÃ­lulas de parceiros */
 .partner-tag { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid #0288d1; background-color: #e1f5fe; color: #01579b; border-radius: 16px; font-size: 13px; font-weight: 500; } /* Estilo individual da tag de parceiro */
-.btn-remove-tag { background: transparent; border: none; padding: 0; color: #0288d1; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; } /* Botão X para remover tag de parceiro */
+.btn-remove-tag { background: transparent; border: none; padding: 0; color: #0288d1; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; } /* BotÃ£o X para remover tag de parceiro */
 .info-alert { display: flex; gap: 12px; background-color: #e1f5fe; border: 1px solid #b3e5fc; border-radius: 10px; padding: 16px; margin-bottom: 8px; color: #01579b; } /* Caixa azul de alerta informativo */
-.alert-icon { flex-shrink: 0; margin-top: 2px; } /* Ícone da caixa de alerta */
-.alert-content strong { display: block; font-size: 14px; margin-bottom: 4px; } /* Título em negrito do alerta */
+.alert-icon { flex-shrink: 0; margin-top: 2px; } /* Ãcone da caixa de alerta */
+.alert-content strong { display: block; font-size: 14px; margin-bottom: 4px; } /* TÃ­tulo em negrito do alerta */
 .alert-content p { margin: 0; font-size: 13px; line-height: 1.4; opacity: 0.9; } /* Texto descritivo do alerta */
 .stages-list { display: flex; flex-direction: column; gap: 16px; } /* Container vertical para lista de etapas (cards) */
 .stage-card { display: flex; background: white; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; transition: all 0.2s ease; } /* Card individual de etapa */
-.stage-card.is-dragged { opacity: 0.4; border: 2px dashed #9ca3af; } /* Estilo do card de etapa quando está sendo arrastado */
-.stage-card.is-dragover { border-top: 4px solid #0288d1; margin-top: 8px; } /* Indicador visual onde o card arrastado será solto */
-.stage-drag-handle { padding: 0 12px; display: flex; align-items: center; justify-content: center; color: #d1d5db; cursor: grab; border-right: 1px solid #e5e7eb; background: #f9fafb; } /* Alça lateral esquerda para arrastar o card */
-.stage-drag-handle:active { cursor: grabbing; } /* Cursor muda ao segurar a alça de arrastar */
-.stage-body { padding: 20px; flex: 1; } /* Corpo de conteúdo do card de etapa */
-.stage-header { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; } /* Cabeçalho interno do card de etapa */
-.stage-number { width: 32px; height: 32px; border-radius: 50%; background-color: #0288d1; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; } /* Círculo azul com número da etapa */
-.stage-titles h4 { margin: 0 0 4px 0; font-size: 15px; color: #1a233a; display: flex; align-items: center; } /* Título interno do card de etapa */
-.badge-padrao { background-color: #e1f5fe; color: #0288d1; font-size: 10px; padding: 2px 8px; border-radius: 12px; margin-left: 8px; font-weight: 500; } /* Etiqueta indicando que a etapa é padrão do sistema */
-.stage-type { font-size: 12px; color: #6b7280; } /* Texto do tipo da etapa abaixo do título */
-.stage-description { margin: 0 0 20px 0; font-size: 13px; color: #4b5563; } /* Parágrafo de descrição dentro do card de etapa */
-.stage-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f3f4f6; } /* Grid com ícones e métricas da etapa */
-.info-item { display: flex; align-items: flex-start; gap: 8px; color: #6b7280; } /* Item individual no grid de métricas */
-.info-item svg { margin-top: 2px; color: #9ca3af; } /* Ícone SVG da métrica na etapa */
-.info-item small { display: block; font-size: 11px; margin-bottom: 2px; } /* Título pequeno da métrica na etapa */
-.info-item span { display: block; font-size: 13px; color: #1a233a; font-weight: 500; } /* Valor numérico/texto da métrica na etapa */
-.stage-actions { display: flex; gap: 12px; } /* Container para os botões Editar/Duplicar/Excluir da etapa */
-.btn-stage-action { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; display: flex; align-items: center; gap: 6px; } /* Estilo dos botões de ação do card da etapa */
-.btn-stage-action.btn-danger { color: #fff; border-color: #ef4444; background: #ef4444; } /* Estilo de erro/vermelho para o botão Excluir etapa */
-.stage-list-actions { display: flex; gap: 12px; margin-top: 8px; margin-bottom: 40px; } /* Ações globais no rodapé da lista de etapas */
-.btn-action-outline { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 16px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; } /* Botão vazado para adicionar nova etapa */
-.btn-action-outline:hover { background: #f9fafb; border-color: #9ca3af; } /* Efeito hover no botão vazado */
-.modal-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; } /* Fundo escuro atrás dos popups (modais) */
+.stage-card.is-dragged { opacity: 0.4; border: 2px dashed #9ca3af; } /* Estilo do card de etapa quando estÃ¡ sendo arrastado */
+.stage-card.is-dragover { border-top: 4px solid #0288d1; margin-top: 8px; } /* Indicador visual onde o card arrastado serÃ¡ solto */
+.stage-drag-handle { padding: 0 12px; display: flex; align-items: center; justify-content: center; color: #d1d5db; cursor: grab; border-right: 1px solid #e5e7eb; background: #f9fafb; } /* AlÃ§a lateral esquerda para arrastar o card */
+.stage-drag-handle:active { cursor: grabbing; } /* Cursor muda ao segurar a alÃ§a de arrastar */
+.stage-body { padding: 20px; flex: 1; } /* Corpo de conteÃºdo do card de etapa */
+.stage-header { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; } /* CabeÃ§alho interno do card de etapa */
+.stage-number { width: 32px; height: 32px; border-radius: 50%; background-color: #0288d1; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; } /* CÃ­rculo azul com nÃºmero da etapa */
+.stage-titles h4 { margin: 0 0 4px 0; font-size: 15px; color: #1a233a; display: flex; align-items: center; } /* TÃ­tulo interno do card de etapa */
+.badge-padrao { background-color: #e1f5fe; color: #0288d1; font-size: 10px; padding: 2px 8px; border-radius: 12px; margin-left: 8px; font-weight: 500; } /* Etiqueta indicando que a etapa Ã© padrÃ£o do sistema */
+.stage-type { font-size: 12px; color: #6b7280; } /* Texto do tipo da etapa abaixo do tÃ­tulo */
+.stage-description { margin: 0 0 20px 0; font-size: 13px; color: #4b5563; } /* ParÃ¡grafo de descriÃ§Ã£o dentro do card de etapa */
+.stage-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f3f4f6; } /* Grid com Ã­cones e mÃ©tricas da etapa */
+.info-item { display: flex; align-items: flex-start; gap: 8px; color: #6b7280; } /* Item individual no grid de mÃ©tricas */
+.info-item svg { margin-top: 2px; color: #9ca3af; } /* Ãcone SVG da mÃ©trica na etapa */
+.info-item small { display: block; font-size: 11px; margin-bottom: 2px; } /* TÃ­tulo pequeno da mÃ©trica na etapa */
+.info-item span { display: block; font-size: 13px; color: #1a233a; font-weight: 500; } /* Valor numÃ©rico/texto da mÃ©trica na etapa */
+.stage-actions { display: flex; gap: 12px; } /* Container para os botÃµes Editar/Duplicar/Excluir da etapa */
+.btn-stage-action { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; display: flex; align-items: center; gap: 6px; } /* Estilo dos botÃµes de aÃ§Ã£o do card da etapa */
+.btn-stage-action.btn-danger { color: #fff; border-color: #ef4444; background: #ef4444; } /* Estilo de erro/vermelho para o botÃ£o Excluir etapa */
+.stage-list-actions { display: flex; gap: 12px; margin-top: 8px; margin-bottom: 40px; } /* AÃ§Ãµes globais no rodapÃ© da lista de etapas */
+.btn-action-outline { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 16px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; } /* BotÃ£o vazado para adicionar nova etapa */
+.btn-action-outline:hover { background: #f9fafb; border-color: #9ca3af; } /* Efeito hover no botÃ£o vazado */
+.modal-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; } /* Fundo escuro atrÃ¡s dos popups (modais) */
 .modal-content { background: white; border-radius: 12px; padding: 24px; width: 100%; max-width: 600px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); } /* Caixa branca principal do modal */
-.modal-sm { max-width: 450px; } /* Classe modificadora para modais menores (ex: exclusão) */
-.modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; } /* Cabeçalho interno do modal */
-.modal-header h3 { margin: 0; font-size: 18px; color: #1a233a; font-weight: 600; } /* Título h3 do modal */
-.modal-subtitle { margin: 4px 0 0 0; font-size: 13px; color: #6b7280; } /* Subtítulo descritivo do modal */
-.btn-close-modal { background: transparent; border: none; color: #9ca3af; cursor: pointer; padding: 4px; border-radius: 6px; display: flex; } /* Botão de fechar (X) do modal */
-.modal-body { margin-bottom: 24px; } /* Corpo interno de conteúdo do modal */
-.delete-confirm-text { font-size: 14px; color: #374151; line-height: 1.5; margin: 0; } /* Texto de aviso no modal de exclusão */
-.modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid #e5e7eb; } /* Rodapé do modal com botões */
-.btn-footer-danger { background-color: #ef4444; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; } /* Botão vermelho de perigo no modal */
-.btn-footer-danger:hover { opacity: 0.9; } /* Efeito hover no botão de perigo */
-.form-actions-footer { display: flex; justify-content: space-between; align-items: center; padding: 24px; border-top: 1px solid #e5e7eb; margin-top: auto; } /* Rodapé fixo de navegação Voltar/Continuar */
-.ml-auto { margin-left: auto; } /* Utilitário para empurrar botão Continuar para a direita */
-.btn-footer-back { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 24px; font-size: 13px; font-weight: 500; color: #1a233a; cursor: pointer; transition: all 0.2s; } /* Botão de Voltar etapa ou Cancelar modal */
-.btn-footer-continue { background-color: #1e1b4b; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; } /* Botão primário para Salvar ou Continuar */
+.modal-sm { max-width: 450px; } /* Classe modificadora para modais menores (ex: exclusÃ£o) */
+.modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; } /* CabeÃ§alho interno do modal */
+.modal-header h3 { margin: 0; font-size: 18px; color: #1a233a; font-weight: 600; } /* TÃ­tulo h3 do modal */
+.modal-subtitle { margin: 4px 0 0 0; font-size: 13px; color: #6b7280; } /* SubtÃ­tulo descritivo do modal */
+.btn-close-modal { background: transparent; border: none; color: #9ca3af; cursor: pointer; padding: 4px; border-radius: 6px; display: flex; } /* BotÃ£o de fechar (X) do modal */
+.modal-body { margin-bottom: 24px; } /* Corpo interno de conteÃºdo do modal */
+.delete-confirm-text { font-size: 14px; color: #374151; line-height: 1.5; margin: 0; } /* Texto de aviso no modal de exclusÃ£o */
+.modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid #e5e7eb; } /* RodapÃ© do modal com botÃµes */
+.btn-footer-danger { background-color: #ef4444; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; } /* BotÃ£o vermelho de perigo no modal */
+.btn-footer-danger:hover { opacity: 0.9; } /* Efeito hover no botÃ£o de perigo */
+.form-actions-footer { display: flex; justify-content: space-between; align-items: center; padding: 24px; border-top: 1px solid #e5e7eb; margin-top: auto; } /* RodapÃ© fixo de navegaÃ§Ã£o Voltar/Continuar */
+.ml-auto { margin-left: auto; } /* UtilitÃ¡rio para empurrar botÃ£o Continuar para a direita */
+.btn-footer-back { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 24px; font-size: 13px; font-weight: 500; color: #1a233a; cursor: pointer; transition: all 0.2s; } /* BotÃ£o de Voltar etapa ou Cancelar modal */
+.btn-footer-continue { background-color: #1e1b4b; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; } /* BotÃ£o primÃ¡rio para Salvar ou Continuar */
 .date-row { display: flex; gap: 16px; width: 100%; } /* Linha flex para agrupar campos de data */
-.date-field { flex: 1; min-width: 0; } /* Campo de data ocupando espaço disponível */
-.picker-overlay { position: fixed; inset: 0; z-index: 50; background: transparent; } /* Camada invisível para fechar calendário ao clicar fora */
-.date-input-wrapper { position: relative; z-index: 51; width: 100%; } /* Container relativo para input de data e ícone SVG */
-.date-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; cursor: pointer; } /* Ícone de calendário clicável no input */
-.custom-calendar { position: absolute; top: calc(100% + 8px); right: 0; width: 260px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 100; padding: 16px; } /* Caixa popup do calendário dinâmico */
-.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: 600; color: #1a233a; font-size: 14px; } /* Topo do calendário com Mês, Ano e Setas */
-.cal-btn { background: transparent; border: 1px solid transparent; cursor: pointer; color: #6b7280; padding: 4px; border-radius: 6px; } /* Setas de navegação de meses do calendário */
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; } /* Matriz 7x7 dos dias do calendário */
-.cal-weekday { text-align: center; font-size: 11px; font-weight: 600; color: #9ca3af; margin-bottom: 8px; } /* Rótulos dos dias da semana (Dom, Seg...) */
-.cal-day { height: 32px; display: flex; align-items: center; justify-content: center; font-size: 13px; border-radius: 6px; cursor: pointer; color: #374151; } /* Quadrado clicável para cada número de dia */
-.cal-day.selected { background-color: #1e1b4b; color: white; font-weight: 600; } /* Destaque azul para a data que está selecionada */
+.date-field { flex: 1; min-width: 0; } /* Campo de data ocupando espaÃ§o disponÃ­vel */
+.picker-overlay { position: fixed; inset: 0; z-index: 50; background: transparent; } /* Camada invisÃ­vel para fechar calendÃ¡rio ao clicar fora */
+.date-input-wrapper { position: relative; z-index: 51; width: 100%; } /* Container relativo para input de data e Ã­cone SVG */
+.date-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; cursor: pointer; } /* Ãcone de calendÃ¡rio clicÃ¡vel no input */
+.custom-calendar { position: absolute; top: calc(100% + 8px); right: 0; width: 260px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 100; padding: 16px; } /* Caixa popup do calendÃ¡rio dinÃ¢mico */
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: 600; color: #1a233a; font-size: 14px; } /* Topo do calendÃ¡rio com MÃªs, Ano e Setas */
+.cal-btn { background: transparent; border: 1px solid transparent; cursor: pointer; color: #6b7280; padding: 4px; border-radius: 6px; } /* Setas de navegaÃ§Ã£o de meses do calendÃ¡rio */
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; } /* Matriz 7x7 dos dias do calendÃ¡rio */
+.cal-weekday { text-align: center; font-size: 11px; font-weight: 600; color: #9ca3af; margin-bottom: 8px; } /* RÃ³tulos dos dias da semana (Dom, Seg...) */
+.cal-day { height: 32px; display: flex; align-items: center; justify-content: center; font-size: 13px; border-radius: 6px; cursor: pointer; color: #374151; } /* Quadrado clicÃ¡vel para cada nÃºmero de dia */
+.cal-day.selected { background-color: #1e1b4b; color: white; font-weight: 600; } /* Destaque azul para a data que estÃ¡ selecionada */
 .summary-sidebar { position: sticky; top: 90px; height: fit-content; max-height: calc(100vh - 110px); overflow-y: auto; border-left: 1px solid #e5e7eb; padding-left: 32px; } /* Barra lateral direita com Resumo e Status */
-.sidebar-actions-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; } /* Bloco de ações globais na barra lateral direita */
-.sidebar-actions { display: flex; align-items: center; gap: 12px; } /* Container para botões da sidebar direita */
-.btn-sidebar-draft { display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #0288d1; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; color: white; cursor: pointer; font-weight: 500; width: 100%; transition: opacity 0.2s; } /* Botão azul para Salvar Rascunho lateral */
-.btn-sidebar-draft:hover { opacity: 0.9; } /* Efeito hover botão Salvar Rascunho */
-.btn-sidebar-restart { display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #ef4444; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; color: white; cursor: pointer; font-weight: 500; width: 100%; transition: opacity 0.2s; } /* Botão vermelho para Reiniciar Cadastro lateral */
-.btn-sidebar-restart:hover { opacity: 0.9; } /* Efeito hover botão Reiniciar Cadastro */
-.status-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; } /* Pílula de status genérica */
+.sidebar-actions-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; } /* Bloco de aÃ§Ãµes globais na barra lateral direita */
+.sidebar-actions { display: flex; align-items: center; gap: 12px; } /* Container para botÃµes da sidebar direita */
+.btn-sidebar-draft { display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #0288d1; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; color: white; cursor: pointer; font-weight: 500; width: 100%; transition: opacity 0.2s; } /* BotÃ£o azul para Salvar Rascunho lateral */
+.btn-sidebar-draft:hover { opacity: 0.9; } /* Efeito hover botÃ£o Salvar Rascunho */
+.btn-sidebar-restart { display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #ef4444; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; color: white; cursor: pointer; font-weight: 500; width: 100%; transition: opacity 0.2s; } /* BotÃ£o vermelho para Reiniciar Cadastro lateral */
+.btn-sidebar-restart:hover { opacity: 0.9; } /* Efeito hover botÃ£o Reiniciar Cadastro */
+.status-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; } /* PÃ­lula de status genÃ©rica */
 .outline-badge { border: 1px solid #e5e7eb; background: white; color: #4b5563; } /* Badge vazio/estado inicial */
 .badge-saved { background-color: #dcfce7; color: #065f46; border: 1px solid #bbf7d0; } /* Badge indicando sucesso/salvo (Verde) */
-.badge-unsaved { background-color: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; } /* Badge indicando não salvo (Cinza) */
-.summary-sidebar h3 { font-size: 16px; margin: 0 0 4px 0; color: #1a233a; } /* Título principal da barra de resumo */
-.summary-desc { font-size: 13px; color: #9ca3af; margin: 0 0 24px 0; font-style: italic; } /* Subtítulo da barra de resumo */
-.summary-block { margin-bottom: 24px; } /* Bloco de divisão dentro da barra de resumo */
+.badge-unsaved { background-color: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; } /* Badge indicando nÃ£o salvo (Cinza) */
+.summary-sidebar h3 { font-size: 16px; margin: 0 0 4px 0; color: #1a233a; } /* TÃ­tulo principal da barra de resumo */
+.summary-desc { font-size: 13px; color: #9ca3af; margin: 0 0 24px 0; font-style: italic; } /* SubtÃ­tulo da barra de resumo */
+.summary-block { margin-bottom: 24px; } /* Bloco de divisÃ£o dentro da barra de resumo */
 .summary-label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 8px; } /* Label das categorias de resumo */
-.timeline { display: flex; flex-direction: column; } /* Contêiner da linha do tempo na lateral */
+.timeline { display: flex; flex-direction: column; } /* ContÃªiner da linha do tempo na lateral */
 .timeline-item { display: flex; gap: 12px; } /* Item individual da linha do tempo */
 .timeline-number { width: 20px; height: 20px; border-radius: 50%; background-color: #0288d1; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; margin-top: 2px; } /* Bolinha numerada azul da timeline */
-.timeline-content h4 { margin: 0 0 2px 0; font-size: 14px; color: #1a233a; } /* Título da etapa na timeline */
+.timeline-content h4 { margin: 0 0 2px 0; font-size: 14px; color: #1a233a; } /* TÃ­tulo da etapa na timeline */
 .timeline-content p { margin: 0 0 4px 0; font-size: 13px; color: #6b7280; } /* Tipo da etapa na timeline */
 .timeline-tag { font-size: 12px; color: #01579b; } /* Etiqueta com vagas ou detalhe extra na timeline */
 .timeline-line { width: 1.5px; height: 24px; background-color: #e5e7eb; margin-left: 9px; margin-top: 4px; margin-bottom: 4px; } /* Fio vertical que une os pontos da timeline */
-.summary-footer { margin-top: 40px; font-size: 12px; color: #9ca3af; } /* Texto de rodapé com a hora da última atualização */
-.toggle-switch { position: relative; display: inline-block; width: 36px; height: 20px; } /* Box principal do botão switch (Toggle) */
+.summary-footer { margin-top: 40px; font-size: 12px; color: #9ca3af; } /* Texto de rodapÃ© com a hora da Ãºltima atualizaÃ§Ã£o */
+.toggle-switch { position: relative; display: inline-block; width: 36px; height: 20px; } /* Box principal do botÃ£o switch (Toggle) */
 .toggle-input { opacity: 0; width: 0; height: 0; } /* Esconde o input checkbox nativo do toggle */
-.toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #d1d5db; transition: .3s; border-radius: 20px; } /* Corpo deslizante do switch com animação */
+.toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #d1d5db; transition: .3s; border-radius: 20px; } /* Corpo deslizante do switch com animaÃ§Ã£o */
 .toggle-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; } /* Bolinha branca de dentro do switch */
 .toggle-input:checked + .toggle-slider { background-color: #1e1b4b; } /* Cor do switch ativado (ligado) */
-.toggle-input:checked + .toggle-slider:before { transform: translateX(16px); } /* Animação arrastando a bolinha branca para direita */
-.list-item-row { display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; background-color: white; } /* Linha visual de tabela usada em requisitos ou opções de toggle */
-.toggle-row-simple { border: none; padding: 0 0 16px 0; border-radius: 0; border-bottom: 1px solid #f3f4f6; margin-bottom: 16px; } /* Variação de linha sem bordas fechadas, apenas risco em baixo */
+.toggle-input:checked + .toggle-slider:before { transform: translateX(16px); } /* AnimaÃ§Ã£o arrastando a bolinha branca para direita */
+.list-item-row { display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; background-color: white; } /* Linha visual de tabela usada em requisitos ou opÃ§Ãµes de toggle */
+.toggle-row-simple { border: none; padding: 0 0 16px 0; border-radius: 0; border-bottom: 1px solid #f3f4f6; margin-bottom: 16px; } /* VariaÃ§Ã£o de linha sem bordas fechadas, apenas risco em baixo */
 .list-item-info { display: flex; align-items: center; } /* Container para infos em lista */
 .list-item-info-stacked { display: flex; flex-direction: column; } /* Container para infos de lista em coluna */
-.list-item-title { font-size: 14px; color: #1a233a; font-weight: 500; } /* Título base de iten de lista (toggles, cursos, cotas) */
+.list-item-title { font-size: 14px; color: #1a233a; font-weight: 500; } /* TÃ­tulo base de iten de lista (toggles, cursos, cotas) */
 .list-item-sub { font-size: 12px; color: #6b7280; margin-top: 4px; } /* Subtexto descritivo para itens de lista */
-.badge-required { background-color: #fef2f2; color: #ef4444; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 500; } /* Etiqueta vermelha indicando item obrigatório */
-.btn-dashed-add { width: 100%; padding: 12px; background: white; border: 1px dashed #d1d5db; color: #1a233a; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 8px; transition: all 0.2s; } /* Botão transparente tracejado para adicionar algo na lista */
-.btn-dashed-add:hover { background-color: #f9fafb; border-color: #9ca3af; } /* Hover do botão tracejado de adicionar */
-.quota-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; } /* Linha de formulário exclusiva para cotas */
-.quota-input-wrapper { display: flex; align-items: center; gap: 8px; } /* Container juntando input de cota + símbolo % */
-.quota-input { width: 60px; padding: 6px 10px; text-align: right; border: 1px solid transparent; background-color: #f3f4f6; border-radius: 6px; font-size: 14px; color: #1a233a; transition: all 0.2s; } /* Caixa numérica pequena para cotas e pesos */
+.badge-required { background-color: #fef2f2; color: #ef4444; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 500; } /* Etiqueta vermelha indicando item obrigatÃ³rio */
+.btn-dashed-add { width: 100%; padding: 12px; background: white; border: 1px dashed #d1d5db; color: #1a233a; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 8px; transition: all 0.2s; } /* BotÃ£o transparente tracejado para adicionar algo na lista */
+.btn-dashed-add:hover { background-color: #f9fafb; border-color: #9ca3af; } /* Hover do botÃ£o tracejado de adicionar */
+.quota-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; } /* Linha de formulÃ¡rio exclusiva para cotas */
+.quota-input-wrapper { display: flex; align-items: center; gap: 8px; } /* Container juntando input de cota + sÃ­mbolo % */
+.quota-input { width: 60px; padding: 6px 10px; text-align: right; border: 1px solid transparent; background-color: #f3f4f6; border-radius: 6px; font-size: 14px; color: #1a233a; transition: all 0.2s; } /* Caixa numÃ©rica pequena para cotas e pesos */
 .quota-input:focus { outline: none; background-color: white; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); } /* Focus para a caixa pequena de cotas */
-.quota-symbol { font-size: 14px; color: #6b7280; font-weight: 500; } /* Símbolo % ao lado dos inputs menores */
+.quota-symbol { font-size: 14px; color: #6b7280; font-weight: 500; } /* SÃ­mbolo % ao lado dos inputs menores */
 .green-toggle-box { display: flex; justify-content: space-between; align-items: center; border: 1px solid #a7f3d0; background-color: #f0fdf4; border-radius: 8px; padding: 16px; } /* Caixa com fundo verde de sucesso/ativo envolvendo um toggle */
-.doc-types-container { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; transition: all 0.2s; } /* Flex para englobar os botões de tipo de arquivos (Pills PDF/DOCX) */
+.doc-types-container { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; transition: all 0.2s; } /* Flex para englobar os botÃµes de tipo de arquivos (Pills PDF/DOCX) */
 .doc-types-container.error-border { padding: 8px; border: 1px dashed #ef4444; border-radius: 6px; background-color: #fef2f2; } /* Borda de erro para quando nenhum tipo for selecionado */
-.doc-type-pill { padding: 6px 12px; border: 1px solid #d1d5db; background-color: white; color: #4b5563; border-radius: 16px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; user-select: none; } /* Botão pílula (Pill) selecionável para tipo de documento */
-.doc-type-pill:hover { border-color: #9ca3af; background-color: #f9fafb; } /* Hover do botão Pill documento */
-.doc-type-pill.active { background-color: #e1f5fe; border-color: #0288d1; color: #01579b; } /* Estado ativo do botão Pill (Fica azul claro com borda azul) */
-.course-table { display: flex; flex-direction: column; } /* Tabela vertical construída em flex-direction (Aba 4) */
-.course-header { display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr; padding: 8px 16px; font-size: 13px; color: #6b7280; border-bottom: 1px solid #e5e7eb; } /* Cabeçalho CSS Grid para a tabela de cursos do Nivelamento */
+.doc-type-pill { padding: 6px 12px; border: 1px solid #d1d5db; background-color: white; color: #4b5563; border-radius: 16px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; user-select: none; } /* BotÃ£o pÃ­lula (Pill) selecionÃ¡vel para tipo de documento */
+.doc-type-pill:hover { border-color: #9ca3af; background-color: #f9fafb; } /* Hover do botÃ£o Pill documento */
+.doc-type-pill.active { background-color: #e1f5fe; border-color: #0288d1; color: #01579b; } /* Estado ativo do botÃ£o Pill (Fica azul claro com borda azul) */
+.course-table { display: flex; flex-direction: column; } /* Tabela vertical construÃ­da em flex-direction (Aba 4) */
+.course-header { display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr; padding: 8px 16px; font-size: 13px; color: #6b7280; border-bottom: 1px solid #e5e7eb; } /* CabeÃ§alho CSS Grid para a tabela de cursos do Nivelamento */
 .course-row { display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr; align-items: center; padding: 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; } /* Corpo das linhas de CSS Grid da tabela de cursos */
-.course-row:last-child { border-bottom: none; } /* Remove borda da última linha da tabela */
+.course-row:last-child { border-bottom: none; } /* Remove borda da Ãºltima linha da tabela */
 .course-name { color: #1a233a; font-weight: 500; } /* css do nome do curso */
 .course-hours { color: #6b7280; } /* css das horas do curso */
-.badge-active { background-color: #dcfce7; color: #065f46; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; } /* Pílula verdinha clara de Status Ativo no meio das linhas de dados */
-.form-range { -webkit-appearance: none; width: 100%; height: 6px; background: #e5e7eb; border-radius: 4px; outline: none; transition: opacity .2s; } /* Barra horizontal dos Slider de pesos matemáticos */
+.badge-active { background-color: #dcfce7; color: #065f46; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; } /* PÃ­lula verdinha clara de Status Ativo no meio das linhas de dados */
+.form-range { -webkit-appearance: none; width: 100%; height: 6px; background: #e5e7eb; border-radius: 4px; outline: none; transition: opacity .2s; } /* Barra horizontal dos Slider de pesos matemÃ¡ticos */
 .form-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: white; border: 3px solid #1e1b4b; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); } /* Bolinha drag & drop (thumb) no slider (Webkit) */
 .form-range::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: white; border: 3px solid #1e1b4b; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); } /* Bolinha drag & drop (thumb) no slider (Firefox) */
-.formula-box { background-color: #0f172a; border-radius: 8px; padding: 16px; color: white; margin-bottom: 24px; } /* Caixa escura (Night Mode) apresentando equações / regras de aprovação */
-.formula-label { font-size: 12px; color: #94a3b8; margin-bottom: 8px; display: block; } /* Título cinza claro acima da fórmula dentro da caixa escura */
-.formula-text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 14px; line-height: 1.5; } /* Fonte mono-espaçada tipo console para leitura da fórmula de nota */
+.formula-box { background-color: #0f172a; border-radius: 8px; padding: 16px; color: white; margin-bottom: 24px; } /* Caixa escura (Night Mode) apresentando equaÃ§Ãµes / regras de aprovaÃ§Ã£o */
+.formula-label { font-size: 12px; color: #94a3b8; margin-bottom: 8px; display: block; } /* TÃ­tulo cinza claro acima da fÃ³rmula dentro da caixa escura */
+.formula-text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 14px; line-height: 1.5; } /* Fonte mono-espaÃ§ada tipo console para leitura da fÃ³rmula de nota */
 </style>
+

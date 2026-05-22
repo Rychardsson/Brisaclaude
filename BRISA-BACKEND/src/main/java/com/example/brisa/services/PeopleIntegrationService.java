@@ -810,10 +810,17 @@ public class PeopleIntegrationService {
     }
 
     private StageStatus toStageStatus(String status) {
-        String normalized = normalizeEnrollmentStatus(status);
-        return "REPROVADA".equals(normalized) || "DESCLASSIFICADA".equals(normalized)
-                ? StageStatus.REPROVADO
-                : StageStatus.APROVADO;
+        String normalized = normalize(status);
+        if (normalized.contains("reprov") || normalized.contains("desclass")) {
+            return StageStatus.REPROVADO;
+        }
+        if (normalized.contains("espera")) {
+            return StageStatus.LISTA_ESPERA;
+        }
+        if (normalized.contains("analise")) {
+            return StageStatus.EM_ANALISE;
+        }
+        return StageStatus.APROVADO;
     }
 
     private String institutionLabel(ClassModel classModel) {

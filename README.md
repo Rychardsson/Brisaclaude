@@ -2,9 +2,9 @@
 
 Workspace principal do projeto BRISA, organizado em tres frentes:
 
-- `BRISA-FRONTEND`: aplicacao Vue 3 + Vite que consome a API oficial.
-- `BRISA-BACKEND`: API Spring Boot responsavel por autenticacao, cadastros, imports, logs e modulos analiticos.
-- `Brisa ONE`: bundle React derivado do Figma, usado como prototipo visual isolado.
+- `BRISA-FRONTEND`: aplicacao Vue 3 + Vite que consome a API oficial (stack oficial).
+- `BRISA-BACKEND`: API Spring Boot responsavel por autenticacao, cadastros, imports, logs e modulos analiticos (stack oficial).
+- `Brisa ONE`: bundle React + Vite derivado do Figma, usado como prototipo visual isolado.
 
 ## Estrutura do repositorio
 
@@ -42,6 +42,12 @@ Hoje o frontend principal e o backend estao integrados nos fluxos abaixo:
   - turmas
   - matriculas
   - instituicoes
+
+## Requisitos
+
+- Java 21
+- Node.js 18+ e npm
+- PostgreSQL (local ou remoto)
 
 ## Subida local
 
@@ -85,7 +91,7 @@ Arquivo de ambiente de exemplo:
 VITE_API_BASE_URL=http://localhost:8082/api
 ```
 
-O exemplo esta em [BRISA-FRONTEND/.env.example](C:/Users/ResTIC16/Documents/GitHub/Brisa-ONE/BRISA-FRONTEND/.env.example).
+O exemplo esta em [BRISA-FRONTEND/.env.example](BRISA-FRONTEND/.env.example).
 
 ### 3. Prototipo visual
 
@@ -103,6 +109,7 @@ npm run dev
 
 ```powershell
 cd BRISA-BACKEND
+.\mvnw.cmd spring-boot:run
 .\mvnw.cmd test
 .\mvnw.cmd clean install
 ```
@@ -111,7 +118,9 @@ cd BRISA-BACKEND
 
 ```powershell
 cd BRISA-FRONTEND
+npm run dev
 npm run build
+npm run preview
 ```
 
 

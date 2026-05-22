@@ -11,6 +11,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -30,6 +31,18 @@ public class ProgramModel {
     private String name;
 
     private String contractNumber;
+
+    @Column(name = "executor_name")
+    private String executorName;
+
+    @Column(name = "funding_entity")
+    private String fundingEntity;
+
+    @Column(name = "general_coordinator")
+    private String generalCoordinator;
+
+    @Column(name = "program_value", precision = 14, scale = 2)
+    private BigDecimal programValue;
 
     @Column(name = "start_date")
     private LocalDate startDate;
@@ -57,6 +70,21 @@ public class ProgramModel {
 
     @Column(name = "evaluation_criteria", length = 4000)
     private String evaluationCriteria;
+
+    @Column(name = "support_email")
+    private String supportEmail;
+
+    @Column(name = "official_website")
+    private String officialWebsite;
+
+    @Column(name = "main_locality")
+    private String mainLocality;
+
+    @Column(name = "observations", length = 4000)
+    private String observations;
+
+    @Column(name = "partner_names", length = 4000)
+    private String partnerNames;
 
     @OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<ProgramInstitutionModel> programInstitutions = new HashSet<>();

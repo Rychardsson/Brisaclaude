@@ -1,24 +1,24 @@
-<template>
+﻿<template>
   <div class="step-container">
     
     <div class="step-header">
        <h2>Dados do Programa</h2>
-       <p>Preencha as informações gerais do edital e do programa</p>
+       <p>Preencha as informaÃ§Ãµes gerais do edital e do programa</p>
     </div>
 
     <div class="card-section">
        <div class="section-title">
-          <h3>Informações Básicas</h3>
+          <h3>InformaÃ§Ãµes BÃ¡sicas</h3>
           <p>Dados principais do programa e edital</p>
        </div>
        
        <div class="form-row two-cols">
          <div class="form-group">
            <label>Nome do Programa <span class="required">*</span></label>
-           <input v-model="formData.programName" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Programa de Formação em Tecnologia" class="form-input"/>
+           <input v-model="formData.programName" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Programa de FormaÃ§Ã£o em Tecnologia" class="form-input"/>
          </div>
          <div class="form-group">
-           <label>Nome da Turma/Edição <span class="required">*</span></label>
+           <label>Nome da Turma/EdiÃ§Ã£o <span class="required">*</span></label>
            <input v-model="formData.batchName" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Turma 2026.1" class="form-input"/>
          </div>
        </div>
@@ -28,9 +28,24 @@
          <input v-model="formData.executor" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Universidade Federal de Tecnologia" class="form-input"/>
        </div>
 
-       <div class="form-group" style="margin-bottom: 0;">
+       <div class="form-row three-cols-special">
+         <div class="form-group">
+           <label>Entidade de Fomento <span class="required">*</span></label>
+           <input v-model="formData.fundingEntity" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Softex" class="form-input"/>
+         </div>
+         <div class="form-group">
+           <label>Coordenador Geral <span class="required">*</span></label>
+           <input v-model="formData.generalCoordinator" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Nome do coordenador" class="form-input"/>
+         </div>
+         <div class="form-group">
+           <label>Valor do Programa <span class="required">*</span></label>
+           <input v-model="formData.programValue" @keydown.enter="$event.target.blur()" type="number" min="0" step="0.01" placeholder="Ex: 150000.00" class="form-input"/>
+         </div>
+       </div>
+
+<div class="form-group" style="margin-bottom: 0;">
          <label>Objetivo do Programa <span class="required">*</span></label>
-         <textarea v-model="formData.objective" placeholder="Descreva o propósito e os resultados esperados deste programa..." class="form-textarea" rows="3"></textarea>
+         <textarea v-model="formData.objective" placeholder="Descreva o propÃ³sito e os resultados esperados deste programa..." class="form-textarea" rows="3"></textarea>
        </div>
     </div>
 
@@ -43,7 +58,7 @@
        <div class="form-row two-cols">
          <div class="form-group">
            <label>Localidade (Cidade/Estado)</label>
-           <input v-model="formData.location" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: São Paulo, SP (ou Nacional)" class="form-input"/>
+           <input v-model="formData.location" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: SÃ£o Paulo, SP (ou Nacional)" class="form-input"/>
          </div>
          
          <div class="form-group relative">
@@ -57,12 +72,23 @@
              placeholder="Ex: suporte@programa.com"
              :class="['form-input', { 'input-error': emailError }]"
            />
-           <span v-if="emailError" class="error-text">Formato de e-mail inválido.</span>
+           <span v-if="emailError" class="error-text">Formato de e-mail invÃ¡lido.</span>
          </div>
        </div>
 
-       <div class="form-group" style="margin-bottom: 0;">
-         <label>Empresas ou Instituições Parceiras</label>
+       <div class="form-row two-cols">
+         <div class="form-group">
+           <label>Site Oficial</label>
+           <input v-model="formData.officialWebsite" @keydown.enter="$event.target.blur()" type="url" placeholder="Ex: https://brisa.org/programa" class="form-input"/>
+         </div>
+         <div class="form-group">
+           <label>Observações gerais</label>
+           <input v-model="formData.observations" @keydown.enter="$event.target.blur()" type="text" placeholder="Informações complementares do programa" class="form-input"/>
+         </div>
+       </div>
+
+<div class="form-group" style="margin-bottom: 0;">
+         <label>Empresas ou InstituiÃ§Ãµes Parceiras</label>
          <div class="partner-input-row">
            <input
              :value="newPartnerName"
@@ -103,7 +129,7 @@
        
        <div class="form-row three-cols-special">
          <div class="form-group relative">
-           <label>Publicação do Edital <span class="required">*</span></label>
+           <label>PublicaÃ§Ã£o do Edital <span class="required">*</span></label>
            <div class="date-input-wrapper">
              <input v-model="displayDates.publishDate" @input="$emit('parse-date-input', 'publishDate')" type="text" placeholder="dd/mm/aaaa" class="form-input" maxlength="10"/>
              <svg @click="$emit('open-date-picker', 'publishDate')" class="date-icon cursor-pointer" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
@@ -111,9 +137,9 @@
            
            <div v-if="activeDatePicker === 'publishDate'" class="custom-calendar">
               <div class="calendar-header">
-                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">‹</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">â€¹</button>
                  <span>{{ monthNames[calendarDate.getMonth()] }} {{ calendarDate.getFullYear() }}</span>
-                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">›</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">â€º</button>
               </div>
               <div class="calendar-grid">
                  <span v-for="d in weekDays" :key="d" class="cal-weekday">{{ d }}</span>
@@ -123,16 +149,16 @@
          </div>
          
          <div class="form-group relative">
-           <label>Início do Programa</label>
+           <label>InÃ­cio do Programa</label>
            <div class="date-input-wrapper">
              <input v-model="displayDates.startDate" @input="$emit('parse-date-input', 'startDate')" type="text" placeholder="dd/mm/aaaa" class="form-input" maxlength="10"/>
              <svg @click="$emit('open-date-picker', 'startDate')" class="date-icon cursor-pointer" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
            </div>
            <div v-if="activeDatePicker === 'startDate'" class="custom-calendar">
               <div class="calendar-header">
-                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">‹</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">â€¹</button>
                  <span>{{ monthNames[calendarDate.getMonth()] }} {{ calendarDate.getFullYear() }}</span>
-                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">›</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">â€º</button>
               </div>
               <div class="calendar-grid">
                  <span v-for="d in weekDays" :key="d" class="cal-weekday">{{ d }}</span>
@@ -149,9 +175,9 @@
            </div>
            <div v-if="activeDatePicker === 'endDate'" class="custom-calendar">
               <div class="calendar-header">
-                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">‹</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">â€¹</button>
                  <span>{{ monthNames[calendarDate.getMonth()] }} {{ calendarDate.getFullYear() }}</span>
-                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">›</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">â€º</button>
               </div>
               <div class="calendar-grid">
                  <span v-for="d in weekDays" :key="d" class="cal-weekday">{{ d }}</span>
@@ -179,7 +205,7 @@ export default {
     weekDays: { type: Array, required: true },
     monthNames: { type: Array, required: true },
     calendarDays: { type: Array, required: true },
-    isEmailInvalid: { type: Boolean, required: true }, // Mantido para não quebrar contrato com o pai
+    isEmailInvalid: { type: Boolean, required: true }, // Mantido para nÃ£o quebrar contrato com o pai
     newPartnerName: { type: String, required: true },
     isSelectedDay: { type: Function, required: true },
     isToday: { type: Function, required: true }
@@ -188,21 +214,21 @@ export default {
   // Dados locais (Estado deste componente filho)
   data() {
     return {
-      // Flag para sabermos se o usuário já focou e interagiu com o campo de e-mail
+      // Flag para sabermos se o usuÃ¡rio jÃ¡ focou e interagiu com o campo de e-mail
       emailTouched: false
     }
   },
 
-  // Propriedades computadas (Validação local)
+  // Propriedades computadas (ValidaÃ§Ã£o local)
   computed: {
     emailError() {
-      // Se não encostou no campo ainda, não há erro
+      // Se nÃ£o encostou no campo ainda, nÃ£o hÃ¡ erro
       if (!this.emailTouched) return false;
       
-      // Se estiver em branco (usuário apagou), também não mostra "formato inválido"
+      // Se estiver em branco (usuÃ¡rio apagou), tambÃ©m nÃ£o mostra "formato invÃ¡lido"
       if (!this.formData.supportEmail) return false;
       
-      // Validação com Expressão Regular para "nome@exemplo.com"
+      // ValidaÃ§Ã£o com ExpressÃ£o Regular para "nome@exemplo.com"
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return !emailRegex.test(this.formData.supportEmail);
     }
@@ -211,5 +237,6 @@ export default {
 </script>
 
 <style scoped>
-/* O CSS Global já lida com todo o layout. A tag scoped garante proteção aqui. */
+/* O CSS Global jÃ¡ lida com todo o layout. A tag scoped garante proteÃ§Ã£o aqui. */
 </style>
+

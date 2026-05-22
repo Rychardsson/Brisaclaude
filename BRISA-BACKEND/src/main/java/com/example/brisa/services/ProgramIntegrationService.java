@@ -220,6 +220,7 @@ public class ProgramIntegrationService {
 
         ClassModel saved = classRepository.save(classModel);
         ensureDefaultStages(saved);
+        cloneCourseAssignments(sourceClass, saved);
 
         return new ProgramClassCreateResponseDTO(
                 saved.getId(),
@@ -364,6 +365,35 @@ public class ProgramIntegrationService {
         }
     }
 
+    private void cloneCourseAssignments(ClassModel sourceClass, ClassModel targetClass) {
+        if (sourceClass == null || targetClass == null) {
+            return;
+        }
+
+        List<CourseAssignmentModel> assignments = courseAssignmentRepository.findByClassId(sourceClass.getId());
+        for (CourseAssignmentModel assignment : assignments) {
+            if (assignment.getCourse() == null) {
+                continue;
+            }
+
+            CourseAssignmentModel existing = courseAssignmentRepository.findByCourseIdAndClassId(
+                    assignment.getCourse().getId(),
+                    targetClass.getId()
+            );
+            if (existing != null) {
+                existing.setRequired(assignment.isRequired());
+                courseAssignmentRepository.save(existing);
+                continue;
+            }
+
+            CourseAssignmentModel clonedAssignment = new CourseAssignmentModel();
+            clonedAssignment.setClassModel(targetClass);
+            clonedAssignment.setCourse(assignment.getCourse());
+            clonedAssignment.setRequired(assignment.isRequired());
+            courseAssignmentRepository.save(clonedAssignment);
+        }
+    }
+
     private String partnerLabel(ProgramModel program, ClassModel classModel) {
         if (program.getProgramInstitutions() != null && !program.getProgramInstitutions().isEmpty()) {
             return program.getProgramInstitutions().stream()
@@ -371,6 +401,12 @@ public class ProgramIntegrationService {
                     .filter(Objects::nonNull)
                     .map(institution -> defaultIfBlank(institution.getAcronym(), institution.getName()))
                     .filter(value -> !isBlank(value))
+                    .findFirst()
+                    .orElse("-");
+        }
+
+        if (!isBlank(program.getPartnerNames())) {
+            return parseList(program.getPartnerNames(), List.of()).stream()
                     .findFirst()
                     .orElse("-");
         }

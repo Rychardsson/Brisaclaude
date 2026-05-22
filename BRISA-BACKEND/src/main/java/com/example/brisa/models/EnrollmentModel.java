@@ -41,4 +41,6 @@ public class EnrollmentModel {
     @Column(name = "grade")
     private Double grade; // Nota final 
 
+    @Column(name = "frequency")
+    private Double frequency; // Frequência percentual do aluno
 }
