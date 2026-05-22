@@ -2,8 +2,8 @@
   <div class="step-container">
     
     <div class="step-header">
-       <h2>RevisÃ£o Final</h2>
-       <p>Revise todas as configuraÃ§Ãµes antes de publicar o edital</p>
+      <h2>Revisão Final</h2>
+      <p>Revise todas as configurações antes de publicar o edital</p>
     </div>
 
     <div class="card-section validation-card" :class="{ 'success-card': progressPercentage === 100 }">
@@ -18,14 +18,14 @@
                    </svg>
                 </span>
                 <div>
-                   <h3 class="validation-title" :class="{ 'success-title': progressPercentage === 100 }">
-                      ValidaÃ§Ãµes AutomÃ¡ticas
-                   </h3>
+                            <h3 class="validation-title" :class="{ 'success-title': progressPercentage === 100 }">
+                                 Validações Automáticas
+                            </h3>
                    <p class="validation-subtitle" v-if="progressPercentage < 100">
-                     âš ï¸ VocÃª possui {{ validationData.totalErrors }} pendÃªncia(s) antes de publicar.
+                               ⚠️ Você possui {{ validationData.totalErrors }} pendência(s) antes de publicar.
                    </p>
                    <p class="validation-subtitle success-text" v-else>
-                     Tudo certo! Edital validado e pronto para publicaÃ§Ã£o.
+                               Tudo certo! Edital validado e pronto para publicação.
                    </p>
                 </div>
              </div>
@@ -55,7 +55,7 @@
                       <div class="pending-list-inner">
                          <ul class="pending-list">
                             <li v-for="(error, i) in group.errors" :key="i">
-                               â€¢ {{ error }}
+                               • {{ error }}
                             </li>
                          </ul>
                       </div>
@@ -68,7 +68,7 @@
           <div class="validation-progress-box">
              <div class="progress-circle" :class="{ 'success-circle': progressPercentage === 100 }">
                 <span class="progress-value">{{ progressPercentage }}%</span>
-                <span class="progress-label">{{ progressPercentage === 100 ? 'Completo' : 'ConcluÃ­do' }}</span>
+                <span class="progress-label">{{ progressPercentage === 100 ? 'Completo' : 'Concluído' }}</span>
              </div>
           </div>
        </div>
@@ -88,15 +88,15 @@
        <div class="review-grid">
           <div class="review-item">
              <small>Nome do Programa</small>
-             <span>{{ formData.programName || 'NÃ£o informado' }}</span>
+             <span>{{ formData.programName || 'Não informado' }}</span>
           </div>
           <div class="review-item">
-             <small>Turma/EdiÃ§Ã£o</small>
-             <span>{{ formData.batchName || 'NÃ£o informado' }}</span>
+             <small>Turma/Edição</small>
+             <span>{{ formData.batchName || 'Não informado' }}</span>
           </div>
           <div class="review-item">
              <small>Executora</small>
-             <span>{{ formData.executor || 'NÃ£o informado' }}</span>
+             <span>{{ formData.executor || 'Não informado' }}</span>
           </div>
           <div class="review-item">
              <small>Entidade de Fomento</small>
@@ -130,15 +130,15 @@
           <div class="timeline-step">
              <div class="timeline-point">0</div>
              <div class="timeline-info">
-                <strong>PerÃ­odo de InscriÃ§Ãµes</strong>
-                <p>Data de inÃ­cio: {{ displayDates.startDate || 'NÃ£o definido' }} â€¢ Data de encerramento: {{ displayDates.endDate || 'NÃ£o definido' }}</p>
+                <strong>Período de Inscrições</strong>
+                <p>Data de início: {{ displayDates.startDate || 'Não definido' }} • Data de encerramento: {{ displayDates.endDate || 'Não definido' }}</p>
              </div>
           </div>
           <div v-for="stage in stageList" :key="stage.id" class="timeline-step">
              <div class="timeline-point">{{ stage.id + 1 }}</div>
              <div class="timeline-info">
                 <strong>{{ stage.title }}</strong>
-                <p>Modalidade: {{ stage.modality }} â€¢ DuraÃ§Ã£o prevista: {{ stage.duration || 'NÃ£o definida' }}</p>
+                <p>Modalidade: {{ stage.modality }} • Duração prevista: {{ stage.duration || 'Não definida' }}</p>
              </div>
           </div>
        </div>
@@ -178,7 +178,7 @@
           <h3>Cotas e Elegibilidade</h3>
        </div>
        <div class="quota-review-list">
-          <div class="quota-review-item"><span>Ampla concorrÃªncia</span><strong>{{ inscriptionForm.quotas.ampla }}%</strong></div>
+          <div class="quota-review-item"><span>Ampla concorrência</span><strong>{{ inscriptionForm.quotas.ampla }}%</strong></div>
           <div class="quota-review-item"><span>PCD / Neurodivergentes</span><strong>{{ inscriptionForm.quotas.pcd }}%</strong></div>
           <div class="quota-review-item"><span>Negros e pardos</span><strong>{{ inscriptionForm.quotas.negros }}%</strong></div>
           <div class="quota-review-item"><span>Mulheres</span><strong>{{ inscriptionForm.quotas.mulheres }}%</strong></div>
@@ -189,20 +189,20 @@
     <div class="card-section">
        <div class="section-title-review">
           <i class="fa-solid fa-gavel"></i>
-          <h3>Regras de ClassificaÃ§Ã£o e AprovaÃ§Ã£o</h3>
+          <h3>Regras de Classificação e Aprovação</h3>
        </div>
        <div class="rules-review-box">
           <div class="rule-review-item">
-             <strong>Etapa InscriÃ§Ã£o â€” Nivelamento</strong>
+             <strong>Etapa Inscrição — Nivelamento</strong>
              <p>{{ inscriptionForm.classification.count }} candidatos classificados por {{ inscriptionForm.classification.criteria.toLowerCase() }}</p>
           </div>
           <div class="rule-review-item">
-             <strong>Etapa Nivelamento â€” ImersÃ£o</strong>
+             <strong>Etapa Nivelamento — Imersão</strong>
              <p>{{ nivelamentoForm.grading.approvedCount }} aprovados com base em: Nota de prova ({{ nivelamentoForm.grading.examWeight }}%) + Cursos opcionais ({{ nivelamentoForm.grading.optionalWeight }}%)</p>
           </div>
           <div class="rule-review-item">
-             <strong>AprovaÃ§Ã£o Final da ImersÃ£o</strong>
-             <p>AvaliaÃ§Ã£o Parcial ({{ imersaoForm.avaliacoes.pesoParcial }}%) + AvaliaÃ§Ã£o Final ({{ imersaoForm.avaliacoes.pesoFinal }}%) com critÃ©rios mÃºltiplos</p>
+             <strong>Aprovação Final da Imersão</strong>
+             <p>Avaliação Parcial ({{ imersaoForm.avaliacoes.pesoParcial }}%) + Avaliação Final ({{ imersaoForm.avaliacoes.pesoFinal }}%) com critérios múltiplos</p>
           </div>
        </div>
     </div>
@@ -210,15 +210,15 @@
     <div class="card-section">
        <div class="section-title-review">
           <i class="fa-solid fa-hand-holding-dollar"></i>
-          <h3>BenefÃ­cios da ImersÃ£o</h3>
+          <h3>Benefícios da Imersão</h3>
        </div>
        <div class="benefits-grid">
           <div class="benefit-item" v-if="imersaoForm.beneficios.hasBolsa"><i class="fa-solid fa-circle-check"></i> Bolsa de R$ {{ imersaoForm.beneficios.valorBolsa }} durante {{ imersaoForm.beneficios.mesesBolsa }} meses</div>
           <div class="benefit-item" v-if="imersaoForm.beneficios.hasNotebook"><i class="fa-solid fa-circle-check"></i> Notebook em comodato</div>
-          <div class="benefit-item" v-if="nivelamentoForm.certification.active"><i class="fa-solid fa-circle-check"></i> Certificado de conclusÃ£o</div>
+          <div class="benefit-item" v-if="nivelamentoForm.certification.active"><i class="fa-solid fa-circle-check"></i> Certificado de conclusão</div>
           
           <div class="benefit-item" v-if="!imersaoForm.beneficios.hasBolsa && !imersaoForm.beneficios.hasNotebook && !nivelamentoForm.certification.active" style="color: #6b7280; font-style: italic;">
-             Nenhum benefÃ­cio extra configurado.
+             Nenhum benefício extra configurado.
           </div>
        </div>
     </div>

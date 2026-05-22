@@ -630,8 +630,8 @@ export default {
       editingProgramId: null, // ID do programa sendo editado (se aplicÃ¡vel)
 
       // Textos exibidos nos botÃµes do menu lateral esquerdo
-      stepTitles: ['Dados do Programa', 'Estrutura das Etapas', 'Etapa 0 â€” InscriÃ§Ã£o', 'Etapa 1 â€” Nivelamento', 'Etapa 2 â€” ImersÃ£o', 'RevisÃ£o Final'],
-      stepDescs: ['InformaÃ§Ãµes gerais', 'DefiniÃ§Ã£o do fluxo', 'FormulÃ¡rio e elegibilidade', 'Cursos e avaliaÃ§Ã£o', 'Projetos e benefÃ­cios', 'Validar e publicar'],
+      stepTitles: ['Dados do Programa', 'Estrutura das Etapas', 'Etapa 0 — Inscrição', 'Etapa 1 — Nivelamento', 'Etapa 2 — Imersão', 'Revisão Final'],
+      stepDescs: ['Informações gerais', 'Definição do fluxo', 'Formulário e elegibilidade', 'Cursos e avaliação', 'Projetos e benefícios', 'Validar e publicar'],
       
       programService, // Importa o serviÃ§o de programa
       newPartnerName: '', // Armazena temporariamente o texto digitado no input de adicionar parceiro (Aba 1)
@@ -644,45 +644,45 @@ export default {
       
       // OBJETO: Aba 3 - ConfiguraÃ§Ã£o do formulÃ¡rio de inscriÃ§Ã£o, documentos e cotas
       inscriptionForm: {
-        title: 'InscriÃ§Ã£o', type: 'InscriÃ§Ã£o / Triagem', desc: 'Etapa de inscriÃ§Ãµes e triagem inicial dos candidatos', situation: 'ObrigatÃ³ria', targetAudience: '', educationReqs: '', requireLinkedin: false, requireCPF: true, singleRegistration: true,
+        title: 'Inscrição', type: 'Inscrição / Triagem', desc: 'Etapa de inscrições e triagem inicial dos candidatos', situation: 'Obrigatória', targetAudience: '', educationReqs: '', requireLinkedin: false, requireCPF: true, singleRegistration: true,
         fields: [
-          { name: 'Nome completo', required: true }, { name: 'E-mail', required: true }, { name: 'CPF', required: true }, { name: 'Data de nascimento', required: true }, { name: 'Telefone', required: true }, { name: 'LinkedIn', required: false }, { name: 'MunicÃ­pio', required: true }, { name: 'Estado', required: true }, { name: 'FormaÃ§Ã£o', required: true }, { name: 'InstituiÃ§Ã£o de ensino', required: false }, { name: 'Grau de escolaridade', required: true },
+          { name: 'Nome completo', required: true }, { name: 'E-mail', required: true }, { name: 'CPF', required: true }, { name: 'Data de nascimento', required: true }, { name: 'Telefone', required: true }, { name: 'LinkedIn', required: false }, { name: 'Município', required: true }, { name: 'Estado', required: true }, { name: 'Formação', required: true }, { name: 'Instituição de ensino', required: false }, { name: 'Grau de escolaridade', required: true },
         ],
         documents: [
           { name: 'Documento de identidade', types: 'PDF, JPG', required: true }, { name: 'CPF', types: 'PDF, JPG', required: true }, { name: 'Comprovante de escolaridade', types: 'PDF', required: true },
         ],
         quotas: { ampla: 50, pcd: 10, negros: 30, mulheres: 0, age45: 10, singleQuota: true, revertUnfilled: true },
-        classification: { active: true, count: 250, criteria: 'Ordem de inscriÃ§Ã£o', tiebreaker: '', waitlist: true, allowAppeals: true, appealDeadline: '' }
+        classification: { active: true, count: 250, criteria: 'Ordem de inscrição', tiebreaker: '', waitlist: true, allowAppeals: true, appealDeadline: '' }
       },
       
       // OBJETO: Aba 4 - ConfiguraÃ§Ã£o do Nivelamento (cursos, prova final e pesos)
       nivelamentoForm: {
-        title: 'Nivelamento', modality: 'Remota AssÃ­ncrona', workload: '172h', platform: '',
+        title: 'Nivelamento', modality: 'Remota Assíncrona', workload: '172h', platform: '',
         courses: [
-          { name: 'IntroduÃ§Ã£o Ã  plataforma', hours: '2h', required: true, scores: false, status: 'Ativo' },
-          { name: 'LÃ³gica de programaÃ§Ã£o', hours: '40h', required: true, scores: true, status: 'Ativo' },
-          { name: 'ProgramaÃ§Ã£o Python', hours: '60h', required: true, scores: true, status: 'Ativo' },
-          { name: 'OrganizaÃ§Ã£o de computadores', hours: '30h', required: true, scores: true, status: 'Ativo' },
+          { name: 'Introdução à plataforma', hours: '2h', required: true, scores: false, status: 'Ativo' },
+          { name: 'Lógica de programação', hours: '40h', required: true, scores: true, status: 'Ativo' },
+          { name: 'Programação Python', hours: '60h', required: true, scores: true, status: 'Ativo' },
+          { name: 'Organização de computadores', hours: '30h', required: true, scores: true, status: 'Ativo' },
           { name: 'Banco de dados', hours: '40h', required: true, scores: true, status: 'Ativo' },
-          { name: 'Empreendedorismo e gerÃªncia de projetos', hours: '20h', required: false, scores: true, status: 'Ativo' },
+          { name: 'Empreendedorismo e gerência de projetos', hours: '20h', required: false, scores: true, status: 'Ativo' },
           { name: 'Desenvolvimento mobile', hours: '30h', required: false, scores: true, status: 'Ativo' },
           { name: 'Business Intelligence', hours: '25h', required: false, scores: true, status: 'Ativo' },
           { name: 'Big Data', hours: '30h', required: false, scores: true, status: 'Ativo' },
-          { name: 'InteligÃªncia Artificial', hours: '35h', required: false, scores: true, status: 'Ativo' },
+          { name: 'Inteligência Artificial', hours: '35h', required: false, scores: true, status: 'Ativo' },
           { name: 'IoT', hours: '20h', required: false, scores: true, status: 'Ativo' },
           { name: 'Engenharia de Requisitos', hours: '15h', required: false, scores: true, status: 'Ativo' },
           { name: 'Treinamento de IA', hours: '25h', required: false, scores: true, status: 'Ativo' },
           { name: 'UI/UX', hours: '30h', required: false, scores: true, status: 'Ativo' },
         ],
         completionRules: { requireActivities: true, requireMinScore: true, minScoreValue: '70', requireFinalEval: true },
-        finalExam: { active: true, time: '', duration: 120, questionsCount: 50, type: 'MÃºltipla Escolha', sequential: true, allowBack: false, mandatorySubmit: true },
+        finalExam: { active: true, time: '', duration: 120, questionsCount: 50, type: 'Múltipla Escolha', sequential: true, allowBack: false, mandatorySubmit: true },
         grading: { examWeight: 70, optionalWeight: 30, bonusLocation: 5, minPassingScore: 50, cutOffRule: false, approvedCount: 50, generatePrelimList: true, allowAppeals: true, generateFinalList: true },
-        certification: { active: true, criteria: 'AprovaÃ§Ã£o na etapa', defaultText: '' }
+        certification: { active: true, criteria: 'Aprovação na etapa', defaultText: '' }
       },
 
       // OBJETO: Aba 5 - ConfiguraÃ§Ãµes da Etapa de ImersÃ£o
       imersaoForm: {
-        nome: 'ImersÃ£o', modalidade: 'HÃ­brida', cargaHoraria: 960, duracaoMeses: 6, mediaHoras: 40,
+        nome: 'Imersão', modalidade: 'Híbrida', cargaHoraria: 960, duracaoMeses: 6, mediaHoras: 40,
         local: '', nomeProfessor: '',
         hasProjetos: true, hasGrupos: true, minGroup: 3, maxGroup: 5, orientador: 'vinculado',
         presenca: {
@@ -740,8 +740,8 @@ export default {
       // Componentes de inteligÃªncia e navegaÃ§Ã£o do CalendÃ¡rio Customizado
       activeDatePicker: null, // Guarda o nome do campo (ex: 'startDate') que estÃ¡ com o calendÃ¡rio aberto
       calendarDate: new Date(), // MÃªs e ano Ã¢ncora exibidos no topo do calendÃ¡rio aberto
-      weekDays: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'SÃ¡b'],
-      monthNames: ['Janeiro', 'Fevereiro', 'MarÃ§o', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+      weekDays: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+      monthNames: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
     };
   },
 
@@ -942,43 +942,43 @@ export default {
       };
 
       this.inscriptionForm = {
-        title: 'InscriÃ§Ã£o', type: 'InscriÃ§Ã£o / Triagem', desc: 'Etapa de inscriÃ§Ãµes e triagem inicial dos candidatos', situation: 'ObrigatÃ³ria', targetAudience: '', educationReqs: '', requireLinkedin: false, requireCPF: true, singleRegistration: true,
+        title: 'Inscrição', type: 'Inscrição / Triagem', desc: 'Etapa de inscrições e triagem inicial dos candidatos', situation: 'Obrigatória', targetAudience: '', educationReqs: '', requireLinkedin: false, requireCPF: true, singleRegistration: true,
         fields: [
-          { name: 'Nome completo', required: true }, { name: 'E-mail', required: true }, { name: 'CPF', required: true }, { name: 'Data de nascimento', required: true }, { name: 'Telefone', required: true }, { name: 'LinkedIn', required: false }, { name: 'MunicÃ­pio', required: true }, { name: 'Estado', required: true }, { name: 'FormaÃ§Ã£o', required: true }, { name: 'InstituiÃ§Ã£o de ensino', required: false }, { name: 'Grau de escolaridade', required: true },
+          { name: 'Nome completo', required: true }, { name: 'E-mail', required: true }, { name: 'CPF', required: true }, { name: 'Data de nascimento', required: true }, { name: 'Telefone', required: true }, { name: 'LinkedIn', required: false }, { name: 'Município', required: true }, { name: 'Estado', required: true }, { name: 'Formação', required: true }, { name: 'Instituição de ensino', required: false }, { name: 'Grau de escolaridade', required: true },
         ],
         documents: [
           { name: 'Documento de identidade', types: 'PDF, JPG', required: true }, { name: 'CPF', types: 'PDF, JPG', required: true }, { name: 'Comprovante de escolaridade', types: 'PDF', required: true },
         ],
         quotas: { ampla: 50, pcd: 10, negros: 30, mulheres: 0, age45: 10, singleQuota: true, revertUnfilled: true },
-        classification: { active: true, count: 250, criteria: 'Ordem de inscriÃ§Ã£o', tiebreaker: '', waitlist: true, allowAppeals: true, appealDeadline: '' }
+        classification: { active: true, count: 250, criteria: 'Ordem de inscrição', tiebreaker: '', waitlist: true, allowAppeals: true, appealDeadline: '' }
       };
 
       this.nivelamentoForm = {
-        title: 'Nivelamento', modality: 'Remota AssÃ­ncrona', workload: '172h', platform: '',
+        title: 'Nivelamento', modality: 'Remota Assíncrona', workload: '172h', platform: '',
         courses: [
-          { name: 'IntroduÃ§Ã£o Ã  plataforma', hours: '2h', required: true, scores: false, status: 'Ativo' },
-          { name: 'LÃ³gica de programaÃ§Ã£o', hours: '40h', required: true, scores: true, status: 'Ativo' },
-          { name: 'ProgramaÃ§Ã£o Python', hours: '60h', required: true, scores: true, status: 'Ativo' },
-          { name: 'OrganizaÃ§Ã£o de computadores', hours: '30h', required: true, scores: true, status: 'Ativo' },
+          { name: 'Introdução à plataforma', hours: '2h', required: true, scores: false, status: 'Ativo' },
+          { name: 'Lógica de programação', hours: '40h', required: true, scores: true, status: 'Ativo' },
+          { name: 'Programação Python', hours: '60h', required: true, scores: true, status: 'Ativo' },
+          { name: 'Organização de computadores', hours: '30h', required: true, scores: true, status: 'Ativo' },
           { name: 'Banco de dados', hours: '40h', required: true, scores: true, status: 'Ativo' },
-          { name: 'Empreendedorismo e gerÃªncia de projetos', hours: '20h', required: false, scores: true, status: 'Ativo' },
+          { name: 'Empreendedorismo e gerência de projetos', hours: '20h', required: false, scores: true, status: 'Ativo' },
           { name: 'Desenvolvimento mobile', hours: '30h', required: false, scores: true, status: 'Ativo' },
           { name: 'Business Intelligence', hours: '25h', required: false, scores: true, status: 'Ativo' },
           { name: 'Big Data', hours: '30h', required: false, scores: true, status: 'Ativo' },
-          { name: 'InteligÃªncia Artificial', hours: '35h', required: false, scores: true, status: 'Ativo' },
+          { name: 'Inteligência Artificial', hours: '35h', required: false, scores: true, status: 'Ativo' },
           { name: 'IoT', hours: '20h', required: false, scores: true, status: 'Ativo' },
           { name: 'Engenharia de Requisitos', hours: '15h', required: false, scores: true, status: 'Ativo' },
           { name: 'Treinamento de IA', hours: '25h', required: false, scores: true, status: 'Ativo' },
           { name: 'UI/UX', hours: '30h', required: false, scores: true, status: 'Ativo' },
         ],
         completionRules: { requireActivities: true, requireMinScore: true, minScoreValue: '70', requireFinalEval: true },
-        finalExam: { active: true, time: '', duration: 120, questionsCount: 50, type: 'MÃºltipla Escolha', sequential: true, allowBack: false, mandatorySubmit: true },
+        finalExam: { active: true, time: '', duration: 120, questionsCount: 50, type: 'Múltipla Escolha', sequential: true, allowBack: false, mandatorySubmit: true },
         grading: { examWeight: 70, optionalWeight: 30, bonusLocation: 5, minPassingScore: 50, cutOffRule: false, approvedCount: 50, generatePrelimList: true, allowAppeals: true, generateFinalList: true },
-        certification: { active: true, criteria: 'AprovaÃ§Ã£o na etapa', defaultText: '' }
+        certification: { active: true, criteria: 'Aprovação na etapa', defaultText: '' }
       };
 
       this.imersaoForm = {
-        nome: 'ImersÃ£o', modalidade: 'HÃ­brida', cargaHoraria: 960, duracaoMeses: 6, mediaHoras: 40,
+        nome: 'Imersão', modalidade: 'Híbrida', cargaHoraria: 960, duracaoMeses: 6, mediaHoras: 40,
         local: '', nomeProfessor: '',
         hasProjetos: true, hasGrupos: true, minGroup: 3, maxGroup: 5, orientador: 'vinculado',
         presenca: {
@@ -1018,9 +1018,9 @@ export default {
     // Preenchimento padrÃ£o automÃ¡tico para o array da Aba 2 (Estruturas)
     restoreDefaultStages() {
       this.stageList = [
-        { id: 0, title: 'InscriÃ§Ã£o', type: 'InscriÃ§Ã£o / Triagem', desc: 'Etapa de inscriÃ§Ãµes e triagem inicial dos candidatos', modality: 'Online', duration: '30 dias', slots: 'Ilimitado', isDefault: true },
-        { id: 1, title: 'Nivelamento', type: 'CapacitaÃ§Ã£o', desc: 'Cursos online e avaliaÃ§Ã£o teÃ³rica', modality: 'Remota AssÃ­ncrona', duration: '3 meses', slots: '250 vagas', isDefault: true },
-        { id: 2, title: 'ImersÃ£o', type: 'Projeto PrÃ¡tico', desc: 'Desenvolvimento de projetos em grupos', modality: 'HÃ­brida', duration: '6 meses', slots: '50 vagas', isDefault: true }
+        { id: 0, title: 'Inscrição', type: 'Inscrição / Triagem', desc: 'Etapa de inscrições e triagem inicial dos candidatos', modality: 'Online', duration: '30 dias', slots: 'Ilimitado', isDefault: true },
+        { id: 1, title: 'Nivelamento', type: 'Capacitação', desc: 'Cursos online e avaliação teórica', modality: 'Remota Assíncrona', duration: '3 meses', slots: '250 vagas', isDefault: true },
+        { id: 2, title: 'Imersão', type: 'Projeto Prático', desc: 'Desenvolvimento de projetos em grupos', modality: 'Híbrida', duration: '6 meses', slots: '50 vagas', isDefault: true }
       ];
     },
     
@@ -1064,7 +1064,7 @@ export default {
       const nextId = this.stageList.length > 0 ? Math.max(...this.stageList.map(s => s.id)) + 1 : 0;
       const duplicatedStage = { ...stage };
       duplicatedStage.id = nextId;
-      duplicatedStage.title = `${stage.title} (CÃ³pia)`; 
+      duplicatedStage.title = `${stage.title} (Cópia)`; 
       duplicatedStage.isDefault = false; // Tira badge de que Ã© raiz do sistema
       const originalIndex = this.stageList.findIndex(s => s.id === stage.id);
       if (originalIndex !== -1) {

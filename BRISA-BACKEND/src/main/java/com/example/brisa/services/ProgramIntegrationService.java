@@ -315,14 +315,14 @@ public class ProgramIntegrationService {
                 firstNonNull(sourceClass != null ? sourceClass.getDefaultImmersionCapacity() : null, 50),
                 parseList(program.getQuotaCriteria(), DEFAULT_COTAS),
                 courseNames,
-                defaultIfBlank(program.getEvaluationCriteria(), "Avaliacao do grupo, pares e orientador.")
+                defaultIfBlank(program.getEvaluationCriteria(), "Avaliação do grupo, pares e orientador.")
         );
     }
 
     private InstitutionModel resolveInstitution(Long institutionId, String institutionName, String locality) {
         if (institutionId != null) {
             return institutionRepository.findById(institutionId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Instituicao nao encontrada com id: " + institutionId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Instituição não encontrada com id: " + institutionId));
         }
 
         if (isBlank(institutionName)) {
@@ -518,9 +518,9 @@ public class ProgramIntegrationService {
         milestones.put("Divulgacao dos selecionados", classModel.getLevelingSelectionAnnouncementDate());
         milestones.put("Inicio do nivelamento", classModel.getLevelingStartDate());
         milestones.put("Prova final do nivelamento", classModel.getLevelingFinalExamDate());
-        milestones.put("Inicio da imersao", classModel.getImmersionStartDate());
-        milestones.put("Avaliacao parcial", classModel.getPartialEvaluationDate());
-        milestones.put("Avaliacao final", classModel.getFinalEvaluationDate());
+        milestones.put("Início da imersão", classModel.getImmersionStartDate());
+        milestones.put("Avaliação parcial", classModel.getPartialEvaluationDate());
+        milestones.put("Avaliação final", classModel.getFinalEvaluationDate());
         milestones.put("Emissao dos certificados", classModel.getCertificateIssueDate());
 
         return milestones.entrySet().stream()

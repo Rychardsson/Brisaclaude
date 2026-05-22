@@ -75,7 +75,7 @@ public class PeopleIntegrationService {
             "Feminino",
             "Masculino",
             "Outro",
-            "Nao informado"
+            "Não informado"
     );
 
     private static final List<String> TIPO_FORMACAO_OPTIONS = List.of(
@@ -89,7 +89,7 @@ public class PeopleIntegrationService {
             "Cursando",
             "Concluido",
             "Trancado",
-            "Nao informado"
+            "Não informado"
     );
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -215,7 +215,7 @@ public class PeopleIntegrationService {
             errors.add("Data de nascimento e obrigatoria.");
         }
         if (isBlank(request.getCota())) {
-            errors.add("Cota e obrigatoria.");
+            errors.add("Cota é obrigatória.");
         }
         if (!errors.isEmpty()) {
             throw new ValidationException(errors);
@@ -335,22 +335,22 @@ public class PeopleIntegrationService {
     public PeopleCreateLinkResponseDTO createOrLink(PeopleCreateLinkRequestDTO request) {
         List<String> errors = new ArrayList<>();
         if (isBlank(request.getNome())) {
-            errors.add("Nome e obrigatorio.");
+            errors.add("Nome é obrigatório.");
         }
         if (isBlank(request.getCpf())) {
-            errors.add("CPF e obrigatorio.");
+            errors.add("CPF é obrigatório.");
         }
         if (isBlank(request.getEmail())) {
-            errors.add("Email e obrigatorio.");
+            errors.add("Email é obrigatório.");
         }
         if (request.getDataNascimento() == null) {
-            errors.add("Data de nascimento e obrigatoria.");
+            errors.add("Data de nascimento é obrigatória.");
         }
         if (request.getTurmaId() == null) {
-            errors.add("Turma e obrigatoria.");
+            errors.add("Turma é obrigatória.");
         }
         if (request.getEtapaId() == null) {
-            errors.add("Etapa inicial e obrigatoria.");
+            errors.add("Etapa inicial é obrigatória.");
         }
         if (!errors.isEmpty()) {
             throw new ValidationException(errors);
@@ -361,7 +361,7 @@ public class PeopleIntegrationService {
         StageModel stage = stageRepository.findById(request.getEtapaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Etapa nao encontrada com id: " + request.getEtapaId()));
         if (!Objects.equals(stage.getClassModel().getId(), classModel.getId())) {
-            throw new ValidationException(List.of("A etapa selecionada nao pertence a turma informada."));
+            throw new ValidationException(List.of("A etapa selecionada não pertence à turma informada."));
         }
 
         PeopleModel person = findExistingPerson(request.getCpf(), request.getEmail()).orElse(null);
@@ -411,7 +411,7 @@ public class PeopleIntegrationService {
         Long personId = person.getId();
         List<String> alerts = detectActiveConflicts(personId, classModel.getId());
 
-        // Se houver conflito de nivelamento, bloquear a operacao e retornar erro de validacao
+        // Se houver conflito de nivelamento, bloquear a operação e retornar erro de validação
         boolean hasNivelamentoConflict = alerts.stream().anyMatch(a -> normalize(a).contains("nivelament"));
         if (hasNivelamentoConflict) {
             throw new ValidationException(alerts);
@@ -491,7 +491,7 @@ public class PeopleIntegrationService {
                 .toList();
 
         ClassModel targetClass = classRepository.findById(targetClassId)
-                .orElseThrow(() -> new ResourceNotFoundException("Turma nao encontrada com id: " + targetClassId));
+                .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + targetClassId));
 
         List<String> alerts = new ArrayList<>();
         for (EnrollmentModel enrollment : enrollments) {
@@ -500,7 +500,7 @@ public class PeopleIntegrationService {
             }
 
             if (overlaps(targetClass, enrollment.getClassModel())) {
-                alerts.add("Conflito: aluno ja vinculado a programa simultaneo em andamento.");
+                alerts.add("Conflito: aluno já vinculado a programa simultâneo em andamento.");
                 return alerts;
             }
         }
@@ -521,13 +521,13 @@ public class PeopleIntegrationService {
             ClassModel otherClass = candidate.getStage().getClassModel();
             if (overlaps(targetClass, otherClass)) {
                 String code = otherClass.getCode() != null ? otherClass.getCode() : String.valueOf(otherClass.getId());
-                alerts.add(String.format("Erro: pessoa ja esta em nivelamento na turma '%s'. Nao e permitido participar de dois nivelamentos simultaneos.", code));
+                alerts.add(String.format("Erro: pessoa já está em nivelamento na turma '%s'. Não é permitido participar de dois nivelamentos simultâneos.", code));
                 return alerts;
             }
         }
 
         if (!enrollments.isEmpty()) {
-            alerts.add("Atencao: aluno ja vinculado a outro programa.");
+            alerts.add("Atenção: aluno já vinculado a outro programa.");
         }
         return alerts;
     }
@@ -570,9 +570,9 @@ public class PeopleIntegrationService {
                 person.getName(),
                 formatCpf(person.getCpf()),
                 person.getEmail(),
-                defaultIfBlank(person.getGender(), "Nao informado"),
+                defaultIfBlank(person.getGender(), "Não informado"),
                 calculateAge(person.getBirthDate()),
-                defaultIfBlank(person.getQuotaCategory(), "Nao informado"),
+                defaultIfBlank(person.getQuotaCategory(), "Não informado"),
                 defaultIfBlank(person.getCity(), "-"),
                 defaultIfBlank(person.getState(), "-"),
                 defaultIfBlank(institution, "-"),

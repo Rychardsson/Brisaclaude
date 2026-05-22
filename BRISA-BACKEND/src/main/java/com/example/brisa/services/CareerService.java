@@ -107,7 +107,7 @@ public class CareerService {
         EnrollmentModel enrollment = null;
         if (request.getEnrollmentId() != null) {
             enrollment = enrollmentRepository.findById(request.getEnrollmentId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Matricula nao encontrada com id: " + request.getEnrollmentId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Matrícula não encontrada com id: " + request.getEnrollmentId()));
         }
 
         PeopleModel person = resolvePerson(request.getPeopleId(), enrollment);
@@ -115,7 +115,7 @@ public class CareerService {
         ProgramModel program = resolveProgram(request.getProgramId(), classModel, enrollment);
 
         if (enrollment != null && person != null && !person.getId().equals(enrollment.getPeople().getId())) {
-            throw new ValidationException(List.of("O peopleId informado nao corresponde a matricula selecionada."));
+            throw new ValidationException(List.of("O peopleId informado não corresponde à matrícula selecionada."));
         }
 
         CareerProgressionModel entity = new CareerProgressionModel();
@@ -169,7 +169,7 @@ public class CareerService {
 
         logAutomationEvent(
                 LogAction.SYSTEM_INFO,
-                "Configuracao da automacao de carreira atualizada",
+                "Configuração da automação de carreira atualizada",
                 "UPDATE",
                 saved,
                 userId,
@@ -191,12 +191,12 @@ public class CareerService {
         CareerAutomationSettingsModel savedSettings = careerAutomationSettingsRepository.save(settings);
 
         if (!emailService.isMailConfigured()) {
-            throw new ValidationException(List.of("O servidor de e-mail ainda nao esta configurado para enviar os acompanhamentos da carreira."));
+            throw new ValidationException(List.of("O servidor de e-mail ainda não está configurado para enviar os acompanhamentos da carreira."));
         }
 
         String recipientEmail = trimToNull(testRecipientEmail);
         if (recipientEmail == null) {
-            throw new ValidationException(List.of("Nao foi possivel identificar o e-mail do usuario autenticado para o teste da automacao."));
+            throw new ValidationException(List.of("Não foi possível identificar o e-mail do usuário autenticado para o teste da automação."));
         }
 
         String subject = buildAutomationSubject(savedSettings, true, null);

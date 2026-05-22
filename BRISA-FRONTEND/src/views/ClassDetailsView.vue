@@ -78,16 +78,16 @@
             <small class="hero-support">Selecionados</small>
           </article>
           <article class="hero-card">
-            <span class="hero-label">ImersÃ£o</span>
+            <span class="hero-label">Imersão</span>
             <strong class="teal-strong">{{ overviewTopCards.imersaoAprovados }}</strong>
             <small>{{ overviewTopCards.imersaoGrupos }} grupos</small>
             <small class="hero-support">Aprovados para fase final</small>
           </article>
           <article class="hero-card">
-            <span class="hero-label">Alertas CrÃ­ticos</span>
+            <span class="hero-label">Alertas Críticos</span>
             <strong class="warning-strong">{{ overviewTopCards.alertasCriticos }}</strong>
             <small class="warning-small">{{ overviewTopCards.alertasRisco }} em risco</small>
-            <small class="hero-support">PendÃªncias ativas</small>
+            <small class="hero-support">Pendências ativas</small>
           </article>
         </div>
 
@@ -109,18 +109,18 @@
         <section v-if="activeTab === 'visao-geral'" class="stack">
           <article class="status-card">
             <div class="status-head">
-              <h3>SituaÃ§Ã£o Atual</h3>
+              <h3>Situação Atual</h3>
               <span class="pill pill-green">{{ classStatusLabel }}</span>
               <span class="pill pill-purple">Etapa: {{ currentStageLabel }}</span>
             </div>
 
             <div class="status-grid">
               <div>
-                <span>PerÃ­odo da etapa</span>
+                <span>Período da etapa</span>
                 <strong>{{ currentStagePeriod }}</strong>
               </div>
               <div>
-                <span>PrÃ³ximo marco</span>
+                <span>Próximo marco</span>
                 <strong class="teal-strong">{{ currentStageMilestone }}</strong>
               </div>
               <div>
@@ -132,7 +132,7 @@
                 <strong>{{ classModelLabel }}</strong>
               </div>
               <div>
-                <span>Carga horÃ¡ria</span>
+                <span>Carga horária</span>
                 <strong>{{ classWorkloadLabel }}</strong>
               </div>
               <div>
@@ -142,7 +142,7 @@
             </div>
 
             <p class="status-note">
-              A turma estÃ¡ em desenvolvimento dos projetos, com avaliaÃ§Ã£o parcial como prÃ³ximo marco.
+              A turma está em desenvolvimento dos projetos, com avaliação parcial como próximo marco.
             </p>
           </article>
 
@@ -180,7 +180,7 @@
                     <strong :class="item.valueClass">{{ item.value }}</strong>
                   </div>
                 </div>
-                <button type="button" class="details-link">Ver detalhes â†’</button>
+                <button type="button" class="details-link">Ver detalhes →</button>
               </article>
             </div>
           </section>
@@ -190,7 +190,7 @@
             <div class="timeline-list">
               <div v-for="item in overviewTimeline" :key="item.label" class="timeline-row">
                 <div class="timeline-left">
-                  <span class="timeline-check">âœ“</span>
+                  <span class="timeline-check">✓</span>
                   <span class="timeline-label">{{ item.label }}</span>
                 </div>
                 <div class="timeline-right">
@@ -199,11 +199,11 @@
                 </div>
               </div>
             </div>
-            <button type="button" class="details-link timeline-link">Ver cronograma completo â†’</button>
+            <button type="button" class="details-link timeline-link">Ver cronograma completo →</button>
           </article>
 
           <section class="overview-block">
-            <h3 class="overview-title">DistribuiÃ§Ã£o dos Alunos</h3>
+            <h3 class="overview-title">Distribuição dos Alunos</h3>
             <div class="distribution-grid">
               <article class="panel distribution-panel">
                 <h4>Por Cota</h4>
@@ -221,7 +221,7 @@
               </article>
 
               <article class="panel distribution-panel">
-                <h4>Por GÃªnero</h4>
+                <h4>Por Gênero</h4>
                 <div class="gender-grid">
                   <div v-for="item in genderDistribution" :key="item.label" class="gender-card">
                     <strong>{{ item.value }}%</strong>
@@ -241,7 +241,7 @@
               </article>
 
               <article class="panel distribution-panel">
-                <h4>Por Tipo de FormaÃ§Ã£o</h4>
+                <h4>Por Tipo de Formação</h4>
                 <div class="simple-list">
                   <div v-for="item in educationDistribution" :key="item.label">
                     <span>{{ item.label }}</span>
@@ -253,7 +253,7 @@
           </section>
 
           <article class="panel updates-panel">
-            <h3 class="section-subtitle">Ãšltimas AtualizaÃ§Ãµes</h3>
+            <h3 class="section-subtitle">Últimas Atualizações</h3>
             <div class="updates-list">
               <div v-for="item in overviewUpdates" :key="item.action" class="update-row">
                 <span class="update-dot" :class="item.dotClass" />
@@ -305,7 +305,7 @@
                   <option v-for="option in peopleCityOptions" :key="option" :value="option">{{ option }}</option>
                 </select>
                 <select v-model="peopleFilterGender" class="people-filter-select">
-                  <option value="">GÃªnero</option>
+                  <option value="">Gênero</option>
                   <option v-for="option in peopleGenderOptions" :key="option" :value="option">{{ option }}</option>
                 </select>
               </div>
@@ -323,13 +323,13 @@
                       <th>Nome</th>
                       <th>CPF</th>
                       <th>E-mail</th>
-                      <th>GÃªnero</th>
+                      <th>Gênero</th>
                       <th>Idade</th>
                       <th>Cota</th>
                       <th>Cidade</th>
                       <th>Etapa Atual</th>
                       <th>Status</th>
-                      <th class="actions-col">AÃ§Ãµes</th>
+                      <th class="actions-col">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -379,7 +379,7 @@
                       {{ page }}
                     </button>
                   </div>
-                  <button type="button" class="page-btn" :disabled="classPeoplePage === classPeopleTotalPages" @click="classPeopleNextPage">PrÃ³ximo</button>
+                  <button type="button" class="page-btn" :disabled="classPeoplePage === classPeopleTotalPages" @click="classPeopleNextPage">Próximo</button>
                 </div>
               </div>
             </template>
@@ -396,7 +396,7 @@
 
           <article class="panel">
             <div class="panel-head">
-              <h3>DistribuiÃ§Ã£o de Vagas por Cotas</h3>
+              <h3>Distribuição de Vagas por Cotas</h3>
               <button type="button" class="btn-primary" @click="openUpdateSelectionModal">Atualizar dados</button>
             </div>
             <div class="quota-distribution">
@@ -415,7 +415,7 @@
             </svg>
             <div class="alert-copy">
               <strong>{{ selectionConflictSummary }}</strong>
-              <p>Isso indica possÃ­vel conflito de inscriÃ§Ã£o</p>
+              <p>Isso indica possível conflito de inscrição</p>
             </div>
             <button type="button" class="alert-link" @click="toggleSelectionConflicts">{{ selectionConflictButtonLabel }}</button>
           </div>
@@ -428,11 +428,11 @@
                     <th>Nome</th>
                     <th>CPF</th>
                     <th>E-mail</th>
-                    <th>GÃªnero</th>
+                    <th>Gênero</th>
                     <th>Idade</th>
                     <th>Cota</th>
                     <th>Cidade</th>
-                    <th>FormaÃ§Ã£o</th>
+                    <th>Formação</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -513,16 +513,16 @@
                 <div class="value">{{ courseStats.inProgress + courseStats.completed }}</div>
               </div>
               <div class="n-card">
-                <div class="label">Cursos obrigatÃ³rios</div>
+                <div class="label">Cursos obrigatórios</div>
                 <div class="value">{{ courseItems.filter(c => c.required).length }}</div>
               </div>
               <div class="n-card">
-                <div class="label">Cursos nÃ£o obrigatÃ³rios</div>
+                <div class="label">Cursos não obrigatórios</div>
                 <div class="value">{{ courseItems.filter(c => !c.required).length }}</div>
               </div>
                <div class="n-card teal">
-                <div class="label">ConclusÃ£o obrigatÃ³rios</div>
-                <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : 'â€”' }}</div>
+                <div class="label">Conclusão obrigatórios</div>
+                <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '—' }}</div>
               </div>
                <div class="n-card amber">
                 <div class="label">Nota de corte prova</div>
@@ -539,7 +539,7 @@
                 <div style="display:flex;align-items:center;gap:12px;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
                   <div>
-                    <span style="font-weight:600;color:#075985;">Ãšltimo e-mail enviado: </span>
+                    <span style="font-weight:600;color:#075985;">Último e-mail enviado: </span>
                     <span style="color:#0c4a6e;">{{ lastEmailInfo }}</span>
                   </div>
                 </div>
@@ -596,13 +596,13 @@
                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
                  </svg>
                  <span class="course-name-new">{{ course?.name || 'Sem nome' }}</span>
-                 <span v-if="course?.required" class="course-badge course-badge-required">ObrigatÃ³rio</span>
+                 <span v-if="course?.required" class="course-badge course-badge-required">Obrigatório</span>
                  <span v-if="course?.knowledgeArea" class="course-badge">{{ course.knowledgeArea }}</span>
                </div>
 
                <div class="course-right-new">
                  <div class="course-stats-new">
-                   <div class="course-stats-text">{{ course?.completedCount || 0 }} concluÃ­dos Â· {{ course?.pendingCount || 0 }} pendentes</div>
+                   <div class="course-stats-text">{{ course?.completedCount || 0 }} concluídos · {{ course?.pendingCount || 0 }} pendentes</div>
                    <div class="progress-container">
                      <div class="progress-bar">
                        <div class="progress-fill" :style="{ width: (course?.completionPct || 0) + '%', backgroundColor: getCompletionColor(course?.completionPct || 0) }"></div>
@@ -610,7 +610,7 @@
                      <span class="progress-pct">{{ course?.completionPct || 0 }}%</span>
                     </div>
                  </div>
-                 <div class="course-media">MÃ©dia: {{ course?.completionPct || 0 }}</div>
+                 <div class="course-media">Média: {{ course?.completionPct || 0 }}</div>
                 </div>
               </div>
            </div>
@@ -781,7 +781,7 @@
                <strong>{{ approvedRankingData.waitlist?.length || 0 }}</strong>
              </article>
              <article class="panel exam-ranking-card">
-               <span>NÃ£o selecionados</span>
+               <span>Não selecionados</span>
                <strong>{{ approvedRankingData.rejected?.length || 0 }}</strong>
              </article>
            </div>
@@ -792,7 +792,7 @@
                  <tr>
                    <th>Nome</th>
                    <th>CPF</th>
-                   <th>Progresso mÃ©dio</th>
+                   <th>Progresso médio</th>
                    <th>Status</th>
                  </tr>
                </thead>
@@ -808,7 +808,7 @@
                        <small>{{ student.avg }}%</small>
                      </div>
                    </td>
-                   <td><span class="status-pill" :class="student.avg===100 ? 'status-approved' : 'status-inprogress'">{{ student.avg===100 ? 'ConcluÃ­do' : 'Em andamento' }}</span></td>
+                   <td><span class="status-pill" :class="student.avg===100 ? 'status-approved' : 'status-inprogress'">{{ student.avg===100 ? 'Concluído' : 'Em andamento' }}</span></td>
                  </tr>
                </tbody>
              </table>
@@ -832,7 +832,7 @@
                   <polyline points="7 10 12 5 17 10" />
                   <line x1="12" y1="5" x2="12" y2="17" />
                 </svg>
-                <span>Importar alunos da imersÃ£o</span>
+                <span>Importar alunos da imersão</span>
               </button>
 
               <button type="button" class="btn-outline" @click="showSubmitNotasImersaoModal = true">
@@ -849,7 +849,7 @@
                   <path d="M3 12a9 9 0 1 0 3-6.7" />
                   <polyline points="3 3 3 9 9 9" />
                 </svg>
-                <span>Atualizar presenÃ§a</span>
+                <span>Atualizar presença</span>
               </button>
 
               <button type="button" class="btn-primary" @click="showGroupCreateModal = true">
@@ -1040,7 +1040,7 @@
         </div>
 
         <div v-if="!selectedUpdateAction" class="modal-content update-selection-home">
-          <p class="modal-subtitle">Escolha uma das aÃ§Ãµes abaixo para atualizar os dados do processo seletivo:</p>
+          <p class="modal-subtitle">Escolha uma das ações abaixo para atualizar os dados do processo seletivo:</p>
           
           <div class="update-actions-grid">
             <button type="button" class="update-action-card" @click="openIndividualRegistration">
@@ -1085,7 +1085,7 @@
                 </svg>
               </div>
               <h4>Atualizar lista de espera</h4>
-              <p>Gerencie a lista de espera e convocaÃ§Ãµes adicionais</p>
+              <p>Gerencie a lista de espera e convocações adicionais</p>
             </button>
           </div>
 
@@ -1097,7 +1097,7 @@
         <!-- Individual Registration -->
         <div v-else-if="selectedUpdateAction === 'individual'" class="modal-content modal-large individual-modal">
           <div class="modal-back">
-            <button type="button" @click="closeIndividualRegistration" class="back-link">â† Voltar</button>
+            <button type="button" @click="closeIndividualRegistration" class="back-link">← Voltar</button>
           </div>
           <h3>Cadastrar aluno individualmente</h3>
 
@@ -1115,13 +1115,13 @@
               <input id="regEmail" v-model="newCandidateForm.email" type="email" class="field" placeholder="exemplo@email.com" />
             </div>
             <div class="candidate-field-row">
-              <label for="regGender">GÃªnero</label>
+              <label for="regGender">Gênero</label>
               <select id="regGender" v-model="newCandidateForm.gender" class="field">
                 <option value="">Selecione</option>
                 <option value="Feminino">Feminino</option>
                 <option value="Masculino">Masculino</option>
                 <option value="Outro">Outro</option>
-                <option value="NÃ£o informado">NÃ£o informado</option>
+                <option value="Não informado">Não informado</option>
               </select>
             </div>
             <div class="candidate-field-row">
@@ -1130,14 +1130,14 @@
             </div>
             <div class="candidate-field-row">
               <label for="regCity">Cidade/UF</label>
-              <input id="regCity" v-model="newCandidateForm.city" type="text" class="field" placeholder="MaceiÃ³ - AL" />
+              <input id="regCity" v-model="newCandidateForm.city" type="text" class="field" placeholder="Maceió - AL" />
             </div>
             <div class="candidate-field-row">
-              <label for="regEducation">Tipo de formaÃ§Ã£o</label>
+              <label for="regEducation">Tipo de formação</label>
               <select id="regEducation" v-model="newCandidateForm.education" class="field">
                 <option value="">Selecione</option>
-                <option value="GraduaÃ§Ã£o em andamento">GraduaÃ§Ã£o em andamento</option>
-                <option value="GraduaÃ§Ã£o concluÃ­da">GraduaÃ§Ã£o concluÃ­da</option>
+                <option value="Graduação em andamento">Graduação em andamento</option>
+                <option value="Graduação concluída">Graduação concluída</option>
                 <option value="Curso tÃ©cnico">Curso tÃ©cnico</option>
                 <option value="Outros cursos de exatas/tecnologia">Outros cursos de exatas/tecnologia</option>
               </select>
