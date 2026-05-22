@@ -207,22 +207,29 @@
          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
            <label style="margin: 0;">Peso da Avaliação Parcial</label>
            <div style="display: flex; align-items: center; gap: 6px;">
-             <input type="number" v-model="imersaoForm.avaliacoes.pesoParcial" @keydown.enter="$event.target.blur()" class="quota-input" style="color: #1a233a; font-weight: 500; padding: 4px 8px; width: 60px; text-align: center;" min="0" max="100"/>
+             <input type="number" v-model.number="imersaoForm.avaliacoes.pesoParcial" @keydown.enter="$event.target.blur()" @input="validateEvaluationWeights" class="quota-input" style="color: #1a233a; font-weight: 500; padding: 4px 8px; width: 60px; text-align: center;" min="0" max="100"/>
              <span style="font-size: 13px; color: #6b7280; font-weight: 500;">%</span>
            </div>
          </div>
-         <input type="range" class="form-range" v-model="imersaoForm.avaliacoes.pesoParcial" min="0" max="100" :style="{ background: `linear-gradient(to right, #1e1b4b ${imersaoForm.avaliacoes.pesoParcial}%, #e5e7eb ${imersaoForm.avaliacoes.pesoParcial}%)` }">
+         <input type="range" class="form-range" v-model.number="imersaoForm.avaliacoes.pesoParcial" @input="validateEvaluationWeights" min="0" max="100" :style="{ background: `linear-gradient(to right, #1e1b4b ${imersaoForm.avaliacoes.pesoParcial}%, #e5e7eb ${imersaoForm.avaliacoes.pesoParcial}%)` }">
        </div>
 
        <div class="form-group" style="margin-bottom: 24px;">
          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
            <label style="margin: 0;">Peso da Avaliação Final</label>
            <div style="display: flex; align-items: center; gap: 6px;">
-             <input type="number" v-model="imersaoForm.avaliacoes.pesoFinal" @keydown.enter="$event.target.blur()" class="quota-input" style="color: #1a233a; font-weight: 500; padding: 4px 8px; width: 60px; text-align: center;" min="0" max="100"/>
+             <input type="number" v-model.number="imersaoForm.avaliacoes.pesoFinal" @keydown.enter="$event.target.blur()" @input="validateEvaluationWeights" class="quota-input" style="color: #1a233a; font-weight: 500; padding: 4px 8px; width: 60px; text-align: center;" min="0" max="100"/>
              <span style="font-size: 13px; color: #6b7280; font-weight: 500;">%</span>
            </div>
          </div>
-         <input type="range" class="form-range" v-model="imersaoForm.avaliacoes.pesoFinal" min="0" max="100" :style="{ background: `linear-gradient(to right, #1e1b4b ${imersaoForm.avaliacoes.pesoFinal}%, #e5e7eb ${imersaoForm.avaliacoes.pesoFinal}%)` }">
+         <input type="range" class="form-range" v-model.number="imersaoForm.avaliacoes.pesoFinal" @input="validateEvaluationWeights" min="0" max="100" :style="{ background: `linear-gradient(to right, #1e1b4b ${imersaoForm.avaliacoes.pesoFinal}%, #e5e7eb ${imersaoForm.avaliacoes.pesoFinal}%)` }">
+       </div>
+
+       <div v-if="isEvaluationWeightExceeded" style="padding: 12px; background-color: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; margin-bottom: 24px;">
+         <p style="margin: 0; color: #991b1b; font-size: 13px; font-weight: 500;">
+           ⚠️ A soma da Avaliação Parcial + Avaliação Final não pode ultrapassar 100%<br/>
+           <span style="font-size: 12px;">Total atual: <strong>{{ totalEvaluationWeight }}%</strong></span>
+         </p>
        </div>
 
        <div class="form-group" style="margin-top: 24px;">
@@ -318,8 +325,28 @@ export default {
   },
   data() {
     return {
-      activeTab: 'visao-geral'
+      activeTab: 'visao-geral',
+      isEvaluationWeightExceeded: false
     };
+  },
+
+  computed: {
+    totalEvaluationWeight() {
+      const parcial = Number(this.imersaoForm.avaliacoes.pesoParcial) || 0;
+      const final = Number(this.imersaoForm.avaliacoes.pesoFinal) || 0;
+      return parcial + final;
+    }
+  },
+
+  methods: {
+    validateEvaluationWeights() {
+      this.isEvaluationWeightExceeded = this.totalEvaluationWeight > 100;
+      if (this.isEvaluationWeightExceeded) {
+        this.$emit('evaluation-weights-invalid');
+      } else {
+        this.$emit('evaluation-weights-valid');
+      }
+    }
   }
 }
 </script>

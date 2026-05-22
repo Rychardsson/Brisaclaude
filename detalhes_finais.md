@@ -29,3 +29,34 @@
 - 2026-05-19: Em `BRISA-FRONTEND/src/views/PessoaPerfilView.vue`, voltou o botão de **3 pontinhos** na tela de pessoa única, com menu contendo **Apagar pessoa** (soft delete) e confirmação.
 - 2026-05-19: Removido de vez o fluxo de detalhes de curso `/programs/:programId/classes/:classId/courses/:courseId`: excluídos `CourseDetailsView.vue`, rota `CourseDetails`, client `courseService.getCourseDetails`, endpoint backend `GET /api/courses/{courseId}/details/class/{classId}` (`CourseController` + `CourseService`) e DTOs exclusivos desse fluxo (`CourseDetailsDTO` e `CourseStudentProgressionDTO`).
 - 2026-05-19: Em `BRISA-FRONTEND/src/views/ProgramsView.vue`, o botão **Dashboard** da turma deixou de abrir `/home` e passou a abrir `/dashboard` com os filtros avançados já aplicados via query (`programaId` e `turmaId`, além do rótulo `programa`).
+
+## 🎯 Sessão 2026-05-21 - Executor Field & Validation Fixes
+
+### Problema
+Campo "executor" (executora) nao estava sendo persistido apos criacao de programa, e dados de exibicao estavam incorretos em ProgramsView.
+
+### Implementacao
+
+#### Backend Changes
+- **ProgramModel.java**: Adicionados campos `executor` (String, 500) e `location` (String, 500)
+- **ProgramOverviewItemDTO.java**: Adicionado campo `executor` ao record
+- **ProgramIntegrationService.java**: Metodo `buildProgramOverviewItem()` agora inclui `program.getExecutor()` nos dados retornados
+- **SecurityFilter.java**: Corrigido NullPointerException com null checks em token validation
+
+#### Frontend Changes
+- **ProgramRegistrationView.vue**: Funcao `publishProgram()` agora envia `executor` e `location` junto com programData
+- **ProgramsView.vue**: Ja estava correto - `mapClassToProgramListItem()` mapeia executor para parceiro
+
+### Fluxo End-to-End
+```
+usuario preenche "Executora" → localStorage → publishProgram() envia 
+→ ProgramController persiste → Hibernate cria colunas via DDL auto 
+→ getOverview() retorna com executor → frontend mapeia para parceiro 
+→ exibe em ProgramsView
+```
+
+### Validacoes Anteriores Implementadas
+- **SecondStageProgramRegistrationView.vue**: Validacao que soma de "Pontuacao Maxima da Prova" + "Pontos por Cursos Nao Obrigatorios" nao ultrapassa 100%
+- **ThirdStageProgramRegistrationView.vue**: Validacao que soma de "Avaliacao Parcial" + "Avaliacao Final" nao ultrapassa 100%
+- **ProgramsView.vue**: Dados de exibicao corrigidos - primeiro span = executor, segundo span = data programa, terceiro span = periodo (data inicio - data fim)
+

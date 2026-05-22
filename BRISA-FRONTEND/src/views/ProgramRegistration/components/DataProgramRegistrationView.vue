@@ -18,8 +18,8 @@
            <input v-model="formData.programName" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Programa de Formação em Tecnologia" class="form-input"/>
          </div>
          <div class="form-group">
-           <label>Nome da Turma/Edição <span class="required">*</span></label>
-           <input v-model="formData.batchName" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Turma 2026.1" class="form-input"/>
+           <label>Turma/Edição <span class="required">*</span></label>
+           <input v-model="formData.batchName" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: 2026.1" class="form-input"/>
          </div>
        </div>
 
@@ -43,7 +43,7 @@
        <div class="form-row two-cols">
          <div class="form-group">
            <label>Localidade (Cidade/Estado)</label>
-           <input v-model="formData.location" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: São Paulo, SP (ou Nacional)" class="form-input"/>
+           <input v-model="formData.location" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Maceió/AL" class="form-input"/>
          </div>
          
          <div class="form-group relative">

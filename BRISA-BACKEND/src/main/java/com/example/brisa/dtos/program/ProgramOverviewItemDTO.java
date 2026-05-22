@@ -8,6 +8,7 @@ public record ProgramOverviewItemDTO(
         String parceiro,
         String localidade,
         String periodo,
+        String executor,
         String status,
         String etapaAtual,
         long inscricao,

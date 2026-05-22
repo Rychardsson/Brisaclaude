@@ -271,6 +271,7 @@ public class ProgramIntegrationService {
                 partnerLabel(program, classModel),
                 localityLabel(classModel),
                 periodLabel(program, classModel),
+                program.getExecutor() != null ? program.getExecutor() : "-",
                 status,
                 etapaAtual,
                 inscricao,

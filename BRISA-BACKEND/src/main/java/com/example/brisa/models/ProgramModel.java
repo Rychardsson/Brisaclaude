@@ -58,6 +58,12 @@ public class ProgramModel {
     @Column(name = "evaluation_criteria", length = 4000)
     private String evaluationCriteria;
 
+    @Column(name = "executor", length = 500)
+    private String executor;
+
+    @Column(name = "location", length = 500)
+    private String location;
+
     @OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<ProgramInstitutionModel> programInstitutions = new HashSet<>();
 

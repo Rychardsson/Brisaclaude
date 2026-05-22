@@ -751,16 +751,35 @@ function mapClassToProgramListItem(classItem, fallbackProgram) {
   const programId = resolveProgramId(classItem) ?? String(fallbackProgram?.programId ?? '');
   const catalogProgram = programCatalog.value.find((item) => item.programId === programId) || null;
   const programName = classItem?.program?.name ?? fallbackProgram?.nome ?? catalogProgram?.nome ?? 'Programa';
-  const partnerName = fallbackProgram?.parceiro ?? catalogProgram?.parceiro ?? classItem?.location?.name ?? '-';
+  const executorName = fallbackProgram?.executor ?? catalogProgram?.executor ?? '-';
+  const localityName = classItem?.locality ?? classItem?.location?.name ?? fallbackProgram?.location ?? '-';
+  
+  // Format period/dates: "DD/MM/YYYY - DD/MM/YYYY"
+  const formatDate = (date) => {
+    if (!date) return null;
+    if (typeof date === 'string') {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return null;
+      return d.toLocaleDateString('pt-BR');
+    }
+    if (date instanceof Date) {
+      return date.toLocaleDateString('pt-BR');
+    }
+    return null;
+  };
+  
+  const startDate = formatDate(classItem?.publishDate ?? classItem?.startDate ?? fallbackProgram?.startDate);
+  const endDate = formatDate(classItem?.endDate ?? fallbackProgram?.endDate);
+  const periodoText = startDate && endDate ? `${startDate} - ${endDate}` : (startDate || '-');
 
   return {
     programId: Number(programId || 0),
     classId: classItem?.id ?? classItem?.classId ?? null,
     nome: programName,
     turma: classItem?.code ?? classItem?.name ?? `Turma ${classItem?.id ?? '-'}`,
-    parceiro: partnerName,
-    localidade: classItem?.locality ?? classItem?.location?.name ?? '-',
-    periodo: '-',
+    parceiro: executorName,
+    localidade: localityName,
+    periodo: periodoText,
     status: classItem?.status || 'andamento',
     etapaAtual: classItem?.currentStage || 'Inscricao',
     inscricao: 0,

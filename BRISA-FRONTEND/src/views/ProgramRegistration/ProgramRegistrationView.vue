@@ -496,6 +496,8 @@
           @next-month="nextMonth"
           @parse-time-input="parseTimeInput"
           @open-new-course-modal="openNewCourseModal"
+          @weights-invalid="onWeightsInvalid"
+          @weights-valid="onWeightsValid"
           :isSelectedDay="isSelectedDay"
           :isToday="isToday"
         />
@@ -516,6 +518,8 @@
           @prev-month="prevMonth"
           @next-month="nextMonth"
           @parse-time-input-imersao="parseTimeInputImersao"
+          @evaluation-weights-invalid="onEvaluationWeightsInvalid"
+          @evaluation-weights-valid="onEvaluationWeightsValid"
           :isSelectedDay="isSelectedDay"
           :isToday="isToday"
         />
@@ -624,15 +628,17 @@ export default {
       currentStep: 1, // Controla qual das 6 abas está ativa e visível no momento
       isDraftSaved: false, // Flag que controla se a pílula verde de "Rascunho Salvo" deve aparecer
       stepStatuses: ['pending', 'pending', 'pending', 'pending', 'pending', 'pending'], // Status de validação de cada etapa para pintar as bolinhas laterais ('pending', 'warning', 'completed')
-      
+       
       isRevisionValid: false, // Flag que controla se a aba 6 está 100% validada sem erros
       isEditMode: false, // Flag que controla se estamos editando um programa existente
       editingProgramId: null, // ID do programa sendo editado (se aplicável)
+      isWeightsValid: true, // Flag que controla se a soma dos pesos de prova + opcionais está dentro de 100%
+      isEvaluationWeightsValid: true, // Flag que controla se a soma dos pesos de avaliação parcial + final está dentro de 100%
 
       // Textos exibidos nos botões do menu lateral esquerdo
       stepTitles: ['Dados do Programa', 'Estrutura das Etapas', 'Etapa 0 — Inscrição', 'Etapa 1 — Nivelamento', 'Etapa 2 — Imersão', 'Revisão Final'],
       stepDescs: ['Informações gerais', 'Definição do fluxo', 'Formulário e elegibilidade', 'Cursos e avaliação', 'Projetos e benefícios', 'Validar e publicar'],
-      
+       
       programService, // Importa o serviço de programa
       newPartnerName: '', // Armazena temporariamente o texto digitado no input de adicionar parceiro (Aba 1)
       emailTouched: false, // Controla se o usuário já focou no campo de e-mail para ativar a validação de erro (Aba 1)
@@ -885,14 +891,38 @@ export default {
       } else if (this.currentStep === 3) {
         isValid = !!(this.displayDates.inscStart && this.displayDates.inscEnd);
       } else if (this.currentStep === 4) {
-        isValid = !!(this.nivelamentoForm.title && this.displayDates.nivStart && this.displayDates.nivEnd);
+        isValid = !!(this.nivelamentoForm.title && this.displayDates.nivStart && this.displayDates.nivEnd && this.isWeightsValid);
       } else if (this.currentStep === 5) {
-        isValid = !!(this.imersaoForm.nome && this.displayDates.imerStart && this.displayDates.imerEnd);
+        isValid = !!(this.imersaoForm.nome && this.displayDates.imerStart && this.displayDates.imerEnd && this.isEvaluationWeightsValid);
       } else if (this.currentStep === 6) {
         // Agora a aba 6 só fica azul de fato se todas as validações forem concluídas!
         isValid = this.isRevisionValid;
       }
       this.stepStatuses[this.currentStep - 1] = isValid ? 'completed' : 'warning';
+    },
+
+    // Handler para quando os pesos da prova + opcionais ficam inválidos
+    onWeightsInvalid() {
+      this.isWeightsValid = false;
+      this.validateCurrentStep();
+    },
+
+    // Handler para quando os pesos da prova + opcionais ficam válidos
+    onWeightsValid() {
+      this.isWeightsValid = true;
+      this.validateCurrentStep();
+    },
+
+    // Handler para quando os pesos de avaliação parcial + final ficam inválidos
+    onEvaluationWeightsInvalid() {
+      this.isEvaluationWeightsValid = false;
+      this.validateCurrentStep();
+    },
+
+    // Handler para quando os pesos de avaliação parcial + final ficam válidos
+    onEvaluationWeightsValid() {
+      this.isEvaluationWeightsValid = true;
+      this.validateCurrentStep();
     },
 
     // Grava todos os Data Objects no LocalStorage do navegador convertido para String(JSON)
@@ -1274,6 +1304,8 @@ export default {
           startDate: this.formData.startDate,
           endDate: this.formData.endDate,
           targetAudience: this.formData.objective || '',
+          executor: this.formData.executor || '',
+          location: this.formData.location || '',
           quotaCriteria: JSON.stringify(this.inscriptionForm.quotas),
           evaluationCriteria: JSON.stringify(this.nivelamentoForm.grading)
         };
