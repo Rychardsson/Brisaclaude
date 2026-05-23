@@ -26,5 +26,14 @@ export const analyticsService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  async getClassStatusReport(classId) {
+    try {
+      const response = await api.get('/analytics/class-status', { params: { classId } });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };

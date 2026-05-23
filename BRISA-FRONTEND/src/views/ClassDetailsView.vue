@@ -615,6 +615,53 @@
               </div>
            </div>
 
+           <div class="class-status-report">
+             <div class="class-status-head">
+               <div>
+                 <h4>Status da Turma</h4>
+                 <p>Quantidade de alunos por número de cursos concluídos.</p>
+               </div>
+               <span class="class-status-pill">{{ classStatusReport?.totalStudents || 0 }} aluno(s)</span>
+             </div>
+
+             <div v-if="classStatusLoading" class="state-box">Carregando status da turma...</div>
+             <div v-else-if="classStatusError" class="state-box state-error">{{ classStatusError }}</div>
+             <div v-else class="class-status-grid">
+               <article class="class-status-summary">
+                 <span>Total de alunos</span>
+                 <strong>{{ classStatusReport?.totalStudents || 0 }}</strong>
+               </article>
+               <article class="class-status-summary">
+                 <span>Alunos ativos</span>
+                 <strong>{{ classStatusReport?.activeStudents || 0 }}</strong>
+               </article>
+               <article class="class-status-summary">
+                 <span>Com progresso</span>
+                 <strong>{{ classStatusReport?.studentsWithProgress || 0 }}</strong>
+               </article>
+               <article class="class-status-summary">
+                 <span>Sem conclusão</span>
+                 <strong>{{ classStatusReport?.studentsWithoutProgress || 0 }}</strong>
+               </article>
+             </div>
+
+             <div v-if="!classStatusLoading && !classStatusError" class="class-status-bars">
+               <div
+                 v-for="bucket in classStatusBuckets"
+                 :key="bucket.completedCourses"
+                 class="class-status-row"
+               >
+                 <div class="class-status-row-head">
+                   <span>{{ bucket.completedCourses }} curso(s) concluído(s)</span>
+                   <strong>{{ bucket.students }} aluno(s)</strong>
+                 </div>
+                 <div class="class-status-track">
+                   <div class="class-status-fill" :style="{ width: `${bucket.percentage || 0}%` }"></div>
+                 </div>
+               </div>
+             </div>
+           </div>
+
            <div class="alert-banner alert-warning">
              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -1922,6 +1969,7 @@ import { stageService } from '@/services/stageService';
 import { courseService } from '@/services/courseService';
 import { examService } from '@/services/examService';
 import { groupService } from '@/services/groupService';
+import { analyticsService } from '@/services/analyticsService';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import GroupCreateModal from '@/components/GroupCreateModal.vue';
 
@@ -2066,6 +2114,9 @@ export default {
     const classEnrollments = ref([]);
     const allEnrollments = ref([]);
     const allClasses = ref([]);
+    const classStatusReport = ref(null);
+    const classStatusLoading = ref(false);
+    const classStatusError = ref(null);
     const loading = ref(false);
     const peopleLoading = ref(false);
     const error = ref(null);
@@ -2767,6 +2818,20 @@ export default {
       }
     };
 
+    const loadClassStatusReport = async () => {
+      if (!classId.value) return;
+      classStatusLoading.value = true;
+      classStatusError.value = null;
+      try {
+        classStatusReport.value = await analyticsService.getClassStatusReport(classId.value);
+      } catch (err) {
+        console.error('Erro ao carregar status da turma:', err);
+        classStatusError.value = 'Não foi possível carregar o relatório de status da turma.';
+      } finally {
+        classStatusLoading.value = false;
+      }
+    };
+
     const courseItems = computed(() => {
       if (!courses.value.length) return [];
       return courses.value.map(course => {
@@ -2805,6 +2870,15 @@ export default {
       inProgress: courseItems.value.filter(c => c.completionPct > 0 && c.completionPct < 100).length,
       completed: courseItems.value.filter(c => c.completionPct === 100).length,
     }));
+
+    const classStatusBuckets = computed(() => {
+      const buckets = classStatusReport.value?.completionBuckets || [];
+      return buckets.map((bucket) => ({
+        completedCourses: bucket.completedCourses ?? 0,
+        students: bucket.students ?? 0,
+        percentage: Number(bucket.percentage || 0),
+      }));
+    });
 
     const getCompletionColor = (pct) => {
       if (pct >= 80) return '#27ae60';
@@ -2897,6 +2971,7 @@ export default {
         watch(() => activeTab.value, (tab) => {
           if (tab === 'etapas') {
             loadNivelamentoData();
+            loadClassStatusReport();
             loadExamInsights();
           }
         });
@@ -3003,6 +3078,7 @@ export default {
         };
 
         watch(() => etapasSubTab.value, (tab) => {
+          if (tab === 'nivelamento') loadClassStatusReport();
           if (tab === 'imersao' && useRealImersaoGroups.value) loadImersaoGroups();
         });
 
@@ -3678,6 +3754,9 @@ export default {
     onMounted(() => {
       applyTabStateFromQuery();
       loadClassDetails();
+      if (activeTab.value === 'etapas') {
+        loadClassStatusReport();
+      }
       if (activeTab.value === 'etapas' && etapasSubTab.value === 'imersao') {
         loadImersaoGroups();
       }
@@ -3723,6 +3802,10 @@ export default {
       classPeopleTotalPages,
       classPeopleVisiblePages,
       classStatusLabel,
+      classStatusReport,
+      classStatusLoading,
+      classStatusError,
+      classStatusBuckets,
       closeCreateStageModal,
       closeEditStageModal,
       closeIndividualRegistration,
@@ -6645,6 +6728,110 @@ export default {
   flex-direction: column;
   gap: 17px;
 }
+
+.class-status-report {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #dbe4ef;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.class-status-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.class-status-head h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.class-status-head p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.class-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #dffcf5;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.class-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.class-status-summary {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.class-status-summary span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.class-status-summary strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.class-status-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.class-status-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.class-status-row-head strong {
+  color: #0f172a;
+}
+
+.class-status-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.class-status-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #14b8a6 0%, #0ea5e9 100%);
+}
+
 .course-card-new {
   width: 100%;
   display: flex;
