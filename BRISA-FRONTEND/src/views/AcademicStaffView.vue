@@ -3,7 +3,7 @@
     <div class="staff-shell">
       <section class="page-header-card">
         <div class="page-header-top">
-          <div>
+          <div class="header-content">
             <h1>Professores e Gestores</h1>
             <p class="subtitle">
               Centralize o cadastro da equipe acadêmica, acompanhe perfis ativos e mantenha professores, gestores e orientadores acessíveis para as operações do programa.
@@ -55,114 +55,120 @@
               <ShieldCheck :size="18" />
             </div>
             <div class="stat-value">{{ formatNumber(activeMembersCount) }}</div>
-            <div class="stat-note">Disponiveis para uso imediato</div>
+            <div class="stat-note">Disponíveis para uso imediato</div>
           </article>
         </div>
       </section>
 
       <section class="table-card">
-        <div class="tabs-bar">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            type="button"
-            class="tab-item"
-            :class="{ active: activeTab === tab.id }"
-            @click="activeTab = tab.id"
-          >
-            <span class="tab-label">{{ tab.label }}</span>
-            <span class="tab-count">{{ tab.count }}</span>
-          </button>
-        </div>
-
-        <div class="filters-row">
-          <div class="search-box">
-            <Search class="search-icon" :size="18" />
-            <input
-              v-model="searchTerm"
-              type="text"
-              placeholder="Buscar por nome, CPF, email ou formação..."
-              class="search-input"
-            />
-          </div>
-
-          <div class="filters-actions">
-            <select v-model="statusFilter" class="filter-select">
-              <option value="all">Todos os status</option>
-              <option value="active">Ativos</option>
-              <option value="inactive">Inativos</option>
-            </select>
+        <div class="tabs-section">
+          <div class="tabs-bar">
+            <button
+              v-for="tab in tabs"
+              :key="tab.id"
+              type="button"
+              class="tab-item"
+              :class="{ active: activeTab === tab.id }"
+              @click="activeTab = tab.id"
+            >
+              <span class="tab-label">{{ tab.label }}</span>
+              <span class="tab-count">{{ tab.count }}</span>
+            </button>
           </div>
         </div>
 
-        <div v-if="loading" class="state-row">
-          <div class="spinner"></div>
-          <span>Carregando equipe acadêmica...</span>
-        </div>
+        <div class="search-section">
+          <div class="filters-row">
+            <div class="search-box">
+              <Search class="search-icon" :size="18" />
+              <input
+                v-model="searchTerm"
+                type="text"
+                placeholder="Buscar por nome, CPF, email ou formação..."
+                class="search-input"
+              />
+            </div>
 
-        <div v-else-if="errorMessage" class="state-row state-row-error">
-          <span>{{ errorMessage }}</span>
-        </div>
-
-        <div v-else-if="filteredMembers.length === 0" class="state-row state-row-empty">
-          <div>
-            <strong>Nenhum membro encontrado</strong>
-            <p>Ajuste os filtros ou cadastre um novo professor, gestor ou orientador.</p>
+            <div class="filters-actions">
+              <select v-model="statusFilter" class="filter-select">
+                <option value="all">Todos os status</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div v-else class="table-scroll">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>CPF</th>
-                <th>Perfil</th>
-                <th>Contato</th>
-                <th>Formação</th>
-                <th>Nascimento</th>
-                <th>Status</th>
-                <th class="actions-column">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="member in filteredMembers" :key="member.id">
-                <td>
-                  <div class="person-cell">
-                    <div class="person-avatar">{{ initials(member.name) }}</div>
-                    <div>
-                      <strong>{{ member.name }}</strong>
-                      <small>{{ roleDescription(member.roleType) }}</small>
+        <div class="table-section">
+          <div v-if="loading" class="state-row">
+            <div class="spinner"></div>
+            <span>Carregando equipe acadêmica...</span>
+          </div>
+
+          <div v-else-if="errorMessage" class="state-row state-row-error">
+            <span>{{ errorMessage }}</span>
+          </div>
+
+          <div v-else-if="filteredMembers.length === 0" class="state-row state-row-empty">
+            <div>
+              <strong>Nenhum membro encontrado</strong>
+              <p>Ajuste os filtros ou cadastre um novo professor, gestor ou orientador.</p>
+            </div>
+          </div>
+
+          <div v-else class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>CPF</th>
+                  <th>Perfil</th>
+                  <th>Contato</th>
+                  <th>Formação</th>
+                  <th>Nascimento</th>
+                  <th>Status</th>
+                  <th class="actions-column">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="member in filteredMembers" :key="member.id">
+                  <td>
+                    <div class="person-cell">
+                      <div class="person-avatar">{{ initials(member.name) }}</div>
+                      <div>
+                        <strong>{{ member.name }}</strong>
+                        <small>{{ roleDescription(member.roleType) }}</small>
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td>{{ formatCpf(member.cpf) }}</td>
-                <td>
-                  <span class="role-badge" :class="roleBadgeClass(member.roleType)">
-                    {{ roleLabel(member.roleType) }}
-                  </span>
-                </td>
-                <td>{{ member.email || '-' }}</td>
-                <td>{{ member.formation || '-' }}</td>
-                <td>{{ formatDate(member.birthDate) }}</td>
-                <td>
-                  <span class="status-badge" :class="member.active ? 'status-active' : 'status-inactive'">
-                    {{ member.active ? 'Ativo' : 'Inativo' }}
-                  </span>
-                </td>
-                <td class="actions-column">
-                  <button type="button" class="row-action-btn" @click="openEditModal(member)">
-                    <Pencil :size="15" />
-                    Editar
-                  </button>
-                  <button type="button" class="row-action-btn row-action-danger" @click="removeMember(member)">
-                    <Trash2 :size="15" />
-                    Excluir
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  </td>
+                  <td>{{ formatCpf(member.cpf) }}</td>
+                  <td>
+                    <span class="role-badge" :class="roleBadgeClass(member.roleType)">
+                      {{ roleLabel(member.roleType) }}
+                    </span>
+                  </td>
+                  <td>{{ member.email || '-' }}</td>
+                  <td>{{ member.formation || '-' }}</td>
+                  <td>{{ formatDate(member.birthDate) }}</td>
+                  <td>
+                    <span class="status-badge" :class="member.active ? 'status-active' : 'status-inactive'">
+                      {{ member.active ? 'Ativo' : 'Inativo' }}
+                    </span>
+                  </td>
+                  <td class="actions-column">
+                    <button type="button" class="row-action-btn" @click="openEditModal(member)">
+                      <Pencil :size="15" />
+                      Editar
+                    </button>
+                    <button type="button" class="row-action-btn row-action-danger" @click="removeMember(member)">
+                      <Trash2 :size="15" />
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </div>
@@ -314,10 +320,10 @@ function roleLabel(roleType) {
 function roleDescription(roleType) {
   const descriptions = {
     ORIENTADOR: 'Acompanhamento de turma e projetos',
-    PROFESSOR: 'Conducao de cursos e avaliacoes',
+    PROFESSOR: 'Condução de cursos e avaliações',
     GESTOR: 'Gestão operacional do programa'
   };
-  return descriptions[roleType] || 'Equipe academica';
+  return descriptions[roleType] || 'Equipe acadêmica';
 }
 
 function roleBadgeClass(roleType) {
@@ -331,59 +337,64 @@ function roleBadgeClass(roleType) {
 
 <style scoped>
 .staff-page {
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(20, 184, 166, 0.08), transparent 30%),
-    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  min-height: 100%;
+  background: #eef3f8;
+  padding: 14px 16px 20px;
 }
 
 .staff-shell {
-  max-width: 1500px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 32px 24px 48px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .page-header-card,
-.table-card {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid #dbe5f0;
-  border-radius: 24px;
-  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.06);
+.table-card,
+.stat-card {
+  background: #fff;
+  border: 1px solid #dfe7f1;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(13, 27, 42, 0.05);
 }
 
 .page-header-card {
-  padding: 28px;
+  padding: 18px 18px 16px;
 }
 
 .page-header-top {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  gap: 20px;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-h1 {
+.header-content {
+  min-width: min(760px, 100%);
+}
+
+.header-content h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 34px;
   line-height: 1.1;
-  color: #0f172a;
+  color: #13233f;
+  font-weight: 800;
 }
 
 .subtitle {
-  margin: 10px 0 0;
-  max-width: 880px;
-  color: #526277;
-  font-size: 15px;
-  line-height: 1.6;
+  margin: 6px 0 0;
+  color: #6a7a90;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .top-actions {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
 }
 
 .ghost-btn,
@@ -398,7 +409,7 @@ h1 {
 
 .ghost-btn,
 .primary-btn {
-  height: 44px;
+  height: 40px;
   padding: 0 16px;
   display: inline-flex;
   align-items: center;
@@ -406,23 +417,28 @@ h1 {
 }
 
 .ghost-btn {
-  background: #f8fbff;
-  border: 1px solid #d7e3f1;
-  color: #1e3a5f;
+  background: #fff;
+  border: 1px solid #d1dbe8;
+  color: #13233f;
 }
 
 .ghost-btn:hover {
-  background: #eef6ff;
+  background: #f8fafc;
+  border-color: #cfd9e6;
 }
 
 .primary-btn {
-  background: linear-gradient(135deg, #14b8a6 0%, #0f9fb5 100%);
+  background: #14b8a6;
   color: #fff;
-  box-shadow: 0 12px 24px rgba(20, 184, 166, 0.22);
+  border: 1px solid #14b8a6;
+  box-shadow: 0 8px 16px rgba(20, 184, 166, 0.20);
 }
 
 .primary-btn:hover {
   transform: translateY(-1px);
+  background: #0d9488;
+  border-color: #0d9488;
+  box-shadow: 0 12px 20px rgba(13, 148, 136, 0.24);
 }
 
 .stats-grid {
@@ -432,12 +448,7 @@ h1 {
   gap: 16px;
 }
 
-.stat-card {
-  border-radius: 20px;
-  padding: 18px;
-  border: 1px solid #dbe7f3;
-  background: #ffffff;
-}
+.stat-card { padding: 18px; }
 
 .stat-card-primary {
   background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
@@ -483,34 +494,52 @@ h1 {
 }
 
 .table-card {
-  overflow: hidden;
+  padding: 0;
+  overflow: visible;
+}
+
+.tabs-section {
+  border-bottom: 1px solid #e2eaf2;
+}
+
+.search-section {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2eaf2;
+  padding: 16px 18px;
+}
+
+.table-section {
+  padding: 0;
 }
 
 .tabs-bar {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 18px 20px 0;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px 0;
+  border-bottom: 1px solid #e2eaf2;
+  overflow-x: auto;
 }
 
 .tab-item {
-  border: 1px solid #d9e4ef;
-  background: #f8fbff;
-  color: #46617e;
-  border-radius: 999px;
-  height: 42px;
-  padding: 0 14px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 0;
+  min-height: 44px;
+  padding: 12px 16px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   cursor: pointer;
   font-weight: 600;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
 }
 
 .tab-item.active {
-  background: #14b8a6;
-  color: #fff;
-  border-color: #14b8a6;
+  color: var(--teal-600);
+  border-bottom-color: var(--teal-600);
 }
 
 .tab-count {
@@ -521,20 +550,28 @@ h1 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.18);
+  background: #eef2f7;
+  color: #8a98ab;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tab-item.active .tab-count {
+  background: #ecfdf5;
+  color: #0f766e;
 }
 
 .filters-row {
   display: flex;
   justify-content: space-between;
-  gap: 14px;
-  padding: 18px 20px;
-  border-bottom: 1px solid #edf2f7;
+  align-items: center;
+  gap: 12px;
 }
 
 .search-box {
   flex: 1;
-  min-width: 240px;
+  min-width: 0;
+  max-width: 100%;
   position: relative;
 }
 
@@ -548,17 +585,24 @@ h1 {
 
 .search-input,
 .filter-select {
-  height: 46px;
-  border-radius: 14px;
+  height: 48px;
+  border-radius: 12px;
   border: 1px solid #d9e4ef;
-  background: #f8fbff;
+  background: #fff;
   color: #11243d;
   font-size: 14px;
+  outline: none;
 }
 
 .search-input {
   width: 100%;
   padding: 0 16px 0 42px;
+}
+
+.search-input:focus,
+.filter-select:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.10);
 }
 
 .filter-select {
@@ -605,11 +649,13 @@ h1 {
 
 .table-scroll {
   overflow-x: auto;
+  padding: 0 18px 18px;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 1080px;
 }
 
 .data-table th,
@@ -702,14 +748,16 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #f8fbff;
+  background: #fff;
   border: 1px solid #d8e2ee;
   color: #1f3552;
   margin-right: 8px;
+  border-radius: 10px;
 }
 
 .row-action-btn:hover {
-  background: #eef6ff;
+  background: #f8fafc;
+  border-color: #cfd9e6;
 }
 
 .row-action-danger {
@@ -736,7 +784,7 @@ h1 {
 
 @media (max-width: 840px) {
   .staff-shell {
-    padding: 24px 16px 40px;
+    gap: 14px;
   }
 
   .page-header-top,
@@ -754,8 +802,16 @@ h1 {
 }
 
 @media (max-width: 640px) {
+  .staff-page {
+    padding: 12px;
+  }
+
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  .header-content h1 {
+    font-size: 28px;
   }
 
   .tabs-bar {

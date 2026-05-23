@@ -2192,10 +2192,9 @@ onBeforeUnmount(() => {
 .primary-btn,
 .secondary-btn,
 .filters-button,
-.tab-item,
 .page-btn,
 .icon-btn {
-  font: inherit;
+   font: inherit;
 }
 
 .ghost-btn,
@@ -2328,31 +2327,32 @@ onBeforeUnmount(() => {
 }
 
 .tab-item {
-  background: transparent;
-  border: 0;
-  padding: 12px 2px 14px;
-  border-bottom: 2px solid transparent;
-  color: #5f728d;
-  cursor: pointer;
-  font-weight: 600;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+   display: inline-flex;
+   align-items: center;
+   padding: 12px 16px;
+   border: none;
+   background: transparent;
+   color: var(--slate-600);
+   font-size: 14px;
+   font-weight: 600;
+   line-height: 1.25;
+   border-bottom: 2px solid transparent;
+   cursor: pointer;
+   white-space: nowrap;
 }
 
 .tab-item.active {
-  color: #0f766e;
-  border-bottom-color: #14b8a6;
+   color: var(--teal-600);
+   border-bottom-color: var(--teal-600);
 }
 
 .tab-count {
-  background: #eef2f7;
-  color: #8a98ab;
-  border-radius: 999px;
-  padding: 2px 7px;
-  font-size: 11px;
-  font-weight: 700;
+   background: #eef2f7;
+   color: #8a98ab;
+   border-radius: 999px;
+   padding: 2px 7px;
+   font-size: 11px;
+   font-weight: 600;
 }
 
 .filters-row {
@@ -3056,19 +3056,22 @@ onBeforeUnmount(() => {
 }
 
 .upload-tab {
-  background: none;
-  border: 0;
-  padding: 10px 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: #64748b;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
+   display: inline-flex;
+   align-items: center;
+   padding: 12px 16px;
+   border: none;
+   background: transparent;
+   color: var(--slate-600);
+   font-size: 14px;
+   font-weight: 600;
+   line-height: 1.25;
+   border-bottom: 2px solid transparent;
+   cursor: pointer;
 }
 
 .upload-tab.active {
-  color: #0f766e;
-  border-bottom-color: #14b8a6;
+   color: var(--teal-600);
+   border-bottom-color: var(--teal-600);
 }
 
 .upload-table {

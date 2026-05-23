@@ -312,10 +312,10 @@ const personActionsMenuRef = ref(null);
 
 const tabs = [
   { id: 'resumo', label: 'Resumo' },
-  { id: 'dados-pessoais', label: 'Dados pessoais' },
-  { id: 'dados-academicos', label: 'Dados acadêmicos' },
-  { id: 'participacoes', label: 'Participações em programas' },
-  { id: 'desempenho', label: 'Desempenho no programa' },
+  { id: 'dados-pessoais', label: 'Dados Pessoais' },
+  { id: 'dados-academicos', label: 'Dados Acadêmicos' },
+  { id: 'participacoes', label: 'Participações em Programas' },
+  { id: 'desempenho', label: 'Desempenho no Programa' },
   { id: 'acompanhamento', label: 'Carreira' },
   { id: 'historico', label: 'Histórico' },
 ];
@@ -675,23 +675,23 @@ onBeforeUnmount(() => {
 }
 
 .tab-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 14px 16px 12px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: #5f728d;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.25;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  white-space: nowrap;
+   display: inline-flex;
+   align-items: center;
+   padding: 12px 16px;
+   border: none;
+   background: none;
+   cursor: pointer;
+   color: var(--slate-600);
+   font-size: 14px;
+   font-weight: 600;
+   line-height: 1.25;
+   border-bottom: 2px solid transparent;
+   transition: all 0.2s;
+   white-space: nowrap;
 }
 
 .tab-btn:hover {
-  color: #13233f;
+   color: var(--color-text);
 }
 
 .tab-btn.active {

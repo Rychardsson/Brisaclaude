@@ -124,8 +124,8 @@ public class ProgramIntegrationService {
                 allItems.size(),
                 allItems.stream().filter(item -> "andamento".equalsIgnoreCase(item.status())).count(),
                 allItems.stream().filter(item -> "inscricao".equalsIgnoreCase(item.status())).count(),
-                allItems.stream().filter(item -> "Imersao".equalsIgnoreCase(item.etapaAtual())).count(),
-                allItems.stream().filter(item -> "Nivelamento".equalsIgnoreCase(item.etapaAtual())).count(),
+                allItems.stream().filter(item -> normalize(item.etapaAtual()).contains("imersao")).count(),
+                allItems.stream().filter(item -> normalize(item.etapaAtual()).contains("nivelamento")).count(),
                 allItems.stream().filter(item -> "encerrado".equalsIgnoreCase(item.status())).count()
         );
 
@@ -475,13 +475,13 @@ public class ProgramIntegrationService {
         }
 
         if (classModel == null) {
-            return "Inscricao";
+            return "Inscrição";
         }
 
         boolean hasImersao = candidates.stream()
                 .anyMatch(candidate -> normalize(candidate.getStage().getName()).contains("imersao"));
         if (hasImersao) {
-            return "Imersao";
+            return "Imersão";
         }
 
         boolean hasNivelamento = candidates.stream()
@@ -492,12 +492,12 @@ public class ProgramIntegrationService {
 
         LocalDate today = LocalDate.now();
         if (classModel.getImmersionStartDate() != null && !today.isBefore(classModel.getImmersionStartDate())) {
-            return "Imersao";
+            return "Imersão";
         }
         if (classModel.getLevelingStartDate() != null && !today.isBefore(classModel.getLevelingStartDate())) {
             return "Nivelamento";
         }
-        return "Inscricao";
+        return "Inscrição";
     }
 
     private long countCandidatesByStage(List<StageCandidateModel> candidates, String stageKeyword) {

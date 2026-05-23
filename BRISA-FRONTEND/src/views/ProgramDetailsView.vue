@@ -1250,7 +1250,7 @@ export default {
 }
 
 .error-box::before {
-  content: 'âš ï¸';
+  content: '\26A0\FE0F';
   font-size: 20px;
 }
 
@@ -1304,7 +1304,7 @@ export default {
 }
 
 .success::before {
-  content: 'âœ“';
+  content: '\2713';
   display: inline-flex;
   align-items: center;
   justify-content: center;

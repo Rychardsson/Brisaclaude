@@ -25,10 +25,12 @@
   --color-error: #f44336;
   --color-info: #2196f3;
   
-  /* Semantic Variables */
-  --color-background: var(--brisa-white);
-  --color-background-soft: var(--brisa-background);
-  --color-background-mute: #fafafa;
+/* Semantic Variables */
+   --color-background: var(--brisa-white);
+   --color-background-soft: var(--brisa-background);
+   --color-background-mute: #fafafa;
+   --slate-600: #50619e;
+   --teal-600: #0d9488;
 
   --color-heading: var(--brisa-primary);
   --color-primary: var(--brisa-primary);

@@ -7,8 +7,8 @@
     </div>
 
     <div class="tabs-container">
-       <div class="tab-pill" :class="{ active: activeTab === 'visao-geral' }" @click="activeTab = 'visao-geral'">Visão geral</div>
-       <div class="tab-pill" :class="{ active: activeTab === 'projetos' }" @click="activeTab = 'projetos'">Projetos e grupos</div>
+       <div class="tab-pill" :class="{ active: activeTab === 'visao-geral' }" @click="activeTab = 'visao-geral'">Visão Geral</div>
+       <div class="tab-pill" :class="{ active: activeTab === 'projetos' }" @click="activeTab = 'projetos'">Projetos e Grupos</div>
        <div class="tab-pill" :class="{ active: activeTab === 'presenca' }" @click="activeTab = 'presenca'">Presença</div>
        <div class="tab-pill" :class="{ active: activeTab === 'avaliacoes' }" @click="activeTab = 'avaliacoes'">Avaliações</div>
        <div class="tab-pill" :class="{ active: activeTab === 'beneficios' }" @click="activeTab = 'beneficios'">Benefícios</div>
@@ -353,8 +353,8 @@ export default {
 
 <style scoped>
 .tabs-container { display: flex; background-color: #f3f4f6; border-radius: 8px; padding: 4px; gap: 4px; margin-bottom: 24px; }
-.tab-pill { flex: 1; text-align: center; padding: 8px 16px; font-size: 13px; font-weight: 500; color: #4b5563; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
-.tab-pill.active { background-color: white; color: #1a233a; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+.tab-pill { flex: 1; text-align: center; padding: 8px 16px; font-size: 14px; font-weight: 600; color: var(--slate-600); cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+.tab-pill.active { background-color: white; color: var(--teal-600); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
 .warning-alert-box { display: flex; align-items: center; gap: 12px; background-color: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; }
 .rule-card { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; }
 .rule-text strong { display: block; font-size: 13px; color: #1a233a; }

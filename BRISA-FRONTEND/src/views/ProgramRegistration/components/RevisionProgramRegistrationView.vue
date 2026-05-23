@@ -1,4 +1,4 @@
-﻿?<template>
+﻿<template>
   <div class="step-container">
     
     <div class="step-header">
@@ -54,9 +54,7 @@
                    <div :class="['pending-list-wrapper', { 'is-open': isExpanded(group.stepNumber) }]">
                       <div class="pending-list-inner">
                          <ul class="pending-list">
-                            <li v-for="(error, i) in group.errors" :key="i">
-                               ? {{ error }}
-                            </li>
+                            <li v-for="(error, i) in group.errors" :key="i">{{ error }}</li>
                          </ul>
                       </div>
                    </div>
@@ -131,14 +129,14 @@
              <div class="timeline-point">0</div>
              <div class="timeline-info">
                 <strong>Período de Inscrições</strong>
-                <p>Data de início: {{ displayDates.startDate || 'Não definido' }} ? Data de encerramento: {{ displayDates.endDate || 'Não definido' }}</p>
+                <p>Data de início: {{ displayDates.startDate || 'Não definido' }} - Data de encerramento: {{ displayDates.endDate || 'Não definido' }}</p>
              </div>
           </div>
           <div v-for="stage in stageList" :key="stage.id" class="timeline-step">
              <div class="timeline-point">{{ stage.id + 1 }}</div>
              <div class="timeline-info">
                 <strong>{{ stage.title }}</strong>
-                <p>Modalidade: {{ stage.modality }} ? Duração prevista: {{ stage.duration || 'Não definida' }}</p>
+                <p>Modalidade: {{ stage.modality }} - Duração prevista: {{ stage.duration || 'Não definida' }}</p>
              </div>
           </div>
        </div>
@@ -315,7 +313,7 @@ export default {
       checkField(this.displayDates.endDate, 'Data de fim do programa não definida.', step1Errors);
       
       if (step1Errors.length > 0) {
-         steps.push({ stepNumber: 1, stepName: 'Dados do programa', errors: step1Errors });
+         steps.push({ stepNumber: 1, stepName: 'Dados do Programa', errors: step1Errors });
       }
 
       // ETAPA 2 - Estrutura de Etapas
@@ -328,7 +326,7 @@ export default {
       });
 
       if (step2Errors.length > 0) {
-         steps.push({ stepNumber: 2, stepName: 'Estrutura das etapas', errors: step2Errors });
+         steps.push({ stepNumber: 2, stepName: 'Estrutura das Etapas', errors: step2Errors });
       }
 
       // ETAPA 3 - Inscrição

@@ -205,7 +205,7 @@
       <div class="modal-content log-details-modal" @click.stop>
         <div class="modal-header">
           <h2>Detalhes do Log</h2>
-          <button @click="closeDetails" class="btn-close">Ã—</button>
+          <button @click="closeDetails" class="btn-close">&times;</button>
         </div>
         <div class="modal-body">
           <div class="detail-row">

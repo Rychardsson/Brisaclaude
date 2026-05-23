@@ -2123,9 +2123,9 @@ export default {
     const peopleError = ref(null);
     const activeTab = ref('visao-geral');
     const tabs = [
-      { id: 'visao-geral', label: 'Visão geral' },
+      { id: 'visao-geral', label: 'Visão Geral' },
       { id: 'pessoas', label: 'Pessoas' },
-      { id: 'processo-seletivo', label: 'Processo seletivo' },
+      { id: 'processo-seletivo', label: 'Processo Seletivo' },
       { id: 'etapas', label: 'Etapas' },
     ];
 
@@ -2944,6 +2944,19 @@ export default {
 
         // Load nivelamento data when Etapas tab is opened
         const etapasSubTab = ref('nivelamento');
+        const etapasSubTabTitles = {
+          nivelamento: 'Nivelamento',
+          imersao: 'Imersão',
+        };
+        const syncDocumentTitle = () => {
+          const classTitle = classData.value?.code ? `Turma ${classData.value.code}` : 'Detalhes da Turma';
+          const tabTitle = tabs.find((tab) => tab.id === activeTab.value)?.label;
+          const subTabTitle = activeTab.value === 'etapas'
+            ? etapasSubTabTitles[etapasSubTab.value] || etapasSubTabTitles.nivelamento
+            : null;
+
+          document.title = [classTitle, tabTitle, subTabTitle, 'BRISA One'].filter(Boolean).join(' | ');
+        };
         const applyTabStateFromQuery = () => {
           const tab = String(route.query?.tab || '').toLowerCase();
           const rawSubTab = route.query?.subTab ?? route.query?.etapasSubTab;
@@ -2981,6 +2994,14 @@ export default {
           () => {
             applyTabStateFromQuery();
           }
+        );
+
+        watch(
+          () => [classData.value?.code, activeTab.value, etapasSubTab.value],
+          () => {
+            syncDocumentTitle();
+          },
+          { immediate: true }
         );
 
         // Load imersao groups when sub-tab switches to 'imersao'
@@ -3534,6 +3555,7 @@ export default {
     const displayStageName = (name) => {
       if (!name) return '';
       const normalized = name.normalize('NFD').replace(/\p{Diacritic}/gu, '').toUpperCase();
+      if (normalized === 'INSCRICAO') return 'INSCRIÇÃO';
       if (normalized === 'SELECAO') return 'SELEÇÃO';
       if (normalized === 'IMERSAO') return 'IMERSÃO';
       return name;
@@ -5754,20 +5776,20 @@ export default {
 }
 
 .submit-imersao-type-btn {
-  height: 40px;
-  border: 1px solid var(--slate-200);
-  background: #fff;
-  color: var(--slate-700);
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
+   height: 40px;
+   border: 1px solid var(--slate-200);
+   background: #fff;
+   color: var(--slate-600);
+   border-radius: 10px;
+   font-size: 14px;
+   font-weight: 600;
+   cursor: pointer;
 }
 
 .submit-imersao-type-btn.active {
-  border-color: var(--teal-500);
-  color: #0f766e;
-  background: #ecfeff;
+   border-color: var(--teal-600);
+   color: var(--teal-600);
+   background: #ecfeff;
 }
 
 .submit-imersao-notas-modal .file-upload-area {
@@ -6402,7 +6424,7 @@ export default {
 
 /* Scoped styles for Nivelamento additions */
 .nivelamento-tabs { padding: 0 24px; }
-.tab-btn { background: transparent; border: none; padding: 10px 14px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; }
+.tab-btn { background: transparent; border: none; padding: 12px 16px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; }
 .tab-btn.active { color:var(--teal-600); border-bottom-color:var(--teal-600); }
 .nivelamento-cards { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap:12px; padding: 12px 24px; }
 .n-card { background:#fff; border:1px solid var(--slate-200); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; justify-content:center; min-height:64px; box-sizing:border-box; }
@@ -6646,20 +6668,19 @@ export default {
 }
 
 .imersao-group-tab-btn {
-  border: none;
-  background: transparent;
-  color: var(--slate-700);
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 10px;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
+   border: none;
+   background: transparent;
+   color: var(--slate-600);
+   font-size: 14px;
+   font-weight: 600;
+   padding: 12px 16px;
+   border-bottom: 2px solid transparent;
+   cursor: pointer;
 }
 
 .imersao-group-tab-btn.active {
-  color: var(--teal-600);
-  border-bottom-color: var(--teal-500);
-  font-weight: 600;
+   color: var(--teal-600);
+   border-bottom-color: var(--teal-600);
 }
 
 .imersao-group-meta p {
@@ -7144,7 +7165,7 @@ export default {
 /* Tabs background stripe */
 .tabs-bg { display:inline-flex !important; background: #ffffff !important; padding:8px 10px !important; border-radius:8px; align-items:center; gap:6px; z-index:2; border:1px solid var(--slate-100) !important; box-shadow: 0 1px 2px rgba(2,6,23,0.04); }
 .tabs-bg .tab-btn { background: transparent !important; border: none !important; }
-.tab-btn { padding: 8px 12px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; background: transparent; }
+.tab-btn { padding: 12px 16px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; background: transparent; }
 .tab-btn.active { color:var(--teal-600); border-bottom-color:var(--teal-600); }
 
 /* ensure the tabs-bg doesn't stretch full width */
