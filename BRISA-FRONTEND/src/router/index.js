@@ -143,8 +143,13 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
+  const currentUser = authService.getUser();
+  const currentRole = String(currentUser?.role || '').toUpperCase();
+
   if (to.meta.requiresAuth && !authService.isAuthenticated()) {
     next('/');
+  } else if (to.meta.requiresAdmin && currentRole !== 'ADMIN') {
+    next('/dashboard');
   } else if (to.path === '/' && authService.isAuthenticated()) {
     next('/dashboard');
   } else {
