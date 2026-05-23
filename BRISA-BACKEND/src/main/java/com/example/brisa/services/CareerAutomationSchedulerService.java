@@ -26,7 +26,7 @@ public class CareerAutomationSchedulerService {
 
             systemLogService.createLog(
                     LogAction.SYSTEM_ERROR,
-                    "Falha na execucao agendada da automacao de carreira",
+                    "Falha na execução agendada da automação de carreira",
                     "CareerAutomation",
                     null,
                     null,

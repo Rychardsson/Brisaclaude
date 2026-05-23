@@ -74,7 +74,7 @@ public class ExamService {
     @Transactional
     public ExamImportResponseDTO importResultsFromExcel(Long classId, MultipartFile file) throws IOException {
         ClassModel classModel = classRepository.findById(classId)
-                .orElseThrow(() -> new ResourceNotFoundException("Turma nao encontrada."));
+                .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada."));
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -168,7 +168,7 @@ public class ExamService {
                 String name = nameIndex == null ? null : excelImportHelper.getString(row, nameIndex);
                 PeopleModel people = resolvePeople(peopleByCpf, peopleByName, cpf, name);
                 if (people == null) {
-                    warnings.add("Linha " + (rowIndex + 1) + ": participante nao encontrado.");
+                    warnings.add("Linha " + (rowIndex + 1) + ": participante não encontrado.");
                     continue;
                 }
 
@@ -293,10 +293,10 @@ public class ExamService {
 
         List<ExamResultModel> results = examResultRepository.findByExamIdWithRelations(exam.getId());
         return new ExamRespondentProfileDTO(
-                buildCountMetrics(results, result -> safeLabel(result.getPeople() != null ? result.getPeople().getCourseName() : null, "Nao informado")),
-                buildAverageMetrics(results, result -> safeLabel(result.getPeople() != null ? result.getPeople().getCourseName() : null, "Nao informado")),
-                buildAverageMetrics(results, result -> safeLabel(normalizeQuotaLabel(result.getPeople() != null ? result.getPeople().getQuotaCategory() : null), "Nao informado")),
-                buildAverageMetrics(results, result -> safeLabel(formatCity(result.getPeople()), "Nao informado"))
+                buildCountMetrics(results, result -> safeLabel(result.getPeople() != null ? result.getPeople().getCourseName() : null, "Não informado")),
+                buildAverageMetrics(results, result -> safeLabel(result.getPeople() != null ? result.getPeople().getCourseName() : null, "Não informado")),
+                buildAverageMetrics(results, result -> safeLabel(normalizeQuotaLabel(result.getPeople() != null ? result.getPeople().getQuotaCategory() : null), "Não informado")),
+                buildAverageMetrics(results, result -> safeLabel(formatCity(result.getPeople()), "Não informado"))
         );
     }
 
@@ -342,7 +342,7 @@ public class ExamService {
 
         List<ApprovedRankingResponseDTO.ApprovedCandidateDTO> approved = toRankingDtos(approvedData, "Aprovado");
         List<ApprovedRankingResponseDTO.ApprovedCandidateDTO> waitlist = toRankingDtos(remaining.subList(0, waitlistSize), "Lista de espera");
-        List<ApprovedRankingResponseDTO.ApprovedCandidateDTO> rejected = toRankingDtos(remaining.subList(waitlistSize, remaining.size()), "Nao classificado");
+        List<ApprovedRankingResponseDTO.ApprovedCandidateDTO> rejected = toRankingDtos(remaining.subList(waitlistSize, remaining.size()), "Não classificado");
 
         return new ApprovedRankingResponseDTO(
                 totalVacancies,

@@ -636,7 +636,7 @@ export default {
       isEvaluationWeightsValid: true, // Flag que controla se a soma dos pesos de avaliação parcial + final está dentro de 100%
 
       // Textos exibidos nos botões do menu lateral esquerdo
-      stepTitles: ['Dados do Programa', 'Estrutura das Etapas', 'Etapa 0 — Inscrição', 'Etapa 1 — Nivelamento', 'Etapa 2 — Imersão', 'Revisão Final'],
+      stepTitles: ['Dados do programa', 'Estrutura das etapas', 'Inscrição', 'Nivelamento', 'Imersão', 'Revisão final'],
       stepDescs: ['Informações gerais', 'Definição do fluxo', 'Formulário e elegibilidade', 'Cursos e avaliação', 'Projetos e benefícios', 'Validar e publicar'],
        
       programService, // Importa o serviço de programa

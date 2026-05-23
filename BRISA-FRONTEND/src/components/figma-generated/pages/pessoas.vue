@@ -1427,9 +1427,9 @@ const newRegistrationsTrend = computed(() => {
 });
 
 const tabs = computed(() => ([
-  { value: 'active', label: 'Pessoas Ativas', count: activePeopleCount.value },
-  { value: 'programs', label: 'Programas em Andamento', count: activeProgramsCount.value },
-  { value: 'all', label: 'Todas as Pessoas', count: totalPeople.value }
+  { value: 'active', label: 'Pessoas ativas', count: activePeopleCount.value },
+  { value: 'programs', label: 'Programas em andamento', count: activeProgramsCount.value },
+  { value: 'all', label: 'Todas as pessoas', count: totalPeople.value }
 ]));
 
 const advancedFiltersCount = computed(() => Object.values(advancedFilters.value).filter(Boolean).length);
@@ -1679,8 +1679,8 @@ const parseUploadFile = async (file) => {
     const idxCourse = getColumnIndex(headers, ['Curso'], 7);
     const idxEmail = getColumnIndex(headers, ['E-mail', 'Email'], 8);
     const idxCota = getColumnIndex(headers, ['Cota'], 9);
-    const idxEducationType = getColumnIndex(headers, ['Tipo de formação', 'Tipo de formacao', 'Formação'], 10);
-    const idxEducationStatus = getColumnIndex(headers, ['Status da formação', 'Status da formacao', 'Status'], 11);
+    const idxEducationType = getColumnIndex(headers, ['Tipo de formação', 'Tipo de formação', 'Formação'], 10);
+    const idxEducationStatus = getColumnIndex(headers, ['Status da formação', 'Status da formação', 'Status'], 11);
 
     return rows.slice(1).map((row, index) => {
       const record = {
@@ -1782,7 +1782,7 @@ const downloadInconsistenciesReport = () => {
   ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(existingSheetData), 'Ja existentes');
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(existingSheetData), 'Já existentes');
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(alertSheetData), 'Alertas');
   XLSX.writeFile(workbook, 'relatorio-inconsistencias.xlsx');
 };

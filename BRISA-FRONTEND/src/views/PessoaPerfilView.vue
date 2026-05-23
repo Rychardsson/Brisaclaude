@@ -312,10 +312,10 @@ const personActionsMenuRef = ref(null);
 
 const tabs = [
   { id: 'resumo', label: 'Resumo' },
-  { id: 'dados-pessoais', label: 'Dados Pessoais' },
-  { id: 'dados-academicos', label: 'Dados Acadêmicos' },
-  { id: 'participacoes', label: 'Participações em Programas' },
-  { id: 'desempenho', label: 'Desempenho no Programa' },
+  { id: 'dados-pessoais', label: 'Dados pessoais' },
+  { id: 'dados-academicos', label: 'Dados acadêmicos' },
+  { id: 'participacoes', label: 'Participações em programas' },
+  { id: 'desempenho', label: 'Desempenho no programa' },
   { id: 'acompanhamento', label: 'Carreira' },
   { id: 'historico', label: 'Histórico' },
 ];

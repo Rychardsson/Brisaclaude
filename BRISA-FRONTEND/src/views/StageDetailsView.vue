@@ -574,7 +574,7 @@ export default {
         // Recarrega a lista de candidatos
         await loadStageDetails();
 
-        // Se houver erros por linha, mantem o modal aberto para correção; caso contrário fecha-o
+        // Se houver erros por linha, mantém o modal aberto para correção; caso contrário fecha-o
         if (rowErrors.value.length === 0) {
           if (showAddCandidatesModal.value) {
             closeAddCandidatesModal();

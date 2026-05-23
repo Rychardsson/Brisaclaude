@@ -781,7 +781,7 @@ function mapClassToProgramListItem(classItem, fallbackProgram) {
     localidade: localityName,
     periodo: periodoText,
     status: classItem?.status || 'andamento',
-    etapaAtual: classItem?.currentStage || 'Inscricao',
+    etapaAtual: classItem?.currentStage || 'Inscrição',
     inscricao: 0,
     selecao: 0,
     inscritos: 0,

@@ -357,9 +357,9 @@ public class PeopleIntegrationService {
         }
 
         ClassModel classModel = classRepository.findById(request.getTurmaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Turma nao encontrada com id: " + request.getTurmaId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + request.getTurmaId()));
         StageModel stage = stageRepository.findById(request.getEtapaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Etapa nao encontrada com id: " + request.getEtapaId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Etapa não encontrada com id: " + request.getEtapaId()));
         if (!Objects.equals(stage.getClassModel().getId(), classModel.getId())) {
             throw new ValidationException(List.of("A etapa selecionada não pertence à turma informada."));
         }

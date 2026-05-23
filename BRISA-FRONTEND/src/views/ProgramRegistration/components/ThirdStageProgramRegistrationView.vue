@@ -7,8 +7,8 @@
     </div>
 
     <div class="tabs-container">
-       <div class="tab-pill" :class="{ active: activeTab === 'visao-geral' }" @click="activeTab = 'visao-geral'">Visão Geral</div>
-       <div class="tab-pill" :class="{ active: activeTab === 'projetos' }" @click="activeTab = 'projetos'">Projetos e Grupos</div>
+       <div class="tab-pill" :class="{ active: activeTab === 'visao-geral' }" @click="activeTab = 'visao-geral'">Visão geral</div>
+       <div class="tab-pill" :class="{ active: activeTab === 'projetos' }" @click="activeTab = 'projetos'">Projetos e grupos</div>
        <div class="tab-pill" :class="{ active: activeTab === 'presenca' }" @click="activeTab = 'presenca'">Presença</div>
        <div class="tab-pill" :class="{ active: activeTab === 'avaliacoes' }" @click="activeTab = 'avaliacoes'">Avaliações</div>
        <div class="tab-pill" :class="{ active: activeTab === 'beneficios' }" @click="activeTab = 'beneficios'">Benefícios</div>

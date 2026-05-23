@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="program-details-view">
     <div v-if="loading" class="loading">
       <div class="spinner"></div>
@@ -16,7 +16,7 @@
     </div>
 
     <div v-else>
-      <!-- NavegaÃ§Ã£o e CabeÃ§alho -->
+      <!-- Navegação e Cabeçalho -->
       <button @click="goBack" class="btn-back">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2">
@@ -52,7 +52,7 @@
               </svg>
             </div>
             <div>
-              <div class="detail-label">NÃºmero do Contrato</div>
+              <div class="detail-label">Número do Contrato</div>
               <div class="detail-value">{{ program.contractNumber }}</div>
             </div>
           </div>
@@ -128,7 +128,7 @@
               </svg>
             </div>
             <div>
-              <div class="detail-label">PerÃ­odo</div>
+              <div class="detail-label">Período</div>
               <div class="detail-value">{{ formatDate(program.startDate) }} - {{ formatDate(program.endDate) }}</div>
             </div>
           </div>
@@ -197,7 +197,7 @@
 
               <div class="addendum-meta">
                 <div>
-                  <span>Vigencia</span>
+                  <span>Vigência</span>
                   <strong>{{ formatDate(addendum.startDate) }} - {{ formatDate(addendum.endDate) }}</strong>
                 </div>
                 <div>
@@ -210,7 +210,7 @@
         </div>
       </div>
 
-      <!-- SeÃ§Ã£o de Turmas -->
+      <!-- Seção de Turmas -->
       <div class="classes-section">
         <div class="section-header">
           <h2>Turmas do Programa</h2>
@@ -232,7 +232,7 @@
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.35-4.35"></path>
           </svg>
-          <input v-model="searchTerm" type="text" placeholder="Buscar turma por cÃ³digo..." class="search-input" />
+          <input v-model="searchTerm" type="text" placeholder="Buscar turma por código..." class="search-input" />
         </div>
 
         <div v-if="filteredClasses.length === 0" class="empty-state">
@@ -244,7 +244,7 @@
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
           <h3>Nenhuma turma encontrada</h3>
-          <p>Importe turmas via Excel para comeÃ§ar</p>
+          <p>Importe turmas via Excel para começar</p>
         </div>
 
         <div v-else class="classes-grid">
@@ -306,7 +306,7 @@
       </div>
     </div>
 
-    <!-- Modal de CriaÃ§Ã£o de Turma -->
+    <!-- Modal de Criação de Turma -->
     <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
       <div class="modal-content modal-form" @click.stop>
         <h2>{{ editingClass ? 'Editar Turma' : 'Nova Turma' }}</h2>
@@ -314,13 +314,13 @@
 
         <form @submit.prevent="saveClass">
           <div class="form-group">
-            <label for="classCode">CÃ³digo da Turma *</label>
+            <label for="classCode">Código da Turma *</label>
             <input id="classCode" v-model="classForm.code" type="text" required placeholder="Ex: T001" />
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label for="classStartDate">Data InÃ­cio</label>
+              <label for="classStartDate">Data Início</label>
               <input id="classStartDate" v-model="classForm.startDate" type="date" />
             </div>
 
@@ -331,9 +331,9 @@
           </div>
 
           <div class="form-group">
-            <label for="location">InstituiÃ§Ã£o (Local)</label>
+            <label for="location">Instituição (Local)</label>
             <select id="location" v-model="classForm.locationId">
-              <option value="">Selecione uma instituiÃ§Ã£o</option>
+              <option value="">Selecione uma instituição</option>
               <option v-for="institution in institutions" :key="institution.id" :value="institution.id">
                 {{ institution.name }} {{ institution.acronym ? `(${institution.acronym})` : '' }}
               </option>
@@ -360,7 +360,7 @@
         <form @submit.prevent="saveAddendum">
           <div class="form-row">
             <div class="form-group">
-              <label for="addendumNumber">Numero do aditivo</label>
+              <label for="addendumNumber">Número do aditivo</label>
               <input id="addendumNumber" v-model="addendumForm.addendumNumber" type="number" min="1" placeholder="Ex: 1" />
             </div>
 
@@ -454,7 +454,7 @@ export default {
         }
 
         if (endDate < startDate) {
-          formError.value = 'Data invÃ¡lida: a data de fim nÃ£o pode ser anterior Ã  data de inÃ­cio';
+          formError.value = 'Data inválida: a data de fim não pode ser anterior à data de início';
         } else {
           formError.value = null;
         }
@@ -667,7 +667,7 @@ export default {
         formError.value = null;
 
         if (!classForm.value.code) {
-          formError.value = 'CÃ³digo da turma Ã© obrigatÃ³rio';
+          formError.value = 'Código da turma é obrigatório';
           return;
         }
 
@@ -682,7 +682,7 @@ export default {
           }
         };
 
-        // Adiciona a instituiÃ§Ã£o se selecionada
+        // Adiciona a instituição se selecionada
         if (classForm.value.locationId) {
           classData.location = {
             id: classForm.value.locationId

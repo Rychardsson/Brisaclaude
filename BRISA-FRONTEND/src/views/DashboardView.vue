@@ -1457,12 +1457,12 @@ function milestoneEntries(classItem) {
     { key: 'publication', label: 'Publicação do edital', date: classItem.publicationDate },
     { key: 'applications-end', label: 'Encerramento das inscrições', date: classItem.applicationEndDate },
     { key: 'leveling-announcement', label: 'Resultado do nivelamento', date: classItem.levelingSelectionAnnouncementDate },
-    { key: 'leveling-start', label: 'Inicio do nivelamento', date: classItem.levelingStartDate },
+    { key: 'leveling-start', label: 'Início do nivelamento', date: classItem.levelingStartDate },
     { key: 'immersion-announcement', label: 'Resultado da imersão', date: classItem.immersionSelectionAnnouncementDate },
     { key: 'immersion-start', label: 'Início da imersão', date: classItem.immersionStartDate },
     { key: 'partial-eval', label: 'Avaliação parcial', date: classItem.partialEvaluationDate },
     { key: 'final-eval', label: 'Avaliação final', date: classItem.finalEvaluationDate },
-    { key: 'certificate', label: 'Emissao de certificados', date: classItem.certificateIssueDate },
+    { key: 'certificate', label: 'Emissão de certificados', date: classItem.certificateIssueDate },
   ].filter((item) => item.date);
 }
 

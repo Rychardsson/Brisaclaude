@@ -15,6 +15,11 @@ public enum LogAction {
     PEOPLE_UPDATE,
     PEOPLE_DELETE,
     PEOPLE_IMPORT,
+
+    // Academic staff actions
+    ADVISOR_CREATE,
+    ADVISOR_UPDATE,
+    ADVISOR_DELETE,
     
     // Program actions
     PROGRAM_CREATE,

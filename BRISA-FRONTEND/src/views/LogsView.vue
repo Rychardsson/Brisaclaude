@@ -58,16 +58,23 @@
             <option value="PEOPLE_UPDATE">Pessoa Atualizada</option>
             <option value="PEOPLE_DELETE">Pessoa Excluída</option>
             <option value="PEOPLE_IMPORT">Importação de Pessoas</option>
+            <option value="ADVISOR_CREATE">Equipe acadêmica criada</option>
+            <option value="ADVISOR_UPDATE">Equipe acadêmica atualizada</option>
+            <option value="ADVISOR_DELETE">Equipe acadêmica removida</option>
             <option value="PROGRAM_CREATE">Programa Criado</option>
             <option value="PROGRAM_UPDATE">Programa Atualizado</option>
             <option value="PROGRAM_DELETE">Programa Excluído</option>
+            <option value="PROGRAM_IMPORT">Importação de Programas</option>
             <option value="CLASS_CREATE">Turma Criada</option>
             <option value="CLASS_UPDATE">Turma Atualizada</option>
             <option value="CLASS_DELETE">Turma Excluída</option>
+            <option value="CLASS_IMPORT">Importação de Turmas</option>
             <option value="STAGE_CREATE">Etapa Criada</option>
             <option value="STAGE_UPDATE">Etapa Atualizada</option>
             <option value="STAGE_DELETE">Etapa Excluída</option>
             <option value="STAGE_CANDIDATES_IMPORT">Importação de Candidatos</option>
+            <option value="ENROLLMENT_IMPORT">Importação de Matrículas</option>
+            <option value="INSTITUTION_IMPORT">Importação de Instituições</option>
             <option value="SYSTEM_ERROR">Erro do Sistema</option>
           </select>
         </div>
@@ -78,6 +85,7 @@
             <option value="">Todos os tipos</option>
             <option value="User">Usuário</option>
             <option value="People">Pessoa</option>
+            <option value="Advisor">Equipe acadêmica</option>
             <option value="Program">Programa</option>
             <option value="Class">Turma</option>
             <option value="Stage">Etapa</option>
@@ -197,7 +205,7 @@
       <div class="modal-content log-details-modal" @click.stop>
         <div class="modal-header">
           <h2>Detalhes do Log</h2>
-          <button @click="closeDetails" class="btn-close">×</button>
+          <button @click="closeDetails" class="btn-close">Ã—</button>
         </div>
         <div class="modal-body">
           <div class="detail-row">
@@ -359,7 +367,39 @@ export default {
     };
 
     const formatAction = (action) => {
-      return action.replace(/_/g, ' ');
+      const labels = {
+        USER_LOGIN: 'Login de usuário',
+        USER_LOGOUT: 'Logout de usuário',
+        USER_REGISTER: 'Registro de usuário',
+        USER_UPDATE: 'Atualização de usuário',
+        USER_DELETE: 'Remoção de usuário',
+        PEOPLE_CREATE: 'Pessoa criada',
+        PEOPLE_UPDATE: 'Pessoa atualizada',
+        PEOPLE_DELETE: 'Pessoa removida',
+        PEOPLE_IMPORT: 'Importação de pessoas',
+        ADVISOR_CREATE: 'Equipe acadêmica criada',
+        ADVISOR_UPDATE: 'Equipe acadêmica atualizada',
+        ADVISOR_DELETE: 'Equipe acadêmica removida',
+        PROGRAM_CREATE: 'Programa criado',
+        PROGRAM_UPDATE: 'Programa atualizado',
+        PROGRAM_DELETE: 'Programa removido',
+        PROGRAM_IMPORT: 'Importação de programas',
+        CLASS_CREATE: 'Turma criada',
+        CLASS_UPDATE: 'Turma atualizada',
+        CLASS_DELETE: 'Turma removida',
+        CLASS_IMPORT: 'Importação de turmas',
+        STAGE_CREATE: 'Etapa criada',
+        STAGE_UPDATE: 'Etapa atualizada',
+        STAGE_DELETE: 'Etapa removida',
+        STAGE_CANDIDATES_IMPORT: 'Importação de candidatos',
+        ENROLLMENT_IMPORT: 'Importação de matrículas',
+        INSTITUTION_IMPORT: 'Importação de instituições',
+        SYSTEM_ERROR: 'Erro do sistema',
+        SYSTEM_WARNING: 'Alerta do sistema',
+        SYSTEM_INFO: 'Evento do sistema'
+      };
+
+      return labels[action] || action.replace(/_/g, ' ');
     };
 
     const getActionClass = (action) => {

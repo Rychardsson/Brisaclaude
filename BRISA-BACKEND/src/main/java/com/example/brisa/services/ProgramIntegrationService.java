@@ -162,7 +162,7 @@ public class ProgramIntegrationService {
         }
 
         ProgramModel program = programRepository.findById(programId)
-                .orElseThrow(() -> new ResourceNotFoundException("Programa nao encontrado com id: " + programId));
+                .orElseThrow(() -> new ResourceNotFoundException("Programa não encontrado com id: " + programId));
 
         if (classRepository.findByCode(request.getNomeTurma().trim()).isPresent()) {
             throw new ValidationException(List.of("Ja existe uma turma com esse nome."));
@@ -307,7 +307,7 @@ public class ProgramIntegrationService {
                 partnerLabel(program, sourceClass),
                 program.getClasses() == null ? 0 : program.getClasses().size(),
                 templateStatus(program),
-                defaultIfBlank(program.getTargetAudience(), "Publico alvo nao informado."),
+                defaultIfBlank(program.getTargetAudience(), "Público alvo não informado."),
                 defaultIfBlank(program.getLevelingModality(), "Remoto e assincrono"),
                 defaultIfBlank(program.getLevelingDuration(), "2 meses"),
                 defaultIfBlank(program.getImmersionDuration(), "6 meses"),

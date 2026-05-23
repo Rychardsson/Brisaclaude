@@ -6,7 +6,7 @@
           <div>
             <h1>Professores e Gestores</h1>
             <p class="subtitle">
-              Centralize o cadastro da equipe academica, acompanhe perfis ativos e mantenha professores, gestores e orientadores acessiveis para as operacoes do programa.
+              Centralize o cadastro da equipe acadêmica, acompanhe perfis ativos e mantenha professores, gestores e orientadores acessíveis para as operações do programa.
             </p>
           </div>
 
@@ -28,7 +28,7 @@
               <Users :size="18" />
             </div>
             <div class="stat-value">{{ formatNumber(totalMembers) }}</div>
-            <div class="stat-note">Base geral da equipe academica</div>
+            <div class="stat-note">Base geral da equipe acadêmica</div>
           </article>
 
           <article class="stat-card stat-card-success">
@@ -37,7 +37,7 @@
               <GraduationCap :size="18" />
             </div>
             <div class="stat-value">{{ formatNumber(professorsCount) }}</div>
-            <div class="stat-note">Docentes vinculados ou disponiveis</div>
+            <div class="stat-note">Docentes vinculados ou disponíveis</div>
           </article>
 
           <article class="stat-card stat-card-warning">
@@ -46,7 +46,7 @@
               <BriefcaseBusiness :size="18" />
             </div>
             <div class="stat-value">{{ formatNumber(managersCount) }}</div>
-            <div class="stat-note">Perfis de coordenacao e gestao</div>
+            <div class="stat-note">Perfis de coordenação e gestão</div>
           </article>
 
           <article class="stat-card stat-card-teal">
@@ -81,7 +81,7 @@
             <input
               v-model="searchTerm"
               type="text"
-              placeholder="Buscar por nome, CPF, email ou formacao..."
+              placeholder="Buscar por nome, CPF, email ou formação..."
               class="search-input"
             />
           </div>
@@ -97,7 +97,7 @@
 
         <div v-if="loading" class="state-row">
           <div class="spinner"></div>
-          <span>Carregando equipe academica...</span>
+          <span>Carregando equipe acadêmica...</span>
         </div>
 
         <div v-else-if="errorMessage" class="state-row state-row-error">
@@ -119,10 +119,10 @@
                 <th>CPF</th>
                 <th>Perfil</th>
                 <th>Contato</th>
-                <th>Formacao</th>
+                <th>Formação</th>
                 <th>Nascimento</th>
                 <th>Status</th>
-                <th class="actions-column">Acoes</th>
+                <th class="actions-column">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -237,7 +237,7 @@ async function loadMembers() {
   try {
     members.value = await advisorService.getAll();
   } catch (error) {
-    errorMessage.value = error.response?.data?.message || 'Nao foi possivel carregar a equipe academica.';
+    errorMessage.value = error.response?.data?.message || 'Não foi possível carregar a equipe acadêmica.';
   } finally {
     loading.value = false;
   }
@@ -274,7 +274,7 @@ async function removeMember(member) {
     await advisorService.delete(member.id);
     await loadMembers();
   } catch (error) {
-    window.alert(error.response?.data?.message || 'Nao foi possivel excluir este membro.');
+    window.alert(error.response?.data?.message || 'Não foi possível excluir este membro.');
   }
 }
 
@@ -315,7 +315,7 @@ function roleDescription(roleType) {
   const descriptions = {
     ORIENTADOR: 'Acompanhamento de turma e projetos',
     PROFESSOR: 'Conducao de cursos e avaliacoes',
-    GESTOR: 'Gestao operacional do programa'
+    GESTOR: 'Gestão operacional do programa'
   };
   return descriptions[roleType] || 'Equipe academica';
 }

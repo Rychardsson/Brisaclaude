@@ -67,7 +67,7 @@
           :class="{ active: activeTab === 'imports' }"
           @click="activeTab = 'imports'"
         >
-          Importação de Planilhas
+          Importação de planilhas
         </button>
         <button
           type="button"
@@ -266,15 +266,20 @@
             <section class="section-card">
               <div class="section-header">
                 <div>
-                  <h2>Histórico de submissões</h2>
+                  <h2>Histórico operacional</h2>
                   <p class="section-copy">
-                    {{ historySourceLabel }} para manter rastreabilidade das últimas cargas e reprocessamentos.
+                    {{ historySourceLabel }}. Para auditoria completa do sistema, use a página de logs.
                   </p>
                 </div>
 
+                <div class="section-actions">
                 <button type="button" class="ghost-btn" @click="loadImportHistory">
                   Atualizar histórico
                 </button>
+                <button type="button" class="ghost-btn" @click="openLogsModule">
+                  Ver logs completos
+                </button>
+                </div>
               </div>
 
               <div v-if="importHistoryLoading" class="empty-shell">
@@ -305,7 +310,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="item in historyRows" :key="item.id">
+                    <tr v-for="item in historyPreviewRows" :key="item.id">
                       <td>{{ item.sourceLabel }}</td>
                       <td>{{ item.typeLabel }}</td>
                       <td>{{ item.fileName }}</td>
@@ -381,16 +386,12 @@
                   <span>Consultar base completa e cadastros detalhados.</span>
                 </button>
                 <button type="button" class="shortcut-card" @click="openAcademicStaffModule">
-                  <strong>Equipe academica</strong>
+                  <strong>Equipe acadêmica</strong>
                   <span>Gerenciar professores, gestores e orientadores em uma base dedicada.</span>
                 </button>
                 <button type="button" class="shortcut-card" @click="openProgramsModule">
                   <strong>Programas e Turmas</strong>
                   <span>Acessar etapas, turmas e imports vinculados ao contexto de cada programa.</span>
-                </button>
-                <button type="button" class="shortcut-card" @click="openContractsModule">
-                  <strong>Contratos e aditivos</strong>
-                  <span>Acompanhar vigencias, valores e manutencao contratual dos programas.</span>
                 </button>
                 <button type="button" class="shortcut-card" @click="openLogsModule">
                   <strong>Logs do sistema</strong>
@@ -848,10 +849,12 @@ const historyRows = computed(() => (
   sessionImportHistory.value.length > 0 ? sessionImportHistory.value : remoteImportHistory.value
 ));
 
+const historyPreviewRows = computed(() => historyRows.value.slice(0, 8));
+
 const historySourceLabel = computed(() => (
   sessionImportHistory.value.length > 0
     ? 'Exibindo o histórico salvo neste navegador para a operação do backoffice'
-    : 'Exibindo os últimos registros de importação encontrados nos logs do sistema'
+    : 'Exibindo as últimas importações encontradas na auditoria do sistema'
 ));
 
 const courseStats = computed(() => ({
@@ -1032,10 +1035,6 @@ function openPeopleModule() {
 
 function openAcademicStaffModule() {
   router.push('/academic-staff');
-}
-
-function openContractsModule() {
-  router.push('/contracts');
 }
 
 function openLogsModule() {
@@ -1853,6 +1852,13 @@ function closeUserDetails() {
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+.section-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .section-header.tight {

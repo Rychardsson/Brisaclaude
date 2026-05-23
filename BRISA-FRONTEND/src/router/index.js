@@ -17,7 +17,6 @@ import CareerView from '@/views/CareerView.vue';
 import ClassesView from '@/views/ClassesView.vue';
 import EnrollmentsView from '@/views/EnrollmentsView.vue';
 import AcademicStaffView from '@/views/AcademicStaffView.vue';
-import ContractsView from '@/views/ContractsView.vue';
 
 const routes = [
   {
@@ -64,12 +63,6 @@ const routes = [
     path: '/programs',
     name: 'Programs',
     component: ProgramsView,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/contracts',
-    name: 'Contracts',
-    component: ContractsView,
     meta: { requiresAuth: true }
   },
   {
@@ -147,7 +140,7 @@ const routes = [
     path: '/logs',
     name: 'Logs',
     component: LogsView,
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true }
   }
 ];
 
