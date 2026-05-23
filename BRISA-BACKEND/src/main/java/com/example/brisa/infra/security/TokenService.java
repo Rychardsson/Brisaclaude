@@ -5,7 +5,6 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.example.brisa.models.auth.UserModel;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -21,47 +20,36 @@ public class TokenService {
     public String generateToken(UserModel user) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
-            String token = JWT.create()
+            return JWT.create()
                     .withIssuer("auth-api")
                     .withSubject(user.getLogin())
                     .withClaim("id", user.getId().toString())
-                    .withClaim("role", user.getRole().name()) 
+                    .withClaim("role", user.getRole().name())
                     .withExpiresAt(genExpirationDate())
                     .sign(algorithm);
-            return token;
         } catch (JWTCreationException exception) {
             throw new RuntimeException("Error while generating token", exception);
         }
     }
-    
 
-public String validateToken(String token){
-    try {
-        System.out.println("=== Token Validation Debug ===");
-        System.out.println("Token recebido: " + (token != null ? "Presente" : "Nulo"));
-        
-        if (token == null || token.isEmpty()) {
-            System.out.println("Token vazio ou nulo");
-            return "";
+    public String validateToken(String token) {
+        try {
+            if (token == null || token.isBlank()) {
+                return null;
+            }
+
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+            return JWT.require(algorithm)
+                    .withIssuer("auth-api")
+                    .build()
+                    .verify(token)
+                    .getSubject();
+        } catch (JWTVerificationException exception) {
+            return null;
         }
-        
-        Algorithm algorithm = Algorithm.HMAC256(secret);
-        String subject = JWT.require(algorithm)
-                .withIssuer("auth-api")
-                .build()
-                .verify(token)
-                .getSubject();
-                
-        System.out.println("Token válido para usuário: " + subject);
-        return subject;
-        
-    } catch (JWTVerificationException exception){
-        System.out.println("Erro na validação do token: " + exception.getMessage());
-        return "";
     }
-}
 
-    private Instant genExpirationDate(){
+    private Instant genExpirationDate() {
         return LocalDateTime.now().plusHours(5).toInstant(ZoneOffset.of("-03:00"));
     }
 }
