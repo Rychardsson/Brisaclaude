@@ -23,8 +23,13 @@ public class AdvisorController {
     private final LogHelper logHelper;
 
     @GetMapping
-    public ResponseEntity<List<AdvisorModel>> getAll() {
-        return ResponseEntity.ok(advisorService.findAll());
+    public ResponseEntity<List<AdvisorModel>> getAll(@RequestParam(required = false) String roleType) {
+        return ResponseEntity.ok(advisorService.findAll(roleType));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AdvisorModel> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(advisorService.findById(id));
     }
 
     @PostMapping
@@ -38,6 +43,37 @@ public class AdvisorController {
         } catch (Exception ignored) {
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<AdvisorModel> updateAdvisor(
+            @PathVariable Long id,
+            @RequestBody AdvisorModel advisor,
+            HttpServletRequest request
+    ) {
+        AdvisorModel updated = advisorService.update(id, advisor);
+        try {
+            UUID userId = getUserId();
+            if (userId != null) {
+                logHelper.logUpdate("Advisor", updated.getId().toString(), updated.getName(), userId, request);
+            }
+        } catch (Exception ignored) {
+        }
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAdvisor(@PathVariable Long id, HttpServletRequest request) {
+        AdvisorModel advisor = advisorService.findById(id);
+        try {
+            UUID userId = getUserId();
+            if (userId != null) {
+                logHelper.logDelete("Advisor", advisor.getId().toString(), advisor.getName(), userId, request);
+            }
+        } catch (Exception ignored) {
+        }
+        advisorService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     private UUID getUserId() {

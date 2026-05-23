@@ -3,8 +3,8 @@
     <div class="modal-card modal-card-small create-modal" @click.stop>
       <div class="modal-head">
         <div>
-          <h2>Novo Orientador</h2>
-          <p class="modal-subtitle">Preencha os dados do orientador.</p>
+          <h2>{{ resolvedTitle }}</h2>
+          <p class="modal-subtitle">{{ resolvedSubtitle }}</p>
         </div>
         <button type="button" class="modal-close" @click="close" aria-label="Fechar">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -17,7 +17,7 @@
       <form class="create-form" @submit.prevent="submit">
         <div class="modal-body">
           <div class="modal-section">
-            <h3 class="modal-section-title">Dados pessoais</h3>
+            <h3 class="modal-section-title">Dados principais</h3>
             <div class="form-grid">
               <div class="form-group full-width">
                 <label>Nome *</label>
@@ -29,14 +29,36 @@
                 <input v-model="form.cpf" type="text" placeholder="000.000.000-00" required />
               </div>
 
+              <div v-if="showRoleSelector" class="form-group">
+                <label>Perfil acadêmico *</label>
+                <select v-model="form.roleType">
+                  <option v-for="role in roleOptions" :key="role.value" :value="role.value">
+                    {{ role.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>E-mail</label>
+                <input v-model="form.email" type="email" placeholder="nome@exemplo.com" />
+              </div>
+
               <div class="form-group">
                 <label>Formação</label>
-                <input v-model="form.formation" type="text" placeholder="Formação" />
+                <input v-model="form.formation" type="text" placeholder="Graduação, mestrado, especialidade..." />
               </div>
 
               <div class="form-group">
                 <label>Data de nascimento</label>
                 <input v-model="form.birthDate" type="date" />
+              </div>
+
+              <div class="form-group">
+                <label>Status</label>
+                <select v-model="form.active">
+                  <option :value="true">Ativo</option>
+                  <option :value="false">Inativo</option>
+                </select>
               </div>
             </div>
           </div>
@@ -46,7 +68,9 @@
 
         <div class="modal-actions">
           <button type="button" class="secondary-btn modal-secondary" @click="close">Cancelar</button>
-          <button type="submit" class="primary-btn" :disabled="submitDisabled" :aria-disabled="submitDisabled">{{ isLoading ? 'Criando...' : 'Criar Orientador' }}</button>
+          <button type="submit" class="primary-btn" :disabled="submitDisabled" :aria-disabled="submitDisabled">
+            {{ isLoading ? 'Salvando...' : resolvedSubmitLabel }}
+          </button>
         </div>
       </form>
     </div>
@@ -54,47 +78,145 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { advisorService } from '@/services/advisorService';
 
-const emit = defineEmits(['close', 'created']);
-const form = ref({ cpf: '', name: '', formation: '', birthDate: '' });
+const props = defineProps({
+  member: {
+    type: Object,
+    default: null
+  },
+  fixedRoleType: {
+    type: String,
+    default: 'ORIENTADOR'
+  },
+  showRoleField: {
+    type: Boolean,
+    default: false
+  },
+  title: {
+    type: String,
+    default: ''
+  },
+  subtitle: {
+    type: String,
+    default: ''
+  },
+  submitLabel: {
+    type: String,
+    default: ''
+  }
+});
+
+const emit = defineEmits(['close', 'created', 'updated']);
+
+const roleOptions = [
+  { value: 'ORIENTADOR', label: 'Orientador' },
+  { value: 'PROFESSOR', label: 'Professor' },
+  { value: 'GESTOR', label: 'Gestor' }
+];
+
 const isLoading = ref(false);
 const errorMessage = ref('');
+const form = ref(createInitialForm());
+
+const isEditing = computed(() => Boolean(props.member?.id));
+const showRoleSelector = computed(() => props.showRoleField);
+const resolvedRoleType = computed(() => (showRoleSelector.value ? form.value.roleType : props.fixedRoleType || 'ORIENTADOR'));
+
+const resolvedTitle = computed(() => {
+  if (props.title) return props.title;
+  if (isEditing.value) {
+    return showRoleSelector.value ? 'Editar membro da equipe' : `Editar ${roleLabel(props.fixedRoleType).toLowerCase()}`;
+  }
+  return showRoleSelector.value ? 'Novo membro da equipe' : `Novo ${roleLabel(props.fixedRoleType).toLowerCase()}`;
+});
+
+const resolvedSubtitle = computed(() => {
+  if (props.subtitle) return props.subtitle;
+  if (showRoleSelector.value) {
+    return 'Cadastre professores, gestores e orientadores sem sair do fluxo atual.';
+  }
+  return `Preencha os dados do ${roleLabel(props.fixedRoleType).toLowerCase()}.`;
+});
+
+const resolvedSubmitLabel = computed(() => {
+  if (props.submitLabel) return props.submitLabel;
+  if (isEditing.value) return 'Salvar alterações';
+  return showRoleSelector.value ? 'Criar membro' : `Criar ${roleLabel(props.fixedRoleType)}`;
+});
 
 const canSubmit = computed(() => {
-  const nameOk = !!String(form.value.name || '').trim().length;
+  const nameOk = Boolean(String(form.value.name || '').trim().length);
   const cpfDigits = String(form.value.cpf || '').replace(/\D/g, '');
-  const cpfOk = cpfDigits.length === 11; // require full CPF (11 digits)
-  return nameOk && cpfOk;
+  return nameOk && cpfDigits.length === 11 && Boolean(resolvedRoleType.value);
 });
 
 const submitDisabled = computed(() => isLoading.value || !canSubmit.value);
+
+watch(
+  () => props.member,
+  () => {
+    form.value = createInitialForm();
+    errorMessage.value = '';
+  },
+  { immediate: true }
+);
+
+function createInitialForm() {
+  return {
+    cpf: props.member?.cpf || '',
+    name: props.member?.name || '',
+    roleType: props.member?.roleType || props.fixedRoleType || 'ORIENTADOR',
+    email: props.member?.email || '',
+    formation: props.member?.formation || '',
+    birthDate: props.member?.birthDate || '',
+    active: props.member?.active ?? true
+  };
+}
+
+function roleLabel(roleType) {
+  return roleOptions.find((role) => role.value === roleType)?.label || 'Orientador';
+}
 
 function close() {
   emit('close');
 }
 
 async function submit() {
-  if (!form.value.cpf || !form.value.name) {
-    errorMessage.value = 'CPF e Nome são obrigatórios';
+  if (!canSubmit.value) {
+    errorMessage.value = 'Preencha nome, CPF e perfil acadêmico corretamente.';
     return;
   }
 
   isLoading.value = true;
   errorMessage.value = '';
+
   try {
     const payload = {
       cpf: String(form.value.cpf).replace(/\D/g, ''),
-      name: form.value.name,
-      formation: form.value.formation,
-      birthDate: form.value.birthDate || null
+      name: String(form.value.name || '').trim(),
+      roleType: resolvedRoleType.value,
+      email: String(form.value.email || '').trim() || null,
+      formation: String(form.value.formation || '').trim() || null,
+      birthDate: form.value.birthDate || null,
+      active: Boolean(form.value.active)
     };
-    const created = await advisorService.create(payload);
-    emit('created', created);
+
+    if (isEditing.value) {
+      const updated = await advisorService.update(props.member.id, payload);
+      emit('updated', updated);
+    } else {
+      const created = await advisorService.create(payload);
+      emit('created', created);
+    }
+
     close();
   } catch (err) {
-    errorMessage.value = err.response?.data?.details?.join(' ') || err.response?.data?.message || err.message || 'Erro ao criar orientador';
+    errorMessage.value = err.response?.data?.details?.join(' ')
+      || err.response?.data?.message
+      || err.message
+      || 'Erro ao salvar membro da equipe.';
   } finally {
     isLoading.value = false;
   }
@@ -124,7 +246,7 @@ async function submit() {
 }
 
 .modal-card-small {
-  width: min(540px, 100%);
+  width: min(620px, 100%);
 }
 
 .modal-head {
@@ -147,12 +269,12 @@ async function submit() {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .modal-close:hover {
   background: #f8fafc;
   border-color: #cbd5e1;
 }
 
-/* Reuse create-modal structure/styles from PeopleListView */
 .create-modal {
   padding: 0;
   display: flex;
@@ -164,9 +286,6 @@ async function submit() {
   padding: 18px 22px 14px;
   border-bottom: 1px solid #e2eaf2;
   align-items: flex-start;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
 }
 
 .create-modal .modal-head h2 {
@@ -233,19 +352,14 @@ async function submit() {
   gap: 7px;
 }
 
-.full-width { grid-column: 1 / -1; }
+.full-width {
+  grid-column: 1 / -1;
+}
 
 .create-modal .form-group label {
   font-size: 14px;
   font-weight: 500;
   color: #334155;
-}
-
-.create-modal .form-group input,
-.create-modal .form-group select {
-  font-size: 16px;
-  font-weight: 400;
-  color: #0f172a;
 }
 
 .form-group input,
@@ -259,6 +373,7 @@ async function submit() {
   color: #13233f;
   background: #fff;
   outline: none;
+  font-size: 15px;
 }
 
 .form-group input:focus,
@@ -280,8 +395,7 @@ async function submit() {
 .primary-btn {
   background: #14b8a6;
   color: #fff;
-  border-color: #14b8a6;
-  box-shadow: 0 8px 16px rgba(20, 184, 166, 0.20);
+  box-shadow: 0 8px 16px rgba(20, 184, 166, 0.2);
 }
 
 .primary-btn:hover {
@@ -294,8 +408,6 @@ async function submit() {
   cursor: not-allowed;
   pointer-events: none;
   box-shadow: none;
-  transform: none;
-  filter: grayscale(6%);
 }
 
 .alert {
@@ -306,20 +418,15 @@ async function submit() {
   gap: 10px;
   align-items: flex-start;
 }
-.alert-error { background: #fff0f0; color: #b42318; }
 
-/* Responsive */
+.alert-error {
+  background: #fff0f0;
+  color: #b42318;
+}
+
 @media (max-width: 720px) {
-  .form-grid { grid-template-columns: 1fr; }
+  .create-modal .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
-
-/* Force inputs styling in case global CSS overrides */
-.create-modal .form-group input,
-.create-modal .form-group select,
-.create-modal .form-group textarea {
-  display: block !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
 </style>

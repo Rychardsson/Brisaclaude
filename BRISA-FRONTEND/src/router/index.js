@@ -16,6 +16,8 @@ import AdminPanelView from '@/views/AdminPanelView.vue';
 import CareerView from '@/views/CareerView.vue';
 import ClassesView from '@/views/ClassesView.vue';
 import EnrollmentsView from '@/views/EnrollmentsView.vue';
+import AcademicStaffView from '@/views/AcademicStaffView.vue';
+import ContractsView from '@/views/ContractsView.vue';
 
 const routes = [
   {
@@ -41,6 +43,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/academic-staff',
+    name: 'AcademicStaff',
+    component: AcademicStaffView,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/people/:id',
     name: 'PersonDetails',
     component: PessoaPerfilView,
@@ -56,6 +64,12 @@ const routes = [
     path: '/programs',
     name: 'Programs',
     component: ProgramsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/contracts',
+    name: 'Contracts',
+    component: ContractsView,
     meta: { requiresAuth: true }
   },
   {

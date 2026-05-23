@@ -380,9 +380,17 @@
                   <strong>Pessoas</strong>
                   <span>Consultar base completa e cadastros detalhados.</span>
                 </button>
+                <button type="button" class="shortcut-card" @click="openAcademicStaffModule">
+                  <strong>Equipe academica</strong>
+                  <span>Gerenciar professores, gestores e orientadores em uma base dedicada.</span>
+                </button>
                 <button type="button" class="shortcut-card" @click="openProgramsModule">
                   <strong>Programas e Turmas</strong>
                   <span>Acessar etapas, turmas e imports vinculados ao contexto de cada programa.</span>
+                </button>
+                <button type="button" class="shortcut-card" @click="openContractsModule">
+                  <strong>Contratos e aditivos</strong>
+                  <span>Acompanhar vigencias, valores e manutencao contratual dos programas.</span>
                 </button>
                 <button type="button" class="shortcut-card" @click="openLogsModule">
                   <strong>Logs do sistema</strong>
@@ -1020,6 +1028,14 @@ function openProgramsModule() {
 
 function openPeopleModule() {
   router.push('/people');
+}
+
+function openAcademicStaffModule() {
+  router.push('/academic-staff');
+}
+
+function openContractsModule() {
+  router.push('/contracts');
 }
 
 function openLogsModule() {

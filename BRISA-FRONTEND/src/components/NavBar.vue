@@ -31,6 +31,17 @@
           </router-link>
         </li>
         <li>
+          <router-link to="/contracts" :class="{ active: $route.path === '/contracts' }">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <path d="M14 2v6h6"></path>
+              <path d="M8 13h8"></path>
+              <path d="M8 17h5"></path>
+            </svg>
+            Contratos
+          </router-link>
+        </li>
+        <li>
           <router-link to="/people" :class="{ active: $route.path === '/people' }">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -39,6 +50,17 @@
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
             Pessoas
+          </router-link>
+        </li>
+        <li>
+          <router-link to="/academic-staff" :class="{ active: $route.path === '/academic-staff' }">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3v18"></path>
+              <path d="M7 8h10"></path>
+              <path d="M7 16h10"></path>
+              <path d="M4 12h16"></path>
+            </svg>
+            Equipe
           </router-link>
         </li>
         <li>
