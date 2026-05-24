@@ -58,7 +58,7 @@ public class PeopleIntegrationService {
     private static final List<String> STATUS_OPTIONS = List.of(
             "Ativa",
             "Pendente",
-            "Concluida",
+            "Concluída",
             "Reprovada",
             "Desclassificada"
     );
@@ -148,8 +148,8 @@ public class PeopleIntegrationService {
                 allItems.size(),
                 allItems.stream().filter(this::isAtivaOuPendente).count(),
                 allItems.stream().filter(this::isEmProgramaAtivo).count(),
-                allItems.stream().filter(item -> "Nivelamento".equalsIgnoreCase(item.etapaAtual())).count(),
-                allItems.stream().filter(item -> "Imersao".equalsIgnoreCase(item.etapaAtual())).count(),
+                allItems.stream().filter(item -> normalize(item.etapaAtual()).contains("nivelamento")).count(),
+                allItems.stream().filter(item -> normalize(item.etapaAtual()).contains("imersao")).count(),
                 people.stream().filter(person -> isCreatedWithinLastDays(person.getCreatedAt(), 30)).count()
         );
 
@@ -357,9 +357,9 @@ public class PeopleIntegrationService {
         }
 
         ClassModel classModel = classRepository.findById(request.getTurmaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Turma nao encontrada com id: " + request.getTurmaId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + request.getTurmaId()));
         StageModel stage = stageRepository.findById(request.getEtapaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Etapa nao encontrada com id: " + request.getEtapaId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Etapa não encontrada com id: " + request.getEtapaId()));
         if (!Objects.equals(stage.getClassModel().getId(), classModel.getId())) {
             throw new ValidationException(List.of("A etapa selecionada não pertence à turma informada."));
         }
@@ -635,7 +635,7 @@ public class PeopleIntegrationService {
             return "-";
         }
         if (isConcluded(enrollment.getStatus())) {
-            return "Concluida";
+            return "Concluída";
         }
         return "Nivelamento";
     }
@@ -759,13 +759,16 @@ public class PeopleIntegrationService {
     private String stageLabel(String stageName) {
         String normalized = normalize(stageName);
         if (normalized.contains("imersao")) {
-            return "Imersao";
+            return "Imersão";
         }
         if (normalized.contains("nivelamento")) {
             return "Nivelamento";
         }
-        if (normalized.contains("selecao") || normalized.contains("inscricao")) {
-            return "Inscricao";
+        if (normalized.contains("selecao")) {
+            return "Seleção";
+        }
+        if (normalized.contains("inscricao")) {
+            return "Inscrição";
         }
         return defaultIfBlank(stageName, "-");
     }
@@ -773,7 +776,7 @@ public class PeopleIntegrationService {
     private String displayStatus(String status) {
         return switch (normalizeEnrollmentStatus(status)) {
             case "ATIVA" -> "Ativa";
-            case "CONCLUIDA" -> "Concluida";
+            case "CONCLUIDA" -> "Concluída";
             case "REPROVADA" -> "Reprovada";
             case "DESCLASSIFICADA" -> "Desclassificada";
             default -> "Pendente";

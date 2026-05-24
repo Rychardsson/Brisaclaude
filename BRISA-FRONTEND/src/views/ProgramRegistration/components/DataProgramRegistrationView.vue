@@ -137,9 +137,9 @@
            
            <div v-if="activeDatePicker === 'publishDate'" class="custom-calendar">
               <div class="calendar-header">
-                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">‹</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">?</button>
                  <span>{{ monthNames[calendarDate.getMonth()] }} {{ calendarDate.getFullYear() }}</span>
-                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">›</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">?</button>
               </div>
               <div class="calendar-grid">
                  <span v-for="d in weekDays" :key="d" class="cal-weekday">{{ d }}</span>
@@ -156,9 +156,9 @@
            </div>
            <div v-if="activeDatePicker === 'startDate'" class="custom-calendar">
               <div class="calendar-header">
-                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">‹</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">?</button>
                  <span>{{ monthNames[calendarDate.getMonth()] }} {{ calendarDate.getFullYear() }}</span>
-                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">›</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">?</button>
               </div>
               <div class="calendar-grid">
                  <span v-for="d in weekDays" :key="d" class="cal-weekday">{{ d }}</span>
@@ -175,9 +175,9 @@
            </div>
            <div v-if="activeDatePicker === 'endDate'" class="custom-calendar">
               <div class="calendar-header">
-                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">‹</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">?</button>
                  <span>{{ monthNames[calendarDate.getMonth()] }} {{ calendarDate.getFullYear() }}</span>
-                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">›</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">?</button>
               </div>
               <div class="calendar-grid">
                  <span v-for="d in weekDays" :key="d" class="cal-weekday">{{ d }}</span>
@@ -205,7 +205,7 @@ export default {
     weekDays: { type: Array, required: true },
     monthNames: { type: Array, required: true },
     calendarDays: { type: Array, required: true },
-    isEmailInvalid: { type: Boolean, required: true }, // Mantido para nÃ£o quebrar contrato com o pai
+    isEmailInvalid: { type: Boolean, required: true }, // Mantido para não quebrar contrato com o pai
     newPartnerName: { type: String, required: true },
     isSelectedDay: { type: Function, required: true },
     isToday: { type: Function, required: true }
@@ -214,21 +214,21 @@ export default {
   // Dados locais (Estado deste componente filho)
   data() {
     return {
-      // Flag para sabermos se o usuÃ¡rio jÃ¡ focou e interagiu com o campo de e-mail
+      // Flag para sabermos se o usuário já focou e interagiu com o campo de e-mail
       emailTouched: false
     }
   },
 
-  // Propriedades computadas (ValidaÃ§Ã£o local)
+  // Propriedades computadas (Validação local)
   computed: {
     emailError() {
-      // Se nÃ£o encostou no campo ainda, nÃ£o hÃ¡ erro
+      // Se não encostou no campo ainda, não há erro
       if (!this.emailTouched) return false;
       
-      // Se estiver em branco (usuÃ¡rio apagou), tambÃ©m nÃ£o mostra "formato invÃ¡lido"
+      // Se estiver em branco (usuário apagou), também não mostra "formato inválido"
       if (!this.formData.supportEmail) return false;
       
-      // ValidaÃ§Ã£o com ExpressÃ£o Regular para "nome@exemplo.com"
+      // Validação com Expressão Regular para "nome@exemplo.com"
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return !emailRegex.test(this.formData.supportEmail);
     }
@@ -237,6 +237,6 @@ export default {
 </script>
 
 <style scoped>
-/* O CSS Global jÃ¡ lida com todo o layout. A tag scoped garante proteÃ§Ã£o aqui. */
+/* O CSS Global já lida com todo o layout. A tag scoped garante proteção aqui. */
 </style>
 

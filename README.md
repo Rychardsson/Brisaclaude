@@ -1,148 +1,92 @@
 # Brisa-ONE
 
-Workspace principal do projeto **BRISA**, organizado em três frentes:
+Workspace principal do sistema BRISA ONE, responsavel pela gestao academica dos programas de capacitacao da BRISA.
 
-- `BRISA-FRONTEND`: aplicação Vue 3 + Vite que consome a API oficial (stack oficial).
-- `BRISA-BACKEND`: API Spring Boot responsável por autenticação, cadastros, importações, logs e módulos analíticos (stack oficial).
-- `Brisa ONE`: bundle React + Vite derivado do Figma, usado como protótipo visual isolado.
+O sistema acompanha alunos desde a inscricao inicial ate o acompanhamento de carreira por ate dois anos apos a conclusao, integrando cadastro operacional, importacoes via planilha, acompanhamento de turmas, projetos, provas, dashboard e backoffice.
 
----
-
-## Estrutura do repositório
+## Estrutura
 
 ```text
 Brisa-ONE/
-├── BRISA-FRONTEND/     # Frontend Vue 3 + Vite
-├── BRISA-BACKEND/      # Backend Spring Boot
-├── docker-compose.yml  # Orquestração Docker
-├── .env.example        # Template de variáveis de ambiente
-└── docs/               # Documentação e requisitos
+|-- BRISA-FRONTEND/     # Frontend oficial em Vue 3 + Vite
+|-- BRISA-BACKEND/      # API oficial em Spring Boot
+|-- docker-compose.yml  # Orquestracao local
+`-- README.md
 ```
-
----
 
 ## Stack oficial
 
-A stack oficial em execução é composta por:
-
-| Serviço | Tecnologia | Porta padrão |
-|---------|-----------|--------------|
+| Servico | Tecnologia | Porta padrao |
+| --- | --- | --- |
 | Frontend | Vue 3 + Vite + Nginx | `4300` |
 | Backend | Spring Boot 3 + Java 21 | `8082` |
 | Banco de dados | PostgreSQL 16 | `5432` |
 
-> O diretório `Brisa ONE` não participa da navegação oficial do sistema. Ele serve apenas como referência visual e protótipo separado.
+## Escopo funcional coberto
 
----
+- Programas, turmas, escolas/parceiros, cursos, etapas, pessoas, matriculas, usuarios e logs.
+- Cadastro de programas com contrato de fomento, entidade de fomento, datas, valor, coordenador geral e dados complementares.
+- Cadastro dedicado de professores, gestores e orientadores com perfil academico e status.
+- Aditivos de programa com numeracao sequencial e atualizacao da data final do programa.
+- Cursos com carga horaria, area de conhecimento e avaliacoes vinculadas.
+- Pessoas/alunos com dados academicos, cidade, genero, cota, formacao e instituicao de origem.
+- Turmas com escola/parceiro, programa, periodo, vagas e estrutura de etapas.
+- Importacao Excel para pessoas, inscritos/candidatos, aprovados, alunos da imersao, cursos da turma, progresso de cursos e prova.
+- Desempenho de alunos por curso, frequencia, nota, status e conclusao.
+- Provas com questoes, assuntos, respostas, resumo, perfil dos respondentes e ranking de aprovados.
+- Grupos de projeto com alunos, orientador, tema, empresa parceira, repositorio e encontros.
+- Progressao de carreira de egressos com acompanhamento ate 24 meses.
+- Automacao real de e-mail da carreira com configuracao e agendamento.
+- Dashboard, Painel de Administracao, Carreira, Programas, Pessoas, Cursos, Turmas, Matriculas e Instituicoes integrados ao backend.
+- Relatorio de Status da Turma com quantidade de alunos por numero de cursos concluidos.
 
-## Funcionalidades integradas
+## Pontos modelados de forma integrada
 
-O frontend principal e o backend estão integrados nos seguintes fluxos:
+- Professores, orientadores e gestores possuem cadastro dedicado e continuam podendo ser relacionados aos fluxos academicos existentes.
+- Contrato de fomento continua ancorado no cadastro e no detalhe de programa, com aditivos mantidos no mesmo contexto.
+- Cursos por escola/parceiro sao controlados pelo vinculo dos cursos as turmas do programa.
 
-- Autenticação JWT
-- Dashboard analítico
-- Painel administrativo
-- Carreiras e progressão
-- Usuários
-- Cursos
-- Pessoas
-- Programas e turmas
-- Importações via Excel de:
-  - Pessoas
-  - Programas
-  - Turmas
-  - Matrículas
-  - Instituições
+## Requisitos nao funcionais
 
----
+- Autenticacao JWT e rotas protegidas no frontend.
+- Auditoria de criacao, edicao, exclusao e importacao via logs do sistema.
+- Importacoes com validacao de arquivo e mensagens de erro para o usuario.
+- Separacao entre frontend, backend e banco para facilitar deploy e manutencao.
+- Configuracao por variaveis de ambiente para banco, JWT, e-mail e URL da API.
+- UI responsiva e consistente entre dashboard, backoffice, carreira e telas academicas.
 
-## Rodando com Docker (recomendado)
+## Criterios de aceitacao
 
-A forma mais simples de subir o projeto completo é via Docker Compose.
+- O administrador consegue autenticar, navegar pelo menu principal e acessar dashboard, painel, carreira, programas, pessoas e turmas.
+- O administrador consegue cadastrar e editar programas, turmas, cursos, pessoas, usuarios e instituicoes conforme permissao.
+- O administrador consegue importar planilhas nos fluxos existentes e receber retorno de sucesso, conflito ou erro.
+- A turma exibe pessoas vinculadas, etapas, cursos, status de conclusao, prova, candidatos e grupos de projeto.
+- A prova gera resumo, distribuicao de notas, melhores/piores questoes, perfil dos respondentes e relacao de aprovados.
+- A carreira exibe egressos, janelas de acompanhamento, status profissional e configuracao de e-mails recorrentes.
+- O sistema compila com `npm run build` no frontend e `.\mvnw.cmd test` no backend.
 
-### Pré-requisitos
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e em execução.
-
-### 1. Configure as variáveis de ambiente
+## Rodando com Docker
 
 ```powershell
 Copy-Item .env.example .env
-```
-
-Edite o arquivo `.env` e ajuste as senhas conforme necessário (especialmente `POSTGRES_PASSWORD` e `JWT_SECRET` em produção).
-
-### 2. Suba todos os serviços
-
-```powershell
 docker compose up -d
 ```
 
-O Docker irá:
-1. Baixar e iniciar o **PostgreSQL 16**.
-2. Compilar e iniciar o **backend** Spring Boot (aguarda o banco estar saudável).
-3. Compilar e iniciar o **frontend** Vue 3 servido pelo Nginx.
-
-### 3. Acesse a aplicação
-
-| Serviço | URL |
-|---------|-----|
+| Servico | URL |
+| --- | --- |
 | Frontend | <http://localhost:4300> |
-| API (Backend) | <http://localhost:8082> |
+| Backend | <http://localhost:8082> |
 
-### Comandos úteis do Docker
+## Rodando localmente
 
-```powershell
-# Acompanhar logs em tempo real
-docker compose logs -f
-
-# Ver logs de um serviço específico
-docker compose logs -f backend
-
-# Parar todos os containers (dados do banco preservados)
-docker compose down
-
-# Parar e apagar o volume do banco de dados
-docker compose down -v
-
-# Recompilar após mudanças no código
-docker compose build backend   # ou: frontend
-docker compose up -d
-```
-
----
-
-## Rodando localmente (sem Docker)
-
-### Pré-requisitos
-
-- Java 21+
-- Node.js 20.19+ ou 22.12+ e npm
-- PostgreSQL 12+ (local ou remoto)
-
-### 1. Backend
-
-Por padrão, o backend conecta ao PostgreSQL em:
-
-- Banco: `jdbc:postgresql://localhost:5432/brisa`
-- Porta HTTP: `8082`
+Backend:
 
 ```powershell
 cd BRISA-BACKEND
 .\mvnw.cmd spring-boot:run
 ```
 
-Para sobrescrever configurações via variáveis de ambiente:
-
-```powershell
-$env:SPRING_DATASOURCE_URL     = 'jdbc:postgresql://localhost:5432/brisa'
-$env:SPRING_DATASOURCE_USERNAME = 'postgres'
-$env:SPRING_DATASOURCE_PASSWORD = 'sua-senha'
-$env:JWT_SECRET                = 'sua-chave-secreta'
-.\mvnw.cmd spring-boot:run
-```
-
-### 2. Frontend
+Frontend:
 
 ```powershell
 cd BRISA-FRONTEND
@@ -150,50 +94,25 @@ npm install
 npm run dev
 ```
 
-Crie o arquivo `.env` com a URL da API:
+Configure a URL da API no frontend:
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:8082/api
 ```
 
-O template está disponível em [`BRISA-FRONTEND/.env.example`](BRISA-FRONTEND/.env.example).
-
----
-
-## Comandos úteis
-
-### Backend
+## Verificacao
 
 ```powershell
 cd BRISA-BACKEND
-.\mvnw.cmd spring-boot:run   # Inicia o servidor
-.\mvnw.cmd test              # Executa os testes
-.\mvnw.cmd clean install     # Compila e instala no repositório local
+.\mvnw.cmd test
+
+cd ..\BRISA-FRONTEND
+npm run build
 ```
 
-### Frontend
+## Observacoes
 
-```powershell
-cd BRISA-FRONTEND
-npm run dev      # Servidor de desenvolvimento com hot-reload
-npm run build    # Build de produção
-npm run preview  # Pré-visualiza o build de produção
-```
-
----
-
-## Convenções importantes
-
-- A API oficial expõe todos os endpoints em `/api/*`.
-- O frontend centraliza as chamadas HTTP em `src/services/api.js`.
-- Rotas protegidas no frontend utilizam `meta.requiresAuth`.
-- O backend registra logs de auditoria para operações de criação, atualização, exclusão e importação.
-- Senhas e segredos nunca devem ser commitados — use sempre o arquivo `.env` (ignorado pelo Git).
-
----
-
-## Observações
-
-- Se você alterar a porta ou a URL da API, atualize `VITE_API_BASE_URL` no frontend.
-- O fork do repositório pode continuar com outro nome sem impactar o funcionamento local.
-- Em ambiente de produção, substitua os valores padrão de `JWT_SECRET` e `POSTGRES_PASSWORD` por valores seguros e únicos.
+- A API oficial expoe endpoints em `/api/*`.
+- O frontend centraliza chamadas HTTP em `BRISA-FRONTEND/src/services/api.js`.
+- Senhas, JWT secret e credenciais de e-mail devem ficar somente em `.env`.
+- O diretorio `BRISA-FRONTEND/src/components/figma-generated` serve como referencia visual e componentes auxiliares, mas a aplicacao oficial esta nas views Vue do frontend principal.

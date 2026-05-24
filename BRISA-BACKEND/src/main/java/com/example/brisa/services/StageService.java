@@ -288,7 +288,7 @@ public class StageService {
 
                 StageCandidateModel candidate = resolveCandidate(candidatesByCpf, candidatesByName, cpf, name);
                 if (candidate == null) {
-                    warnings.add("Linha " + (rowIndex + 1) + ": candidato nao encontrado na etapa.");
+                    warnings.add("Linha " + (rowIndex + 1) + ": candidato não encontrado na etapa.");
                     continue;
                 }
 

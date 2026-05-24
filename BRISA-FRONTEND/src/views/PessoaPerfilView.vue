@@ -675,23 +675,23 @@ onBeforeUnmount(() => {
 }
 
 .tab-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 14px 16px 12px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: #5f728d;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.25;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  white-space: nowrap;
+   display: inline-flex;
+   align-items: center;
+   padding: 12px 16px;
+   border: none;
+   background: none;
+   cursor: pointer;
+   color: var(--slate-600);
+   font-size: 14px;
+   font-weight: 600;
+   line-height: 1.25;
+   border-bottom: 2px solid transparent;
+   transition: all 0.2s;
+   white-space: nowrap;
 }
 
 .tab-btn:hover {
-  color: #13233f;
+   color: var(--color-text);
 }
 
 .tab-btn.active {

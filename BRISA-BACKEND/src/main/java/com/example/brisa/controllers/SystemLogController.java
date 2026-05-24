@@ -16,10 +16,12 @@ import com.example.brisa.services.SystemLogService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("api/logs")
 @CrossOrigin(origins = "*")
+@Slf4j
 public class SystemLogController {
 
     @Autowired
@@ -52,6 +54,7 @@ public class SystemLogController {
             Page<SystemLogDTO> logs = logService.findLogs(filter);
             return ResponseEntity.ok(logs);
         } catch (Exception e) {
+            log.error("Erro ao buscar logs com filtros", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

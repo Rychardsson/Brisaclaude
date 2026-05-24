@@ -1,5 +1,6 @@
 package com.example.brisa.controllers;
 
+import com.example.brisa.dtos.analytics.ClassStatusReportDTO;
 import com.example.brisa.dtos.analytics.CourseCompletionTimelineDTO;
 import com.example.brisa.dtos.analytics.CourseProgressionFunnelDTO;
 import com.example.brisa.services.AnalyticsService;
@@ -33,5 +34,10 @@ public class AnalyticsController {
         @RequestParam(defaultValue = "week") String granularity
     ) {
         return ResponseEntity.ok(analyticsService.getCourseCompletions(classId, stageId, granularity));
+    }
+
+    @GetMapping("/class-status")
+    public ResponseEntity<ClassStatusReportDTO> getClassStatusReport(@RequestParam Long classId) {
+        return ResponseEntity.ok(analyticsService.getClassStatusReport(classId));
     }
 }

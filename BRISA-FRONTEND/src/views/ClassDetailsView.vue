@@ -1,4 +1,4 @@
-﻿<template>
+﻿?<template>
   <div class="figma-page">
     <ConfirmDialog ref="confirmDialog" />
 
@@ -180,7 +180,7 @@
                     <strong :class="item.valueClass">{{ item.value }}</strong>
                   </div>
                 </div>
-                <button type="button" class="details-link">Ver detalhes →</button>
+                <button type="button" class="details-link">Ver detalhes ?</button>
               </article>
             </div>
           </section>
@@ -190,7 +190,7 @@
             <div class="timeline-list">
               <div v-for="item in overviewTimeline" :key="item.label" class="timeline-row">
                 <div class="timeline-left">
-                  <span class="timeline-check">✓</span>
+                  <span class="timeline-check">?</span>
                   <span class="timeline-label">{{ item.label }}</span>
                 </div>
                 <div class="timeline-right">
@@ -199,7 +199,7 @@
                 </div>
               </div>
             </div>
-            <button type="button" class="details-link timeline-link">Ver cronograma completo →</button>
+            <button type="button" class="details-link timeline-link">Ver cronograma completo ?</button>
           </article>
 
           <section class="overview-block">
@@ -484,7 +484,7 @@
                     {{ page }}
                   </button>
                 </div>
-                <button type="button" class="page-btn" :disabled="selectionProcessPage === selectionProcessTotalPages" @click="selectionProcessNextPage">PrÃ³ximo</button>
+                <button type="button" class="page-btn" :disabled="selectionProcessPage === selectionProcessTotalPages" @click="selectionProcessNextPage">Próximo</button>
               </div>
             </div>
           </article>
@@ -497,7 +497,7 @@
             <div class="px-6">
               <div class="tabs-bg flex items-center gap-1">
                 <button type="button" @click="etapasSubTab = 'nivelamento'" :class="['tab-btn', etapasSubTab === 'nivelamento' ? 'active' : '']">Nivelamento</button>
-                <button type="button" @click="etapasSubTab = 'imersao'" :class="['tab-btn', etapasSubTab === 'imersao' ? 'active' : '']">ImersÃ£o</button>
+                <button type="button" @click="etapasSubTab = 'imersao'" :class="['tab-btn', etapasSubTab === 'imersao' ? 'active' : '']">Imersão</button>
               </div>
             </div>
           </div>
@@ -522,7 +522,7 @@
               </div>
                <div class="n-card teal">
                 <div class="label">Conclusão obrigatórios</div>
-                <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '—' }}</div>
+                <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '?' }}</div>
               </div>
                <div class="n-card amber">
                 <div class="label">Nota de corte prova</div>
@@ -571,7 +571,7 @@
           </div>
 
           <template v-if="etapasSubTab === 'nivelamento'">
-          <!-- SeÃ§Ã£o Cursos do Nivelamento -->
+          <!-- Seção Cursos do Nivelamento -->
           <article class="panel">
            <div class="panel-head">
             <h3>Cursos do Nivelamento</h3>
@@ -602,7 +602,7 @@
 
                <div class="course-right-new">
                  <div class="course-stats-new">
-                   <div class="course-stats-text">{{ course?.completedCount || 0 }} concluídos · {{ course?.pendingCount || 0 }} pendentes</div>
+                   <div class="course-stats-text">{{ course?.completedCount || 0 }} concluídos / {{ course?.pendingCount || 0 }} pendentes</div>
                    <div class="progress-container">
                      <div class="progress-bar">
                        <div class="progress-fill" :style="{ width: (course?.completionPct || 0) + '%', backgroundColor: getCompletionColor(course?.completionPct || 0) }"></div>
@@ -615,6 +615,53 @@
               </div>
            </div>
 
+           <div class="class-status-report">
+             <div class="class-status-head">
+               <div>
+                 <h4>Status da Turma</h4>
+                 <p>Quantidade de alunos por número de cursos concluídos.</p>
+               </div>
+               <span class="class-status-pill">{{ classStatusReport?.totalStudents || 0 }} aluno(s)</span>
+             </div>
+
+             <div v-if="classStatusLoading" class="state-box">Carregando status da turma...</div>
+             <div v-else-if="classStatusError" class="state-box state-error">{{ classStatusError }}</div>
+             <div v-else class="class-status-grid">
+               <article class="class-status-summary">
+                 <span>Total de alunos</span>
+                 <strong>{{ classStatusReport?.totalStudents || 0 }}</strong>
+               </article>
+               <article class="class-status-summary">
+                 <span>Alunos ativos</span>
+                 <strong>{{ classStatusReport?.activeStudents || 0 }}</strong>
+               </article>
+               <article class="class-status-summary">
+                 <span>Com progresso</span>
+                 <strong>{{ classStatusReport?.studentsWithProgress || 0 }}</strong>
+               </article>
+               <article class="class-status-summary">
+                 <span>Sem conclusão</span>
+                 <strong>{{ classStatusReport?.studentsWithoutProgress || 0 }}</strong>
+               </article>
+             </div>
+
+             <div v-if="!classStatusLoading && !classStatusError" class="class-status-bars">
+               <div
+                 v-for="bucket in classStatusBuckets"
+                 :key="bucket.completedCourses"
+                 class="class-status-row"
+               >
+                 <div class="class-status-row-head">
+                   <span>{{ bucket.completedCourses }} curso(s) concluído(s)</span>
+                   <strong>{{ bucket.students }} aluno(s)</strong>
+                 </div>
+                 <div class="class-status-track">
+                   <div class="class-status-fill" :style="{ width: `${bucket.percentage || 0}%` }"></div>
+                 </div>
+               </div>
+             </div>
+           </div>
+
            <div class="alert-banner alert-warning">
              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -622,14 +669,14 @@
                <line x1="12" y1="17" x2="12.01" y2="17" />
              </svg>
              <div class="alert-copy">
-               <strong>Cursos obrigatÃ³rios com pendÃªncias</strong>
-               <p>37 alunos ainda possuem pendÃªncias em cursos obrigatÃ³rios</p>
+               <strong>Cursos obrigatórios com pendências</strong>
+               <p>37 alunos ainda possuem pendências em cursos obrigatórios</p>
              </div>
              <button type="button" class="alert-link" @click="showSendMessageModal = true">Enviar mensagem</button>
            </div>
           </article>
 
-          <!-- SeÃ§Ã£o Prova Final do Nivelamento -->
+          <!-- Seção Prova Final do Nivelamento -->
           <article class="panel">
            <div class="panel-head">
              <h3>Prova Final do Nivelamento</h3>
@@ -641,7 +688,7 @@
                 <div class="exam-stat-value">{{ examSummaryData?.examDate ? formatDate(examSummaryData.examDate) : (overviewTimeline[5]?.date || '--') }}</div>
              </div>
              <div class="exam-stat-card">
-               <div class="exam-stat-label">Questões mapeadas</div>
+               <div class="exam-stat-label">Questáes mapeadas</div>
                 <div class="exam-stat-value">{{ examSummaryData?.totalQuestions || 0 }}</div>
              </div>
              <div class="exam-stat-card">
@@ -649,7 +696,7 @@
                 <div class="exam-stat-value">{{ examSummaryData?.totalParticipants || 0 }}</div>
              </div>
              <div class="exam-stat-card">
-               <div class="exam-stat-label">MÃ©dia geral</div>
+               <div class="exam-stat-label">Média geral</div>
                 <div class="exam-stat-value teal">{{ examSummaryData?.averageScore != null ? Number(examSummaryData.averageScore).toFixed(1) : '--' }}</div>
              </div>
              <div class="exam-stat-card">
@@ -663,11 +710,11 @@
            </div>
 
            <div class="exam-criteria">
-             <p><strong>CritÃ©rio de aprovaÃ§Ã£o:</strong> A aprovaÃ§Ã£o no nivelamento considera nota igual ou superior a 50% da maior nota obtida na turma, alÃ©m da conclusÃ£o dos cursos obrigatÃ³rios.</p>
+             <p><strong>Critério de aprovação:</strong> A aprovação no nivelamento considera nota igual ou superior a 50% da maior nota obtida na turma, além da conclusão dos cursos obrigatórios.</p>
            </div>
           </article>
 
-          <!-- SeÃ§Ã£o Alunos do Nivelamento -->
+          <!-- Seção Alunos do Nivelamento -->
           <article class="panel">
            <div class="panel-head">
              <h3>Alunos do Nivelamento</h3>
@@ -684,7 +731,7 @@
                    <strong>{{ examSummaryData.totalParticipants || 0 }}</strong>
                  </div>
                  <div>
-                   <span>MÃ©dia geral</span>
+                   <span>Média geral</span>
                    <strong>{{ examSummaryData.averageScore != null ? Number(examSummaryData.averageScore).toFixed(1) : '--' }}</strong>
                  </div>
                  <div>
@@ -699,7 +746,7 @@
              </article>
 
              <article class="panel exam-insight-card">
-               <h4>DistribuiÃ§Ã£o de notas</h4>
+               <h4>Distribuição de notas</h4>
                <div class="simple-list">
                  <div v-for="bucket in examSummaryData.scoreDistribution || []" :key="bucket.label">
                    <span>{{ bucket.label }}</span>
@@ -709,20 +756,20 @@
              </article>
 
              <article class="panel exam-insight-card">
-               <h4>Melhores questÃµes</h4>
+               <h4>Melhores questões</h4>
                <div class="simple-list">
                  <div v-for="question in (examSummaryData.bestQuestions || []).slice(0, 5)" :key="`best-${question.questionNumber}`">
-                   <span>Q{{ question.questionNumber }} <small v-if="question.subject">Â· {{ question.subject }}</small></span>
+                   <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
                    <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
                  </div>
                </div>
              </article>
 
              <article class="panel exam-insight-card">
-               <h4>QuestÃµes com menor desempenho</h4>
+               <h4>Questões com menor desempenho</h4>
                <div class="simple-list">
                  <div v-for="question in (examSummaryData.worstQuestions || []).slice(0, 5)" :key="`worst-${question.questionNumber}`">
-                   <span>Q{{ question.questionNumber }} <small v-if="question.subject">Â· {{ question.subject }}</small></span>
+                   <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
                    <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
                  </div>
                </div>
@@ -888,7 +935,7 @@
                   </div>
 
                   <div class="imersao-group-avg">
-                    <span>MÃ©dia parcial:</span>
+                    <span>Média parcial:</span>
                     <strong class="teal">{{ group.partialAverage }}</strong>
                     <span>Final:</span>
                     <strong class="teal">{{ group.finalAverage }}</strong>
@@ -905,24 +952,24 @@
                 <div v-if="imersaoExpandedGroupId === group.id" class="imersao-group-expanded">
                   <div class="imersao-group-tabs">
                     <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'resumo' }" @click="setImersaoGroupTab(group.id, 'resumo')">Resumo</button>
-                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'parcial' }" @click="setImersaoGroupTab(group.id, 'parcial')">AvaliaÃ§Ã£o Parcial</button>
-                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'final' }" @click="setImersaoGroupTab(group.id, 'final')">AvaliaÃ§Ã£o Final</button>
-                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'presenca' }" @click="setImersaoGroupTab(group.id, 'presenca')">PresenÃ§a</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'parcial' }" @click="setImersaoGroupTab(group.id, 'parcial')">Avaliação parcial</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'final' }" @click="setImersaoGroupTab(group.id, 'final')">Avaliação final</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'presenca' }" @click="setImersaoGroupTab(group.id, 'presenca')">Presença</button>
                   </div>
 
                   <div v-if="getImersaoGroupTab(group.id) === 'resumo'" class="imersao-group-panel">
                     <div class="imersao-group-meta">
                       <p><strong>Projeto:</strong> {{ group.project }}</p>
                       <p><strong>Empresa parceira:</strong> {{ group.partnerCompany }}</p>
-                      <p class="muted">Ãšltima atualizaÃ§Ã£o de notas: {{ group.lastGradesUpdate }}</p>
+                      <p class="muted">Última atualização de notas: {{ group.lastGradesUpdate }}</p>
                     </div>
                     <table class="imersao-group-table">
                       <thead>
                         <tr>
                           <th>Aluno</th>
-                          <th>MÃ©dia Parcial</th>
-                          <th>MÃ©dia Final</th>
-                          <th>SituaÃ§Ã£o</th>
+                          <th>Média Parcial</th>
+                          <th>Média Final</th>
+                          <th>Situação</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -942,14 +989,14 @@
                         <tr>
                           <th>Aluno</th>
                           <th>Nota parcial</th>
-                          <th>ObservaÃ§Ã£o</th>
+                          <th>Observação</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr v-for="student in group.studentsDetails" :key="`p-${student.id}`">
                           <td>{{ student.name }}</td>
                           <td :class="{ 'warning-strong': Number(student.partial) < 4 }">{{ student.partial }}</td>
-                          <td>{{ Number(student.partial) < 4 ? 'Acompanhamento necessÃ¡rio' : 'Desempenho esperado' }}</td>
+                          <td>{{ Number(student.partial) < 4 ? 'Acompanhamento necessário' : 'Desempenho esperado' }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -961,7 +1008,7 @@
                         <tr>
                           <th>Aluno</th>
                           <th>Nota final</th>
-                          <th>SituaÃ§Ã£o</th>
+                          <th>Situação</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -979,8 +1026,8 @@
                       <thead>
                         <tr>
                           <th>Aluno</th>
-                          <th>Ãšltima reuniÃ£o</th>
-                          <th>PresenÃ§a</th>
+                          <th>Última reunião</th>
+                          <th>Presença</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1010,11 +1057,11 @@
         <h2>Criar Nova Etapa</h2>
         <div class="form-row">
           <label for="stageName">Nome da Etapa *</label>
-          <input id="stageName" v-model="newStage.name" type="text" class="field" placeholder="Ex: SeleÃ§Ã£o, Entrevista, Prova..." />
+          <input id="stageName" v-model="newStage.name" type="text" class="field" placeholder="Ex: Seleção, Entrevista, Prova..." />
         </div>
         <div class="form-row">
-          <label for="stageDescription">DescriÃ§Ã£o</label>
-          <textarea id="stageDescription" v-model="newStage.description" class="field" rows="3" placeholder="DescriÃ§Ã£o da etapa (opcional)"></textarea>
+          <label for="stageDescription">Descrição</label>
+          <textarea id="stageDescription" v-model="newStage.description" class="field" rows="3" placeholder="Descrição da etapa (opcional)"></textarea>
         </div>
         <div class="modal-actions">
           <button class="btn-outline" @click="closeCreateStageModal">Cancelar</button>
@@ -1097,7 +1144,7 @@
         <!-- Individual Registration -->
         <div v-else-if="selectedUpdateAction === 'individual'" class="modal-content modal-large individual-modal">
           <div class="modal-back">
-            <button type="button" @click="closeIndividualRegistration" class="back-link">← Voltar</button>
+            <button type="button" @click="closeIndividualRegistration" class="back-link">? Voltar</button>
           </div>
           <h3>Cadastrar aluno individualmente</h3>
 
@@ -1138,19 +1185,19 @@
                 <option value="">Selecione</option>
                 <option value="Graduação em andamento">Graduação em andamento</option>
                 <option value="Graduação concluída">Graduação concluída</option>
-                <option value="Curso tÃ©cnico">Curso tÃ©cnico</option>
+                <option value="Curso técnico">Curso técnico</option>
                 <option value="Outros cursos de exatas/tecnologia">Outros cursos de exatas/tecnologia</option>
               </select>
             </div>
             <div class="candidate-field-row">
-              <label for="regInstitution">InstituiÃ§Ã£o</label>
-              <input id="regInstitution" v-model="newCandidateForm.institution" type="text" class="field" placeholder="Nome da instituiÃ§Ã£o" />
+              <label for="regInstitution">Instituição</label>
+              <input id="regInstitution" v-model="newCandidateForm.institution" type="text" class="field" placeholder="Nome da instituição" />
             </div>
             <div class="candidate-field-row">
               <label for="regQuota">Cota</label>
               <select id="regQuota" v-model="newCandidateForm.quota" class="field">
                 <option value="">Selecione</option>
-                <option value="Ampla concorrÃªncia">Ampla concorrÃªncia</option>
+                <option value="Ampla concorrência">Ampla concorrência</option>
                 <option value="PCD/Neurodivergente">PCD/Neurodivergente</option>
                 <option value="Negro/Pardo">Negro/Pardo</option>
                 <option value="Mulher">Mulher</option>
@@ -1162,7 +1209,7 @@
               <select id="regStatus" v-model="newCandidateForm.status" class="field">
                 <option value="">Selecione</option>
                 <option value="Inscrito">Inscrito</option>
-                <option value="Em anÃ¡lise">Em anÃ¡lise</option>
+                <option value="Em análise">Em análise</option>
                 <option value="Aprovado">Aprovado</option>
                 <option value="Lista de espera">Lista de espera</option>
               </select>
@@ -1176,8 +1223,8 @@
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             <div>
-              <strong>ValidaÃ§Ã£o automÃ¡tica</strong>
-              <p>O sistema verificarÃ¡ automaticamente se este CPF jÃ¡ estÃ¡ vinculado a outro programa vigente.</p>
+              <strong>Validação automática</strong>
+              <p>O sistema verificará automaticamente se este CPF já está vinculado a outro programa vigente.</p>
             </div>
           </div>
 
@@ -1194,7 +1241,7 @@
         <!-- Import Inscricoes -->
         <div v-else-if="selectedUpdateAction === 'import-inscricoes'" class="modal-content import-inscricoes-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">â† Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
           </div>
           <div class="modal-header-with-action">
             <h3>Importar planilha de inscritos</h3>
@@ -1213,11 +1260,11 @@
             <div class="column-item">Nome completo</div>
             <div class="column-item">CPF</div>
             <div class="column-item">E-mail</div>
-            <div class="column-item">GÃªnero</div>
+            <div class="column-item">Gênero</div>
             <div class="column-item">Data de nascimento</div>
             <div class="column-item">Cidade/UF</div>
-            <div class="column-item">Tipo de formaÃ§Ã£o</div>
-            <div class="column-item">InstituiÃ§Ã£o</div>
+            <div class="column-item">Tipo de formação</div>
+            <div class="column-item">Instituição</div>
             <div class="column-item">Cota</div>
           </div>
 
@@ -1236,7 +1283,7 @@
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (mÃ¡x. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
           </div>
 
           <div v-if="importInscricoesFile" class="selected-file-name">{{ importInscricoesFile.name }}</div>
@@ -1248,14 +1295,14 @@
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <div>
-              <strong>ValidaÃ§Ã£o de conflitos</strong>
-              <p>ApÃ³s o envio, o sistema verificarÃ¡ automaticamente se algum CPF jÃ¡ estÃ¡ vinculado a outro programa vigente e sinalizarÃ¡ os conflitos.</p>
+              <strong>Validação de conflitos</strong>
+              <p>Após o envio, o sistema verificará automaticamente se algum CPF já está vinculado a outro programa vigente e sinalizará os conflitos.</p>
             </div>
           </div>
 
           <div v-if="importInscricoesError" class="state-box state-error">{{ importInscricoesError }}</div>
           <div v-if="importInscricoesResult" class="state-box state-success">
-            Processadas: {{ importInscricoesResult.totalProcessed }} Â· Inseridas: {{ importInscricoesResult.successfullyInserted }} Â· JÃ¡ na etapa: {{ importInscricoesResult.alreadyInStage }} Â· Novas pessoas: {{ importInscricoesResult.newPeopleCreated }}
+            Processadas: {{ importInscricoesResult.totalProcessed }} · Inseridas: {{ importInscricoesResult.successfullyInserted }} · Já na etapa: {{ importInscricoesResult.alreadyInStage }} · Novas pessoas: {{ importInscricoesResult.newPeopleCreated }}
           </div>
 
           <div class="modal-actions">
@@ -1269,13 +1316,13 @@
         <!-- Import Aprovados -->
         <div v-else-if="selectedUpdateAction === 'import-aprovados'" class="modal-content import-aprovados-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">â† Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
           </div>
           <h3>Importar planilha de aprovados</h3>
-          <p class="modal-desc">Envie uma planilha com a lista final de candidatos aprovados. O sistema atualizarÃ¡ automaticamente o status de cada candidato.</p>
+          <p class="modal-desc">Envie uma planilha com a lista final de candidatos aprovados. O sistema atualizará automaticamente o status de cada candidato.</p>
 
           <div class="columns-grid">
-            <div class="columns-grid-title">Colunas necessÃ¡rias:</div>
+            <div class="columns-grid-title">Colunas necessárias:</div>
             <div class="column-item"><strong>CPF</strong></div>
             <div class="column-item"><strong>Status</strong> (Aprovado / Lista de espera)</div>
             <div class="column-item"><strong>Nome completo</strong></div>
@@ -1295,7 +1342,7 @@
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (mÃ¡x. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
           </div>
 
           <div v-if="importAprovadosFile" class="selected-file-name">{{ importAprovadosFile.name }}</div>
@@ -1306,8 +1353,8 @@
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
             <div>
-              <strong>AtualizaÃ§Ã£o automÃ¡tica de status</strong>
-              <p>Candidatos listados na planilha terÃ£o seu status atualizado para "Aprovado" ou "Lista de espera". Os demais candidatos serÃ£o marcados como "NÃ£o selecionado".</p>
+              <strong>Atualização automática de status</strong>
+              <p>Candidatos listados na planilha terão seu status atualizado para "Aprovado" ou "Lista de espera". Os demais candidatos serão marcados como "Não selecionado".</p>
             </div>
           </div>
 
@@ -1318,14 +1365,14 @@
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <div>
-              <strong>VerificaÃ§Ã£o de conflitos</strong>
-              <p>O sistema verificarÃ¡ se algum aprovado jÃ¡ estÃ¡ vinculado a outro programa vigente e sinalizarÃ¡ esses casos para anÃ¡lise manual.</p>
+              <strong>Verificação de conflitos</strong>
+              <p>O sistema verificará se algum aprovado já está vinculado a outro programa vigente e sinalizará esses casos para análise manual.</p>
             </div>
           </div>
 
           <div v-if="importAprovadosError" class="state-box state-error">{{ importAprovadosError }}</div>
           <div v-if="importAprovadosResult" class="state-box state-success">
-            Processadas: {{ importAprovadosResult.totalProcessed }} Â· Aprovados: {{ importAprovadosResult.approvedCount }} Â· Lista de espera: {{ importAprovadosResult.waitlistCount }} Â· Reprovados: {{ importAprovadosResult.rejectedCount }} Â· Conflitos: {{ importAprovadosResult.conflictsCount }}
+            Processadas: {{ importAprovadosResult.totalProcessed }} · Aprovados: {{ importAprovadosResult.approvedCount }} · Lista de espera: {{ importAprovadosResult.waitlistCount }} · Reprovados: {{ importAprovadosResult.rejectedCount }} · Conflitos: {{ importAprovadosResult.conflictsCount }}
           </div>
 
           <div class="modal-actions">
@@ -1339,7 +1386,7 @@
         <!-- Lista de Espera -->
         <div v-else-if="selectedUpdateAction === 'lista-espera'" class="modal-content modal-large waitlist-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">â† Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
           </div>
           <h3>Atualizar lista de espera</h3>
 
@@ -1349,7 +1396,7 @@
               <strong>{{ selectionWaitlistCount }}</strong>
             </div>
             <div class="stat-item">
-              <span>Vagas disponÃ­veis</span>
+              <span>Vagas disponíveis</span>
               <strong class="teal-strong">{{ selectionAvailableVacancies }}</strong>
             </div>
             <div class="stat-item">
@@ -1358,22 +1405,22 @@
             </div>
           </div>
 
-          <p class="modal-desc">Gerencie convocaÃ§Ãµes adicionais para preencher vagas disponÃ­veis a partir da lista de espera.</p>
+          <p class="modal-desc">Gerencie convocações adicionais para preencher vagas disponíveis a partir da lista de espera.</p>
 
           <div class="waitlist-form-row waitlist-form-row--count">
-            <label for="convokeCount">Quantidade de convocaÃ§Ãµes</label>
+            <label for="convokeCount">Quantidade de convocações</label>
             <input id="convokeCount" v-model="waitlistForm.convokeCount" type="number" class="field" placeholder="Digite a quantidade" />
             <small>Máximo: {{ selectionWaitlistCount }} candidatos disponíveis</small>
           </div>
 
           <div class="waitlist-form-row">
-            <label for="convokeDate">Prazo para confirmaÃ§Ã£o</label>
+            <label for="convokeDate">Prazo para confirmação</label>
             <input id="convokeDate" v-model="waitlistForm.convokeDate" type="text" class="field" placeholder="dd/mm/aaaa" />
           </div>
 
           <div class="waitlist-form-row">
-            <label for="convokeNotes">ObservaÃ§Ãµes (opcional)</label>
-            <textarea id="convokeNotes" v-model="waitlistForm.notes" class="field" rows="3" placeholder="Adicione informaÃ§Ãµes relevantes sobre esta convocaÃ§Ã£o..." />
+            <label for="convokeNotes">Observações (opcional)</label>
+            <textarea id="convokeNotes" v-model="waitlistForm.notes" class="field" rows="3" placeholder="Adicione informações relevantes sobre esta convocação..." />
           </div>
 
           <div class="info-box info-blue">
@@ -1383,8 +1430,8 @@
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             <div>
-              <strong>ConvocaÃ§Ã£o automÃ¡tica</strong>
-              <p>Os candidatos convocados receberÃ£o notificaÃ§Ã£o por e-mail e terÃ£o seu status atualizado para "Em anÃ¡lise" atÃ© a confirmaÃ§Ã£o.</p>
+              <strong>Convocação automática</strong>
+              <p>Os candidatos convocados receberão notificação por e-mail e terão seu status atualizado para "Em análise" até a confirmação.</p>
             </div>
           </div>
 
@@ -1411,7 +1458,7 @@
           <input id="editStageName" v-model="editingStage.name" type="text" class="field" />
         </div>
         <div class="form-row">
-          <label for="editStageDescription">DescriÃ§Ã£o</label>
+          <label for="editStageDescription">Descrição</label>
           <textarea id="editStageDescription" v-model="editingStage.description" class="field" rows="3" />
         </div>
         <div class="modal-actions">
@@ -1439,7 +1486,7 @@
 
         <div class="modal-content submit-cursos-modal">
           <div class="modal-header-with-action" style="margin-bottom: 16px;">
-            <p class="modal-desc" style="margin: 0;">Envie a planilha com os dados de conclusÃ£o e notas dos cursos</p>
+            <p class="modal-desc" style="margin: 0;">Envie a planilha com os dados de conclusão e notas dos cursos</p>
             <a href="/Modelo_Nivelamento_Cursos.xlsx" download="Modelo_Nivelamento_Cursos.xlsx" class="ghost-btn hero-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1455,10 +1502,10 @@
             <div class="column-item"><strong>CPF</strong></div>
             <div class="column-item"><strong>Nome</strong></div>
             <div class="column-item"><strong>Curso</strong></div>
-            <div class="column-item"><strong>Percentual de conclusÃ£o</strong></div>
+            <div class="column-item"><strong>Percentual de conclusão</strong></div>
             <div class="column-item"><strong>Nota</strong></div>
             <div class="column-item"><strong>Status</strong></div>
-            <div class="column-item"><strong>Data de atualizaÃ§Ã£o</strong></div>
+            <div class="column-item"><strong>Data de atualização</strong></div>
           </div>
 
           <input
@@ -1476,7 +1523,7 @@
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (mÃ¡x. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
           </div>
 
           <div class="info-box info-blue">
@@ -1486,12 +1533,12 @@
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             <div>
-              <strong>ApÃ³s o envio, o sistema processarÃ¡:</strong>
+              <strong>Após o envio, o sistema processará:</strong>
               <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-                <li>AtualizaÃ§Ã£o dos percentuais de conclusÃ£o</li>
+                <li>Atualização dos percentuais de conclusão</li>
                 <li>Registro das notas obtidas</li>
-                <li>IdentificaÃ§Ã£o de alunos com pendÃªncias em cursos obrigatÃ³rios</li>
-                <li>VerificaÃ§Ã£o de conflitos com outros programas vigentes</li>
+                <li>Identificação de alunos com pendências em cursos obrigatórios</li>
+                <li>Verificação de conflitos com outros programas vigentes</li>
               </ul>
             </div>
           </div>
@@ -1525,13 +1572,13 @@
         </div>
 
         <div class="modal-content submit-prova-notas-modal">
-          <p class="modal-desc">Envie a planilha com as notas finais e o desempenho por questÃ£o</p>
+          <p class="modal-desc">Envie a planilha com as notas finais e o desempenho por questão</p>
 
           <div class="columns-grid">
             <p class="columns-grid-title">A planilha deve conter as seguintes colunas:</p>
-            <div class="column-item"><strong>ObrigatÃ³rias:</strong> CPF, Nome, Nota final, Tempo de conclusÃ£o</div>
-            <div class="column-item"><strong>QuestÃµes:</strong> Q1, Q2, Q3... Q80 (respostas ou pontuaÃ§Ã£o por questÃ£o)</div>
-            <div class="column-item"><strong>Opcional:</strong> Ãrea/Assunto (para anÃ¡lise por tema)</div>
+            <div class="column-item"><strong>Obrigatórias:</strong> CPF, Nome, Nota final, Tempo de conclusão</div>
+            <div class="column-item"><strong>Questões:</strong> Q1, Q2, Q3... Q80 (respostas ou pontuação por questão)</div>
+            <div class="column-item"><strong>Opcional:</strong> Área/Assunto (para análise por tema)</div>
           </div>
 
           <input
@@ -1549,7 +1596,7 @@
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (mÃ¡x. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
           </div>
 
           <div v-if="submitProvaFile" class="selected-file-name">{{ submitProvaFile.name }}</div>
@@ -1561,12 +1608,12 @@
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             <div>
-              <strong>ApÃ³s o envio, o sistema processarÃ¡:</strong>
+              <strong>Após o envio, o sistema processará:</strong>
               <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-                <li>AtualizaÃ§Ã£o das notas finais dos alunos</li>
-                <li>CÃ¡lculo do desempenho por questÃ£o</li>
-                <li>AnÃ¡lise de pontos fortes e fracos</li>
-                <li>IdentificaÃ§Ã£o de questÃµes com baixo desempenho</li>
+                <li>Atualização das notas finais dos alunos</li>
+                <li>Cálculo do desempenho por questão</li>
+                <li>Análise de pontos fortes e fracos</li>
+                <li>Identificação de questões com baixo desempenho</li>
               </ul>
             </div>
           </div>
@@ -1584,11 +1631,11 @@
       </div>
     </div>
 
-    <!-- Modal: Import Students from ImersÃ£o -->
+    <!-- Modal: Import Students from Imersão -->
     <div v-if="showImportImersaoModal" class="modal-overlay" @click="showImportImersaoModal = false">
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
-          <h2>Importar alunos da imersÃ£o</h2>
+          <h2>Importar alunos da imersão</h2>
           <button type="button" class="modal-close" @click="showImportImersaoModal = false">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -1612,7 +1659,7 @@
               <polyline points="7 10 12 5 17 10" />
               <line x1="12" y1="5" x2="12" y2="17" />
             </svg>
-            <p>Envie a planilha com os alunos da imersÃ£o</p>
+            <p>Envie a planilha com os alunos da imersão</p>
             <small>Formatos aceitos: .xlsx, .xls, .csv</small>
           </div>
 
@@ -1625,8 +1672,8 @@
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <div>
-              <strong>ValidaÃ§Ã£o automÃ¡tica de conflitos</strong>
-              <p>O sistema verificarÃ¡ se algum aluno jÃ¡ estÃ¡ vinculado a outro programa vigente.</p>
+              <strong>Validação automática de conflitos</strong>
+              <p>O sistema verificará se algum aluno já está vinculado a outro programa vigente.</p>
             </div>
           </div>
         </div>
@@ -1643,7 +1690,7 @@
       </div>
     </div>
 
-    <!-- Modal: Submit ImersÃ£o Grades -->
+    <!-- Modal: Submit Imersão Grades -->
     <div v-if="showSubmitNotasImersaoModal" class="modal-overlay" @click="showSubmitNotasImersaoModal = false">
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
@@ -1657,7 +1704,7 @@
         </div>
 
         <div class="modal-content submit-imersao-notas-modal">
-          <div class="submit-imersao-type-label">Tipo de avaliaÃ§Ã£o</div>
+          <div class="submit-imersao-type-label">Tipo de avaliação</div>
 
           <div class="submit-imersao-type-tabs">
             <button
@@ -1666,7 +1713,7 @@
               :class="{ active: tipoAvaliacaoImersao === 'parcial' }"
               @click="tipoAvaliacaoImersao = 'parcial'"
             >
-              AvaliaÃ§Ã£o Parcial
+              Avaliação parcial
             </button>
             <button
               type="button"
@@ -1674,7 +1721,7 @@
               :class="{ active: tipoAvaliacaoImersao === 'final' }"
               @click="tipoAvaliacaoImersao = 'final'"
             >
-              AvaliaÃ§Ã£o Final
+              Avaliação final
             </button>
           </div>
 
@@ -1703,11 +1750,11 @@
       </div>
     </div>
 
-    <!-- Modal: Update Attendance (ImersÃ£o) -->
+    <!-- Modal: Update Attendance (Imersão) -->
     <div v-if="showAtualizarPresencaImersaoModal" class="modal-overlay" @click="showAtualizarPresencaImersaoModal = false">
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
-          <h2>Atualizar presenÃ§a</h2>
+          <h2>Atualizar presença</h2>
           <button type="button" class="modal-close" @click="showAtualizarPresencaImersaoModal = false">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -1726,7 +1773,7 @@
             </div>
 
             <div class="presenca-field">
-              <label for="presenca-reuniao">ReuniÃ£o semanal</label>
+              <label for="presenca-reuniao">Reunião semanal</label>
               <select id="presenca-reuniao" v-model="imersaoPresencaForm.meetingDate" class="field">
                 <option v-for="meeting in presencaMeetingOptions" :key="meeting.value" :value="meeting.value">{{ meeting.label }}</option>
               </select>
@@ -1735,7 +1782,7 @@
 
           <div class="presenca-list-head">
             <strong>Alunos do grupo</strong>
-            <span>Marque presenÃ§a ou ausÃªncia na data selecionada.</span>
+            <span>Marque presença ou ausência na data selecionada.</span>
           </div>
 
           <div class="presenca-list">
@@ -1765,7 +1812,7 @@
 
         <div class="modal-actions-footer update-presenca-footer">
           <button type="button" class="btn-outline" @click="showAtualizarPresencaImersaoModal = false">Cancelar</button>
-          <button type="button" class="btn-primary">Salvar presenÃ§a</button>
+          <button type="button" class="btn-primary">Salvar presença</button>
         </div>
       </div>
     </div>
@@ -1784,17 +1831,17 @@
         </div>
 
         <div class="modal-content send-message-modal">
-          <p class="modal-desc">Comunique os alunos sobre pendÃªncias na conclusÃ£o dos cursos obrigatÃ³rios do nivelamento.</p>
+          <p class="modal-desc">Comunique os alunos sobre pendências na conclusão dos cursos obrigatórios do nivelamento.</p>
 
           <div class="send-message-section">
-            <label class="section-label">DestinatÃ¡rios</label>
+            <label class="section-label">Destinatários</label>
             <div class="radio-option">
               <input type="radio" id="all-students" name="recipients" value="all" v-model="sendMessageRecipients" />
               <label for="all-students">Todos os alunos do nivelamento</label>
             </div>
             <div class="radio-option">
               <input type="radio" id="pending-students" name="recipients" value="pending" v-model="sendMessageRecipients" />
-              <label for="pending-students">Apenas alunos com cursos obrigatÃ³rios pendentes</label>
+              <label for="pending-students">Apenas alunos com cursos obrigatórios pendentes</label>
             </div>
 
             <div class="stats-grid">
@@ -1803,11 +1850,11 @@
                 <span class="stat-value">37</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Com pendÃªncias:</span>
+                <span class="stat-label">Com pendências:</span>
                 <span class="stat-value pending">37</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Sem pendÃªncias:</span>
+                <span class="stat-label">Sem pendências:</span>
                 <span class="stat-value">0</span>
               </div>
             </div>
@@ -1818,7 +1865,7 @@
             <input
               id="email-subject"
               type="text"
-              placeholder="PendÃªncia na conclusÃ£o dos cursos obrigatÃ³rios"
+              placeholder="Pendência na conclusão dos cursos obrigatórios"
               class="text-input"
               v-model="sendMessageSubject"
             />
@@ -1830,7 +1877,7 @@
               id="message-body"
               class="textarea-input"
               rows="6"
-              placeholder="OlÃ¡, identificamos que vocÃª ainda possui pendÃªncias em um ou mais cursos obrigatÃ³rios da etapa de Nivelamento. A conclusÃ£o desses cursos Ã© necessÃ¡ria para continuar no processo. Acesse a plataforma e regularize sua situaÃ§Ã£o dentro do prazo."
+              placeholder="Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo."
               v-model="sendMessageBody"
             />
           </div>
@@ -1849,7 +1896,7 @@
           <div>
             <h2>{{ selectedCourseItem?.name || 'Detalhes do curso' }}</h2>
             <div class="course-details-badges">
-              <span v-if="selectedCourseItem?.required" class="course-badge course-badge-required">ObrigatÃ³rio</span>
+              <span v-if="selectedCourseItem?.required" class="course-badge course-badge-required">Obrigatório</span>
               <span v-if="selectedCourseItem?.knowledgeArea" class="course-badge">{{ selectedCourseItem.knowledgeArea }}</span>
             </div>
           </div>
@@ -1864,15 +1911,15 @@
         <div class="modal-content course-details-content">
           <div class="course-detail-stats">
             <div class="course-detail-stat">
-              <div class="course-detail-label">Carga horÃ¡ria</div>
+              <div class="course-detail-label">Carga horária</div>
               <div class="course-detail-value">{{ selectedCourseItem?.workloadHours ? `${selectedCourseItem.workloadHours}h` : '--' }}</div>
             </div>
             <div class="course-detail-stat">
-              <div class="course-detail-label">MÃ©dia de conclusÃ£o</div>
+              <div class="course-detail-label">Média de conclusão</div>
               <div class="course-detail-value teal">{{ selectedCourseItem?.completionPct || 0 }}%</div>
             </div>
             <div class="course-detail-stat">
-              <div class="course-detail-label">ConcluÃ­dos</div>
+              <div class="course-detail-label">Concluídos</div>
               <div class="course-detail-value">{{ selectedCourseItem?.completedCount || 0 }}</div>
             </div>
             <div class="course-detail-stat">
@@ -1888,8 +1935,8 @@
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <div class="alert-copy">
-              <strong>Alunos com pendÃªncia</strong>
-              <p>{{ selectedCourseItem?.pendingCount || 0 }} alunos ainda nÃ£o concluÃ­ram este curso</p>
+              <strong>Alunos com pendência</strong>
+              <p>{{ selectedCourseItem?.pendingCount || 0 }} alunos ainda não concluíram este curso</p>
             </div>
             <button type="button" class="alert-link" @click="openCoursePendingMessage">Enviar mensagem</button>
           </div>
@@ -1922,56 +1969,57 @@ import { stageService } from '@/services/stageService';
 import { courseService } from '@/services/courseService';
 import { examService } from '@/services/examService';
 import { groupService } from '@/services/groupService';
+import { analyticsService } from '@/services/analyticsService';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import GroupCreateModal from '@/components/GroupCreateModal.vue';
 
-const cycle = ['InscriÃ§Ã£o', 'SeleÃ§Ã£o', 'Nivelamento', 'ImersÃ£o', 'Encerrado'];
-const overviewCycle = ['InscriÃ§Ã£o', 'Processo Seletivo', 'Nivelamento', 'Prova', 'ImersÃ£o', 'AvaliaÃ§Ã£o Final', 'Encerramento'];
+const cycle = ['Inscrição', 'Seleção', 'Nivelamento', 'Imersão', 'Encerrado'];
+const overviewCycle = ['Inscrição', 'Processo Seletivo', 'Nivelamento', 'Prova', 'Imersão', 'Avaliação final', 'Encerramento'];
 const overviewStageCards = [
   {
     title: 'Processo Seletivo',
-    status: 'ConcluÃ­do',
+    status: 'Concluído',
     statusClass: 'pill-green',
     items: [
       { label: 'Inscritos', value: '612' },
       { label: 'Vagas nivelamento', value: '250' },
-      { label: 'PendÃªncias doc.', value: '22', valueClass: 'warning-strong' },
+      { label: 'Pendências doc.', value: '22', valueClass: 'warning-strong' },
       { label: 'Conflitos', value: '3', valueClass: 'warning-strong' },
     ],
   },
   {
     title: 'Nivelamento',
-    status: 'ConcluÃ­do',
+    status: 'Concluído',
     statusClass: 'pill-green',
     items: [
       { label: 'Selecionados', value: '250' },
       { label: 'Ativos', value: '229' },
-      { label: 'Cursos obrigatÃ³rios', value: '6' },
+      { label: 'Cursos obrigatórios', value: '6' },
       { label: 'Prova final', value: '22/10/2025' },
     ],
   },
   {
-    title: 'ImersÃ£o',
+    title: 'Imersão',
     status: 'Em andamento',
     statusClass: 'pill-teal',
     items: [
       { label: 'Aprovados', value: '50' },
       { label: 'Alunos ativos', value: '44' },
       { label: 'Grupos formados', value: '10' },
-      { label: 'AvaliaÃ§Ã£o Final', value: '30/11/2025' },
+      { label: 'Avaliação final', value: '30/11/2025' },
     ],
   },
 ];
 const overviewTimeline = [
-  { label: 'PerÃ­odo de InscriÃ§Ã£o', date: '01/02 - 28/02', status: 'ConcluÃ­do' },
-  { label: 'DivulgaÃ§Ã£o Resultado Preliminar', date: '05/03', status: 'ConcluÃ­do' },
-  { label: 'PerÃ­odo de Recursos', date: '06/03 - 10/03', status: 'ConcluÃ­do' },
-  { label: 'Resultado Final', date: '15/03', status: 'ConcluÃ­do' },
-  { label: 'ConfirmaÃ§Ã£o de ParticipaÃ§Ã£o', date: '16/03 - 20/03', status: 'ConcluÃ­do' },
-  { label: 'Nivelamento', date: '21/03 - 30/04', status: 'ConcluÃ­do' },
+  { label: 'Período de Inscrição', date: '01/02 - 28/02', status: 'Concluído' },
+  { label: 'Divulgação Resultado Preliminar', date: '05/03', status: 'Concluído' },
+  { label: 'Período de Recursos', date: '06/03 - 10/03', status: 'Concluído' },
+  { label: 'Resultado Final', date: '15/03', status: 'Concluído' },
+  { label: 'Confirmação de Participação', date: '16/03 - 20/03', status: 'Concluído' },
+  { label: 'Nivelamento', date: '21/03 - 30/04', status: 'Concluído' },
 ];
 const quotaDistribution = [
-  { label: 'Ampla ConcorrÃªncia', value: 45, color: '#3b82f6' },
+  { label: 'Ampla Concorrência', value: 45, color: '#3b82f6' },
   { label: 'Mulheres', value: 25, color: '#a855f7' },
   { label: 'Negros/Pardos', value: 15, color: '#f59e0b' },
   { label: 'PCD/Neurodivergente', value: 10, color: '#14b8a6' },
@@ -1981,18 +2029,18 @@ const genderDistribution = [
   { label: 'Feminino', value: 42 },
   { label: 'Masculino', value: 56 },
   { label: 'Outro', value: 1 },
-  { label: 'NÃ£o inf.', value: 1 },
+  { label: 'Não inf.', value: 1 },
 ];
 const cityDistribution = [
-  { label: 'MaceiÃ³ - AL', value: 32 },
+  { label: 'Maceió - AL', value: 32 },
   { label: 'Arapiraca - AL', value: 8 },
   { label: 'Rio Largo - AL', value: 5 },
-  { label: 'Outros municÃ­pios', value: 5 },
+  { label: 'Outros municípios', value: 5 },
 ];
 const educationDistribution = [
-  { label: 'GraduaÃ§Ã£o em andamento', value: 28 },
-  { label: 'GraduaÃ§Ã£o concluÃ­da', value: 15 },
-  { label: 'Curso tÃ©cnico', value: 5 },
+  { label: 'Graduação em andamento', value: 28 },
+  { label: 'Graduação concluída', value: 15 },
+  { label: 'Curso técnico', value: 5 },
   { label: 'Outros cursos', value: 2 },
 ];
 const overviewUpdates = [
@@ -2000,7 +2048,7 @@ const overviewUpdates = [
     action: 'Planilha de notas da prova importada',
     author: 'Ana Souza',
     date: '24/10/2025 14:32',
-    status: 'ConcluÃ­do',
+    status: 'Concluído',
     statusClass: 'pill-green',
     dotClass: 'dot-green',
   },
@@ -2008,15 +2056,15 @@ const overviewUpdates = [
     action: 'Dados dos cursos atualizados',
     author: 'Carlos Lima',
     date: '21/10/2025 09:18',
-    status: 'ConcluÃ­do',
+    status: 'Concluído',
     statusClass: 'pill-green',
     dotClass: 'dot-green',
   },
   {
-    action: 'Lista de aprovados para imersÃ£o atualizada',
+    action: 'Lista de aprovados para imersão atualizada',
     author: 'Mariana Torres',
     date: '30/10/2025 16:05',
-    status: 'ConcluÃ­do',
+    status: 'Concluído',
     statusClass: 'pill-green',
     dotClass: 'dot-green',
   },
@@ -2024,12 +2072,12 @@ const overviewUpdates = [
     action: 'Contratos pendentes identificados',
     author: 'Sistema',
     date: '05/11/2025 10:44',
-    status: 'AtenÃ§Ã£o',
+    status: 'Atenção',
     statusClass: 'pill-amber',
     dotClass: 'dot-amber',
   },
   {
-    action: 'Notas da avaliaÃ§Ã£o parcial aguardando envio',
+    action: 'Notas da avaliação parcial aguardando envio',
     author: 'Sistema',
     date: '25/02/2026 08:20',
     status: 'Pendente',
@@ -2047,7 +2095,7 @@ const overviewTopCards = {
 };
 
 const selectionQuotaLabels = [
-  'Ampla ConcorrÃªncia',
+  'Ampla Concorrência',
   'PCD/Neurodivergente',
   'Negro/Pardo',
   'Mulheres',
@@ -2066,13 +2114,16 @@ export default {
     const classEnrollments = ref([]);
     const allEnrollments = ref([]);
     const allClasses = ref([]);
+    const classStatusReport = ref(null);
+    const classStatusLoading = ref(false);
+    const classStatusError = ref(null);
     const loading = ref(false);
     const peopleLoading = ref(false);
     const error = ref(null);
     const peopleError = ref(null);
     const activeTab = ref('visao-geral');
     const tabs = [
-      { id: 'visao-geral', label: 'VisÃ£o Geral' },
+      { id: 'visao-geral', label: 'Visão Geral' },
       { id: 'pessoas', label: 'Pessoas' },
       { id: 'processo-seletivo', label: 'Processo Seletivo' },
       { id: 'etapas', label: 'Etapas' },
@@ -2096,8 +2147,8 @@ export default {
     const tipoAvaliacaoImersao = ref('parcial');
     const showSendMessageModal = ref(false);
     const sendMessageRecipients = ref('all');
-    const sendMessageSubject = ref('PendÃªncia na conclusÃ£o dos cursos obrigatÃ³rios');
-    const sendMessageBody = ref('OlÃ¡, identificamos que vocÃª ainda possui pendÃªncias em um ou mais cursos obrigatÃ³rios da etapa de Nivelamento. A conclusÃ£o desses cursos Ã© necessÃ¡ria para continuar no processo. Acesse a plataforma e regularize sua situaÃ§Ã£o dentro do prazo.');
+    const sendMessageSubject = ref('Pendência na conclusão dos cursos obrigatórios');
+    const sendMessageBody = ref('Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.');
     const showCourseDetailsModal = ref(false);
     const selectedCourseItem = ref(null);
     const showGroupCreateModal = ref(false);
@@ -2228,7 +2279,7 @@ export default {
       const raw = String(value ?? '').trim();
       const normalized = normalizeText(raw);
       if (!normalized || raw === '-') return '-';
-      if (normalized.includes('ampla')) return 'Ampla ConcorrÃªncia';
+      if (normalized.includes('ampla')) return 'Ampla Concorrência';
       if (normalized.includes('pcd') || normalized.includes('neuro')) return 'PCD/Neurodivergente';
       if (normalized.includes('negro') || normalized.includes('pardo')) return 'Negro/Pardo';
       if (normalized.includes('mulher')) return 'Mulheres';
@@ -2274,10 +2325,10 @@ export default {
 
     const mapCycle = (value) => {
       const normalized = normalizeText(value);
-      if (normalized.includes('inscri')) return 'InscriÃ§Ã£o';
-      if (normalized.includes('sele')) return 'SeleÃ§Ã£o';
+      if (normalized.includes('inscri')) return 'Inscrição';
+      if (normalized.includes('sele')) return 'Seleção';
       if (normalized.includes('nivel')) return 'Nivelamento';
-      if (normalized.includes('imers')) return 'ImersÃ£o';
+      if (normalized.includes('imers')) return 'Imersão';
       if (normalized.includes('encer')) return 'Encerrado';
       return '';
     };
@@ -2285,7 +2336,7 @@ export default {
     const classStatusLabel = computed(() => {
       const value = normalizeText(classData.value?.status);
       if (value.includes('encerr')) return 'Encerrado';
-      if (value.includes('inscri') || value.includes('espera')) return 'InscriÃ§Ã£o aberta';
+      if (value.includes('inscri') || value.includes('espera')) return 'Inscrição aberta';
       if (value.includes('andamento') || value.includes('ativo') || value.includes('active')) return 'Em andamento';
       return classData.value?.status || 'Sem status';
     });
@@ -2309,21 +2360,21 @@ export default {
       return maxIndex;
     });
 
-    const currentStageLabel = computed(() => cycle[currentStageIndex.value] || 'InscriÃ§Ã£o');
-    const nextStageLabel = computed(() => cycle[currentStageIndex.value + 1] || 'Ciclo concluÃ­do');
+    const currentStageLabel = computed(() => cycle[currentStageIndex.value] || 'Inscrição');
+    const nextStageLabel = computed(() => cycle[currentStageIndex.value + 1] || 'Ciclo concluído');
     const progressPct = computed(() => Math.round((currentStageIndex.value / (cycle.length - 1)) * 100));
     const totalCandidates = computed(() => Object.values(stageCandidatesCount.value || {}).reduce((sum, item) => sum + Number(item || 0), 0));
-    const classModelLabel = computed(() => classData.value?.model || classData.value?.modality || 'HÃ­brido');
+    const classModelLabel = computed(() => classData.value?.model || classData.value?.modality || 'Híbrido');
     const classWorkloadLabel = computed(() => {
       const workload = classData.value?.workload || classData.value?.totalHours;
       return workload ? `${workload}h` : '480h';
     });
     const classPeriodLabel = computed(() => {
-      if (!classData.value?.startDate || !classData.value?.endDate) return 'Ago/2025 â†’ Jun/2026';
+      if (!classData.value?.startDate || !classData.value?.endDate) return 'Ago/2025 → Jun/2026';
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const start = new Date(classData.value.startDate);
       const end = new Date(classData.value.endDate);
-      return `${months[start.getMonth()]}/${start.getFullYear()} â†’ ${months[end.getMonth()]}/${end.getFullYear()}`;
+      return `${months[start.getMonth()]}/${start.getFullYear()} → ${months[end.getMonth()]}/${end.getFullYear()}`;
     });
     const partnerLabel = computed(
       () =>
@@ -2347,7 +2398,7 @@ export default {
       return location.name || '-';
     });
     const currentStagePeriod = computed(() => classData.value?.stagePeriod || '17/11/2025 a 18/05/2026');
-    const currentStageMilestone = computed(() => classData.value?.nextMilestone || 'AvaliaÃ§Ã£o parcial');
+    const currentStageMilestone = computed(() => classData.value?.nextMilestone || 'Avaliação parcial');
     const currentStageMilestoneDate = computed(() => classData.value?.nextMilestoneDate || '03/03/2026');
     const overviewCurrentCycleIndex = computed(() => {
       const normalized = normalizeText(classData.value?.currentStage || classData.value?.status || '');
@@ -2408,8 +2459,8 @@ export default {
 
     const openSendMessageModal = (options = {}) => {
       const { subject, body, recipients } = options;
-      sendMessageSubject.value = subject ?? 'PendÃªncia na conclusÃ£o dos cursos obrigatÃ³rios';
-      sendMessageBody.value = body ?? 'OlÃ¡, identificamos que vocÃª ainda possui pendÃªncias em um ou mais cursos obrigatÃ³rios da etapa de Nivelamento. A conclusÃ£o desses cursos Ã© necessÃ¡ria para continuar no processo. Acesse a plataforma e regularize sua situaÃ§Ã£o dentro do prazo.';
+      sendMessageSubject.value = subject ?? 'Pendência na conclusão dos cursos obrigatórios';
+      sendMessageBody.value = body ?? 'Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.';
       sendMessageRecipients.value = recipients ?? 'all';
       showSendMessageModal.value = true;
     };
@@ -2418,8 +2469,8 @@ export default {
       if (!selectedCourseItem.value) return;
       const courseName = selectedCourseItem.value?.name || 'este curso';
       openSendMessageModal({
-        subject: `PendÃªncia no curso ${courseName}`,
-        body: `OlÃ¡, identificamos que vocÃª ainda possui pendÃªncia no curso "${courseName}" do nivelamento. A conclusÃ£o desse curso Ã© necessÃ¡ria para continuar no processo. Acesse a plataforma e regularize sua situaÃ§Ã£o dentro do prazo.`,
+        subject: `Pendência no curso ${courseName}`,
+        body: `Olá, identificamos que você ainda possui pendência no curso "${courseName}" do nivelamento. A conclusão desse curso é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.`,
         recipients: 'pending',
       });
     };
@@ -2480,7 +2531,7 @@ export default {
       }
       if (normalized.includes('pend')) return { label: 'Pendente', className: 'status-pending' };
       if (normalized.includes('conclu') || normalized.includes('realizado') || normalized.includes('finaliz')) {
-        return { label: 'ConcluÃ­da', className: 'status-done' };
+        return { label: 'Concluída', className: 'status-done' };
       }
       return { label: 'Ativa', className: 'status-active' };
     };
@@ -2612,7 +2663,7 @@ export default {
 
       return classPeopleRows.value.map((row) => {
         const conflict = selectionConflictPeopleIds.value.has(row.id);
-        let status = 'NÃ£o selecionado';
+        let status = 'Não selecionado';
         let statusClass = 'status-inactive';
 
         if (conflict) {
@@ -2712,7 +2763,7 @@ export default {
         valueClass: 'teal-strong',
       },
       {
-        label: 'Data final de inscriÃ§Ã£o',
+        label: 'Data final de inscrição',
         value: formatDate(classData.value?.applicationEndDate || classData.value?.endDate),
         valueClass: '',
       },
@@ -2724,10 +2775,10 @@ export default {
     ]);
     const selectionConflictSummary = computed(() => {
       const count = selectionConflictCount.value;
-      if (!count) return 'Nenhum conflito de inscriÃ§Ã£o identificado';
+      if (!count) return 'Nenhum conflito de inscrição identificado';
       return `${count} ${count === 1 ? 'aluno encontrado' : 'alunos encontrados'} em outro programa vigente`;
     });
-    const selectionConflictButtonLabel = computed(() => (selectionConflictOnly.value ? 'Ver todos â†’' : 'Ver conflitos â†’'));
+    const selectionConflictButtonLabel = computed(() => (selectionConflictOnly.value ? 'Ver todos →' : 'Ver conflitos →'));
     const selectionProcessPageSummary = computed(() => {
       const total = selectionProcessRows.value.length;
       if (!total) return 'Nenhum inscrito encontrado';
@@ -2739,7 +2790,7 @@ export default {
       showUpdateSelectionModal.value = true;
     };
 
-    // â”€â”€ Nivelamento : carregar cursos, progressÃµes e estatÃ­sticas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Nivelamento : carregar cursos, progressões e estatísticas ─────────────
     const courses = ref([]);
     const progressions = ref([]);
     const assignments = ref([]);
@@ -2767,14 +2818,28 @@ export default {
       }
     };
 
+    const loadClassStatusReport = async () => {
+      if (!classId.value) return;
+      classStatusLoading.value = true;
+      classStatusError.value = null;
+      try {
+        classStatusReport.value = await analyticsService.getClassStatusReport(classId.value);
+      } catch (err) {
+        console.error('Erro ao carregar status da turma:', err);
+        classStatusError.value = 'Não foi possível carregar o relatório de status da turma.';
+      } finally {
+        classStatusLoading.value = false;
+      }
+    };
+
     const courseItems = computed(() => {
       if (!courses.value.length) return [];
       return courses.value.map(course => {
         const courseProgressions = progressions.value.filter(p => p.course?.id === course.id);
         const total = courseProgressions.length || 1;
-        const notStarted = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('nÃ£o iniciado') || p.status === 'nÃ£o iniciado').length;
+        const notStarted = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('não iniciado') || p.status === 'não iniciado').length;
         const inProgress = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('em andamento') || p.status === 'em andamento').length;
-        const completed = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('concluÃ­do') || p.status === 'concluÃ­do').length;
+        const completed = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('concluído') || p.status === 'concluído').length;
         const pending = Math.max(total - completed, 0);
         const workloadHours = Number(course.workloadHours || course.workload || course.hourLoad || course.cargaHoraria || 0);
         const avgCompletion = courseProgressions.length ? Math.round((courseProgressions.reduce((acc, p) => acc + Number(p.completionPercentage || p.completionPct || p.completion || 0), 0)) / total) : 0; // eslint-disable-line
@@ -2805,6 +2870,15 @@ export default {
       inProgress: courseItems.value.filter(c => c.completionPct > 0 && c.completionPct < 100).length,
       completed: courseItems.value.filter(c => c.completionPct === 100).length,
     }));
+
+    const classStatusBuckets = computed(() => {
+      const buckets = classStatusReport.value?.completionBuckets || [];
+      return buckets.map((bucket) => ({
+        completedCourses: bucket.completedCourses ?? 0,
+        students: bucket.students ?? 0,
+        percentage: Number(bucket.percentage || 0),
+      }));
+    });
 
     const getCompletionColor = (pct) => {
       if (pct >= 80) return '#27ae60';
@@ -2870,6 +2944,19 @@ export default {
 
         // Load nivelamento data when Etapas tab is opened
         const etapasSubTab = ref('nivelamento');
+        const etapasSubTabTitles = {
+          nivelamento: 'Nivelamento',
+          imersao: 'Imersão',
+        };
+        const syncDocumentTitle = () => {
+          const classTitle = classData.value?.code ? `Turma ${classData.value.code}` : 'Detalhes da Turma';
+          const tabTitle = tabs.find((tab) => tab.id === activeTab.value)?.label;
+          const subTabTitle = activeTab.value === 'etapas'
+            ? etapasSubTabTitles[etapasSubTab.value] || etapasSubTabTitles.nivelamento
+            : null;
+
+          document.title = [classTitle, tabTitle, subTabTitle, 'BRISA One'].filter(Boolean).join(' | ');
+        };
         const applyTabStateFromQuery = () => {
           const tab = String(route.query?.tab || '').toLowerCase();
           const rawSubTab = route.query?.subTab ?? route.query?.etapasSubTab;
@@ -2889,7 +2976,7 @@ export default {
           const info = classData.value?.lastEmailSent;
           if (info && info.date) {
             const d = new Date(info.date);
-            return `${d.toLocaleDateString('pt-BR')} Ã s ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} por ${info.author || 'â€”'} â†’ ${info.count || 0} alunos com pendÃªncias`;
+            return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} por ${info.author || '—'} → ${info.count || 0} alunos com pendências`;
           }
           return 'Nenhum e-mail enviado recentemente';
         });
@@ -2897,6 +2984,7 @@ export default {
         watch(() => activeTab.value, (tab) => {
           if (tab === 'etapas') {
             loadNivelamentoData();
+            loadClassStatusReport();
             loadExamInsights();
           }
         });
@@ -2906,6 +2994,14 @@ export default {
           () => {
             applyTabStateFromQuery();
           }
+        );
+
+        watch(
+          () => [classData.value?.code, activeTab.value, etapasSubTab.value],
+          () => {
+            syncDocumentTitle();
+          },
+          { immediate: true }
         );
 
         // Load imersao groups when sub-tab switches to 'imersao'
@@ -2968,7 +3064,7 @@ export default {
               return {
                 id: group.id,
                 name: group.projectTheme || group.name || '-',
-                status: hasStudents ? 'OK' : 'AtenÃ§Ã£o',
+                status: hasStudents ? 'OK' : 'Atenção',
                 statusClass: hasStudents ? 'is-ok' : 'is-warning',
                 mentor: group.leaderName || group.leader || '-',
                 project: group.projectTheme || group.project || '-',
@@ -3003,6 +3099,7 @@ export default {
         };
 
         watch(() => etapasSubTab.value, (tab) => {
+          if (tab === 'nivelamento') loadClassStatusReport();
           if (tab === 'imersao' && useRealImersaoGroups.value) loadImersaoGroups();
         });
 
@@ -3092,7 +3189,7 @@ export default {
         totalVacancies,
         pointsPerCompletedCourse: 1,
         bonusPerPriorityCity: 2,
-        priorityCities: ['MaceiÃ³ - AL', 'Arapiraca - AL', 'Rio Largo - AL'],
+        priorityCities: ['Maceió - AL', 'Arapiraca - AL', 'Rio Largo - AL'],
         amplaConcorrenciaSeats,
         pcdSeats,
         negroPardoSeats,
@@ -3112,7 +3209,7 @@ export default {
         const data = await stageService.getCandidatesByStageId(firstSelectionStageId.value);
         selectionStageCandidates.value = Array.isArray(data) ? data : [];
       } catch (err) {
-        console.error('Erro ao carregar candidatos da seleÃ§Ã£o:', err);
+        console.error('Erro ao carregar candidatos da seleção:', err);
         selectionStageCandidates.value = [];
       } finally {
         selectionCandidatesLoading.value = false;
@@ -3179,7 +3276,7 @@ export default {
 
     const importSelectionCandidates = async () => {
       if (!firstSelectionStageId.value) {
-        importInscricoesError.value = 'Nenhuma etapa de seleÃ§Ã£o foi encontrada para esta turma.';
+        importInscricoesError.value = 'Nenhuma etapa de seleção foi encontrada para esta turma.';
         return;
       }
       if (!importInscricoesFile.value) {
@@ -3206,7 +3303,7 @@ export default {
 
     const importApprovedCandidates = async () => {
       if (!firstSelectionStageId.value) {
-        importAprovadosError.value = 'Nenhuma etapa de seleÃ§Ã£o foi encontrada para esta turma.';
+        importAprovadosError.value = 'Nenhuma etapa de seleção foi encontrada para esta turma.';
         return;
       }
       if (!importAprovadosFile.value) {
@@ -3233,7 +3330,7 @@ export default {
 
     const convokeWaitlistCandidates = async () => {
       if (!firstSelectionStageId.value) {
-        waitlistError.value = 'Nenhuma etapa de seleÃ§Ã£o foi encontrada para esta turma.';
+        waitlistError.value = 'Nenhuma etapa de seleção foi encontrada para esta turma.';
         return;
       }
       if (!waitlistForm.value.convokeCount) {
@@ -3276,7 +3373,7 @@ export default {
         submitCoursesSuccess.value = `Processadas: ${result.totalProcessed}. Criadas: ${result.createdProgressions}. Atualizadas: ${result.updatedProgressions}. Notas atualizadas: ${result.updatedGrades}. Ignoradas: ${result.skippedRows}.`;
         await loadNivelamentoData();
       } catch (err) {
-        submitCoursesError.value = err.response?.data?.message || err.message || 'Erro ao importar progressÃµes.';
+        submitCoursesError.value = err.response?.data?.message || err.message || 'Erro ao importar progressões.';
       } finally {
         submittingCourses.value = false;
       }
@@ -3295,7 +3392,7 @@ export default {
         const formData = new FormData();
         formData.append('file', submitProvaFile.value);
         const result = await examService.importResults(classId.value, formData);
-        submitProvaSuccess.value = `Participantes processados: ${result.participantsProcessed}. QuestÃµes detectadas: ${result.questionsDetected}.${formatImportWarnings(result.warnings)}`;
+        submitProvaSuccess.value = `Participantes processados: ${result.participantsProcessed}. Questões detectadas: ${result.questionsDetected}.${formatImportWarnings(result.warnings)}`;
         await loadExamInsights();
       } catch (err) {
         submitProvaError.value = err.response?.data?.message || err.message || 'Erro ao importar resultados da prova.';
@@ -3306,11 +3403,11 @@ export default {
 
     const importImersaoStudents = async () => {
       if (!imersaoStageId.value) {
-        importImersaoError.value = 'Nenhuma etapa de imersÃ£o foi encontrada para esta turma.';
+        importImersaoError.value = 'Nenhuma etapa de imersão foi encontrada para esta turma.';
         return;
       }
       if (!importImersaoFile.value) {
-        importImersaoError.value = 'Selecione uma planilha de alunos da imersÃ£o para continuar.';
+        importImersaoError.value = 'Selecione uma planilha de alunos da imersão para continuar.';
         return;
       }
 
@@ -3324,7 +3421,7 @@ export default {
         importImersaoSuccess.value = `Processadas: ${result.totalProcessed}. Inseridas: ${result.successfullyInserted}. Novas pessoas: ${result.newPeopleCreated}.`;
         await loadStages();
       } catch (err) {
-        importImersaoError.value = err.response?.data?.message || err.message || 'Erro ao importar alunos da imersÃ£o.';
+        importImersaoError.value = err.response?.data?.message || err.message || 'Erro ao importar alunos da imersão.';
       } finally {
         importingImersao.value = false;
       }
@@ -3458,8 +3555,9 @@ export default {
     const displayStageName = (name) => {
       if (!name) return '';
       const normalized = name.normalize('NFD').replace(/\p{Diacritic}/gu, '').toUpperCase();
-      if (normalized === 'SELECAO') return 'SELEÃ‡ÃƒO';
-      if (normalized === 'IMERSAO') return 'IMERSÃƒO';
+      if (normalized === 'INSCRICAO') return 'INSCRIÇÃO';
+      if (normalized === 'SELECAO') return 'SELEÇÃO';
+      if (normalized === 'IMERSAO') return 'IMERSÃO';
       return name;
     };
 
@@ -3589,8 +3687,8 @@ export default {
 
       if (normalizedStatus === 'APROVADO') return { label: 'Aprovado', className: 'status-active', conflict: hasConflict };
       if (normalizedStatus === 'LISTA_ESPERA') return { label: 'Lista de espera', className: 'status-pending', conflict: hasConflict };
-      if (normalizedStatus === 'EM_ANALISE') return { label: 'Em anÃ¡lise', className: 'status-pending', conflict: hasConflict };
-      if (normalizedStatus === 'REPROVADO') return { label: 'NÃ£o selecionado', className: 'status-inactive', conflict: hasConflict };
+      if (normalizedStatus === 'EM_ANALISE') return { label: 'Em análise', className: 'status-pending', conflict: hasConflict };
+      if (normalizedStatus === 'REPROVADO') return { label: 'Não selecionado', className: 'status-inactive', conflict: hasConflict };
 
       return {
         label: status ? String(status) : 'Sem status',
@@ -3601,7 +3699,7 @@ export default {
 
     const firstSelectionStageId = computed(() => {
       const stage = (stages.value || []).find((item) => normalizeText(item?.name) === 'selecao')
-        || (stages.value || []).find((item) => normalizeText(item?.name) === 'seleÃ§Ã£o')
+        || (stages.value || []).find((item) => normalizeText(item?.name) === 'seleção')
         || (stages.value || [])[0];
 
       return stage?.id || null;
@@ -3624,12 +3722,12 @@ export default {
       try {
         const birthDate = parseBrazilianDate(newCandidateForm.value.birthDate);
         if (!birthDate) {
-          throw new Error('Informe uma data de nascimento vÃ¡lida no formato dd/mm/aaaa.');
+          throw new Error('Informe uma data de nascimento válida no formato dd/mm/aaaa.');
         }
 
         const stageId = firstSelectionStageId.value;
         if (!stageId) {
-          throw new Error('Nenhuma etapa disponÃ­vel para vincular o candidato.');
+          throw new Error('Nenhuma etapa disponível para vincular o candidato.');
         }
 
         await peopleService.createLink({
@@ -3678,6 +3776,9 @@ export default {
     onMounted(() => {
       applyTabStateFromQuery();
       loadClassDetails();
+      if (activeTab.value === 'etapas') {
+        loadClassStatusReport();
+      }
       if (activeTab.value === 'etapas' && etapasSubTab.value === 'imersao') {
         loadImersaoGroups();
       }
@@ -3723,6 +3824,10 @@ export default {
       classPeopleTotalPages,
       classPeopleVisiblePages,
       classStatusLabel,
+      classStatusReport,
+      classStatusLoading,
+      classStatusError,
+      classStatusBuckets,
       closeCreateStageModal,
       closeEditStageModal,
       closeIndividualRegistration,
@@ -5671,20 +5776,20 @@ export default {
 }
 
 .submit-imersao-type-btn {
-  height: 40px;
-  border: 1px solid var(--slate-200);
-  background: #fff;
-  color: var(--slate-700);
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
+   height: 40px;
+   border: 1px solid var(--slate-200);
+   background: #fff;
+   color: var(--slate-600);
+   border-radius: 10px;
+   font-size: 14px;
+   font-weight: 600;
+   cursor: pointer;
 }
 
 .submit-imersao-type-btn.active {
-  border-color: var(--teal-500);
-  color: #0f766e;
-  background: #ecfeff;
+   border-color: var(--teal-600);
+   color: var(--teal-600);
+   background: #ecfeff;
 }
 
 .submit-imersao-notas-modal .file-upload-area {
@@ -5972,7 +6077,7 @@ export default {
 }
 
 .column-item:before {
-  content: 'â—';
+  content: '●';
   color: var(--teal-500);
   font-size: 10px;
 }
@@ -6319,7 +6424,7 @@ export default {
 
 /* Scoped styles for Nivelamento additions */
 .nivelamento-tabs { padding: 0 24px; }
-.tab-btn { background: transparent; border: none; padding: 10px 14px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; }
+.tab-btn { background: transparent; border: none; padding: 12px 16px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; }
 .tab-btn.active { color:var(--teal-600); border-bottom-color:var(--teal-600); }
 .nivelamento-cards { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap:12px; padding: 12px 24px; }
 .n-card { background:#fff; border:1px solid var(--slate-200); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; justify-content:center; min-height:64px; box-sizing:border-box; }
@@ -6563,20 +6668,19 @@ export default {
 }
 
 .imersao-group-tab-btn {
-  border: none;
-  background: transparent;
-  color: var(--slate-700);
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 10px;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
+   border: none;
+   background: transparent;
+   color: var(--slate-600);
+   font-size: 14px;
+   font-weight: 600;
+   padding: 12px 16px;
+   border-bottom: 2px solid transparent;
+   cursor: pointer;
 }
 
 .imersao-group-tab-btn.active {
-  color: var(--teal-600);
-  border-bottom-color: var(--teal-500);
-  font-weight: 600;
+   color: var(--teal-600);
+   border-bottom-color: var(--teal-600);
 }
 
 .imersao-group-meta p {
@@ -6645,6 +6749,110 @@ export default {
   flex-direction: column;
   gap: 17px;
 }
+
+.class-status-report {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #dbe4ef;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.class-status-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.class-status-head h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.class-status-head p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.class-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #dffcf5;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.class-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.class-status-summary {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.class-status-summary span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.class-status-summary strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.class-status-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.class-status-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.class-status-row-head strong {
+  color: #0f172a;
+}
+
+.class-status-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.class-status-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #14b8a6 0%, #0ea5e9 100%);
+}
+
 .course-card-new {
   width: 100%;
   display: flex;
@@ -6957,7 +7165,7 @@ export default {
 /* Tabs background stripe */
 .tabs-bg { display:inline-flex !important; background: #ffffff !important; padding:8px 10px !important; border-radius:8px; align-items:center; gap:6px; z-index:2; border:1px solid var(--slate-100) !important; box-shadow: 0 1px 2px rgba(2,6,23,0.04); }
 .tabs-bg .tab-btn { background: transparent !important; border: none !important; }
-.tab-btn { padding: 8px 12px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; background: transparent; }
+.tab-btn { padding: 12px 16px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; background: transparent; }
 .tab-btn.active { color:var(--teal-600); border-bottom-color:var(--teal-600); }
 
 /* ensure the tabs-bg doesn't stretch full width */

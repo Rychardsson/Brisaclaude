@@ -574,7 +574,7 @@ export default {
         // Recarrega a lista de candidatos
         await loadStageDetails();
 
-        // Se houver erros por linha, mantem o modal aberto para correção; caso contrário fecha-o
+        // Se houver erros por linha, mantém o modal aberto para correção; caso contrário fecha-o
         if (rowErrors.value.length === 0) {
           if (showAddCandidatesModal.value) {
             closeAddCandidatesModal();
@@ -819,12 +819,26 @@ export default {
     const displayStageName = (name) => {
       if (!name) return '';
       const normalized = normalizeName(name);
+      if (normalized === 'INSCRICAO') return 'INSCRIÇÃO';
       if (normalized === 'SELECAO') return 'SELEÇÃO';
       if (normalized === 'IMERSAO') return 'IMERSÃO';
       return name;
     };
 
     const isNivelamento = computed(() => normalizeName(stageData.value?.name) === 'NIVELAMENTO');
+    const syncDocumentTitle = () => {
+      const stageTitle = displayStageName(stageData.value?.name) || 'Detalhes da Etapa';
+      const classTitle = stageData.value?.className ? `Turma ${stageData.value.className}` : null;
+      document.title = [stageTitle, classTitle, 'BRISA One'].filter(Boolean).join(' | ');
+    };
+
+    watch(
+      () => [stageData.value?.name, stageData.value?.className],
+      () => {
+        syncDocumentTitle();
+      },
+      { immediate: true }
+    );
 
     const handleDocumentClick = (e) => {
       try {

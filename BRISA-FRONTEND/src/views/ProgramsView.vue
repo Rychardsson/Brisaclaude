@@ -710,6 +710,16 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
+function formatStageName(value) {
+  const normalized = normalizeText(value);
+  if (normalized.includes('inscri')) return 'Inscrição';
+  if (normalized.includes('selec')) return 'Seleção';
+  if (normalized.includes('nivel')) return 'Nivelamento';
+  if (normalized.includes('imers')) return 'Imersão';
+  if (normalized.includes('encerr')) return 'Encerrado';
+  return value || '-';
+}
+
 function parseYears(period) {
   const matches = String(period ?? '').match(/\d{4}/g) ?? [];
   return matches;
@@ -781,7 +791,7 @@ function mapClassToProgramListItem(classItem, fallbackProgram) {
     localidade: localityName,
     periodo: periodoText,
     status: classItem?.status || 'andamento',
-    etapaAtual: classItem?.currentStage || 'Inscricao',
+    etapaAtual: formatStageName(classItem?.currentStage || 'Inscrição'),
     inscricao: 0,
     selecao: 0,
     inscritos: 0,
@@ -940,9 +950,9 @@ const tabs = computed(() => {
   const encerrados = items.filter((item) => normalizedStatus(item.status) === 'encerrado').length;
 
   return [
-    { id: 'ativos', label: 'Turmas ativas', count: ativos },
-    { id: 'espera', label: 'Em espera', count: espera },
-    { id: 'todos', label: 'Todas as turmas', count: items.length },
+    { id: 'ativos', label: 'Turmas Ativas', count: ativos },
+    { id: 'espera', label: 'Em Espera', count: espera },
+    { id: 'todos', label: 'Todas as Turmas', count: items.length },
     { id: 'encerrados', label: 'Encerradas', count: encerrados },
   ];
 });
@@ -1658,28 +1668,28 @@ h1 {
 }
 
 .tab-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 2px 14px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  color: #5f728d;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 12px 16px;
+   background: transparent;
+   border: none;
+   border-bottom: 2px solid transparent;
+   cursor: pointer;
+   font-size: 14px;
+   font-weight: 600;
+   color: var(--slate-600);
+   transition: all 0.2s ease;
+   white-space: nowrap;
 }
 
 .tab-item:hover {
-  color: #2a3566;
+   color: var(--color-text);
 }
 
 .tab-item.active {
-  color: #0f766e;
-  border-bottom-color: #14b8a6;
+   color: var(--teal-600);
+   border-bottom-color: var(--teal-600);
 }
 
 .tab-count {
@@ -1688,11 +1698,11 @@ h1 {
   border-radius: 999px;
   padding: 2px 7px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .tab-item.active .tab-count {
-  color: #14b8a6;
+  color: var(--teal-600);
 }
 
 .filters-row {

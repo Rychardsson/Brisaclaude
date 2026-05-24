@@ -1,7 +1,10 @@
 package com.example.brisa.models;
 
+import com.example.brisa.enums.AdvisorRoleType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,11 +34,21 @@ public class AdvisorModel {
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role_type")
+    private AdvisorRoleType roleType = AdvisorRoleType.ORIENTADOR;
+
+    @Column(name = "email")
+    private String email;
+
     @Column(name = "formation")
     private String formation;
 
     @Column(name = "birth_date")
     private LocalDate birthDate;
+
+    @Column(name = "active")
+    private Boolean active = Boolean.TRUE;
 
     @CreationTimestamp
     @Column(name = "created_at")

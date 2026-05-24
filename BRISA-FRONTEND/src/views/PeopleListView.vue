@@ -4,7 +4,7 @@
     <div class="people-shell">
       <section class="page-header-card">
         <div class="page-header-top">
-          <div>
+          <div class="header-content">
             <h1>Pessoas</h1>
             <p class="subtitle">
               Gerencie todas as pessoas cadastradas no sistema e acompanhe seus vínculos com programas e etapas.
@@ -1137,9 +1137,10 @@ const enrollmentProgramId = (enrollment) => enrollment?.classModel?.program?.id 
 
 const stageLabel = (name) => {
   const normalized = normalize(name);
-  if (normalized.includes('imersao')) return 'Imersao';
+  if (normalized.includes('imersao')) return 'Imersão';
   if (normalized.includes('nivelamento')) return 'Nivelamento';
-  if (normalized.includes('selecao') || normalized.includes('inscricao')) return 'Inscricao';
+  if (normalized.includes('selecao')) return 'Seleção';
+  if (normalized.includes('inscricao')) return 'Inscrição';
   return name || '-';
 };
 
@@ -1691,8 +1692,8 @@ const parseUploadFile = async (file) => {
     const idxCourse = getColumnIndex(headers, ['Curso'], 7);
     const idxEmail = getColumnIndex(headers, ['E-mail', 'Email'], 8);
     const idxCota = getColumnIndex(headers, ['Cota'], 9);
-    const idxEducationType = getColumnIndex(headers, ['Tipo de formação', 'Tipo de formacao', 'Formação'], 10);
-    const idxEducationStatus = getColumnIndex(headers, ['Status da formação', 'Status da formacao', 'Status'], 11);
+    const idxEducationType = getColumnIndex(headers, ['Tipo de formação', 'Tipo de formação', 'Formação'], 10);
+    const idxEducationStatus = getColumnIndex(headers, ['Status da formação', 'Status da formação', 'Status'], 11);
 
     return rows.slice(1).map((row, index) => {
       const record = {
@@ -1794,7 +1795,7 @@ const downloadInconsistenciesReport = () => {
   ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(existingSheetData), 'Ja existentes');
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(existingSheetData), 'Já existentes');
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(alertSheetData), 'Alertas');
   XLSX.writeFile(workbook, 'relatorio-inconsistencias.xlsx');
 };
@@ -2170,6 +2171,10 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
 }
 
+.header-content {
+  min-width: min(760px, 100%);
+}
+
 .eyebrow {
   margin: 0 0 2px;
   font-size: 12px;
@@ -2204,10 +2209,9 @@ onBeforeUnmount(() => {
 .primary-btn,
 .secondary-btn,
 .filters-button,
-.tab-item,
 .page-btn,
 .icon-btn {
-  font: inherit;
+   font: inherit;
 }
 
 .ghost-btn,
@@ -2340,31 +2344,32 @@ onBeforeUnmount(() => {
 }
 
 .tab-item {
-  background: transparent;
-  border: 0;
-  padding: 12px 2px 14px;
-  border-bottom: 2px solid transparent;
-  color: #5f728d;
-  cursor: pointer;
-  font-weight: 600;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+   display: inline-flex;
+   align-items: center;
+   padding: 12px 16px;
+   border: none;
+   background: transparent;
+   color: var(--slate-600);
+   font-size: 14px;
+   font-weight: 600;
+   line-height: 1.25;
+   border-bottom: 2px solid transparent;
+   cursor: pointer;
+   white-space: nowrap;
 }
 
 .tab-item.active {
-  color: #0f766e;
-  border-bottom-color: #14b8a6;
+   color: var(--teal-600);
+   border-bottom-color: var(--teal-600);
 }
 
 .tab-count {
-  background: #eef2f7;
-  color: #8a98ab;
-  border-radius: 999px;
-  padding: 2px 7px;
-  font-size: 11px;
-  font-weight: 700;
+   background: #eef2f7;
+   color: #8a98ab;
+   border-radius: 999px;
+   padding: 2px 7px;
+   font-size: 11px;
+   font-weight: 600;
 }
 
 .filters-row {
@@ -3068,19 +3073,22 @@ onBeforeUnmount(() => {
 }
 
 .upload-tab {
-  background: none;
-  border: 0;
-  padding: 10px 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: #64748b;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
+   display: inline-flex;
+   align-items: center;
+   padding: 12px 16px;
+   border: none;
+   background: transparent;
+   color: var(--slate-600);
+   font-size: 14px;
+   font-weight: 600;
+   line-height: 1.25;
+   border-bottom: 2px solid transparent;
+   cursor: pointer;
 }
 
 .upload-tab.active {
-  color: #0f766e;
-  border-bottom-color: #14b8a6;
+   color: var(--teal-600);
+   border-bottom-color: var(--teal-600);
 }
 
 .upload-table {

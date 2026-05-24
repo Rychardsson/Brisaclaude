@@ -1457,12 +1457,12 @@ function milestoneEntries(classItem) {
     { key: 'publication', label: 'Publicação do edital', date: classItem.publicationDate },
     { key: 'applications-end', label: 'Encerramento das inscrições', date: classItem.applicationEndDate },
     { key: 'leveling-announcement', label: 'Resultado do nivelamento', date: classItem.levelingSelectionAnnouncementDate },
-    { key: 'leveling-start', label: 'Inicio do nivelamento', date: classItem.levelingStartDate },
+    { key: 'leveling-start', label: 'Início do nivelamento', date: classItem.levelingStartDate },
     { key: 'immersion-announcement', label: 'Resultado da imersão', date: classItem.immersionSelectionAnnouncementDate },
     { key: 'immersion-start', label: 'Início da imersão', date: classItem.immersionStartDate },
     { key: 'partial-eval', label: 'Avaliação parcial', date: classItem.partialEvaluationDate },
     { key: 'final-eval', label: 'Avaliação final', date: classItem.finalEvaluationDate },
-    { key: 'certificate', label: 'Emissao de certificados', date: classItem.certificateIssueDate },
+    { key: 'certificate', label: 'Emissão de certificados', date: classItem.certificateIssueDate },
   ].filter((item) => item.date);
 }
 
@@ -1552,7 +1552,8 @@ function isTechPosition(position, company) {
 }
 
 .page-header-card {
-  padding: 26px 30px;
+  padding: 18px 18px 16px;
+  border-radius: 20px;
 }
 
 .page-header-top {
@@ -1569,15 +1570,15 @@ function isTechPosition(position, company) {
 
 .header-content h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 34px;
   line-height: 1.1;
-  color: #0f2344;
-  font-weight: 700;
+  color: #13233f;
+  font-weight: 800;
 }
 
 .subtitle {
-  margin: 10px 0 0;
-  color: #425977;
+  margin: 6px 0 0;
+  color: #6a7a90;
   font-size: 14px;
   line-height: 1.5;
 }
@@ -2616,6 +2617,10 @@ function isTechPosition(position, company) {
 @media (max-width: 760px) {
   .dashboard-page {
     padding: 12px;
+  }
+
+  .header-content h1 {
+    font-size: 28px;
   }
 
   .page-header-card,

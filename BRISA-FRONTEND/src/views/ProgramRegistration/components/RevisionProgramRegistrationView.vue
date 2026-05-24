@@ -22,7 +22,7 @@
                                  Validações Automáticas
                             </h3>
                    <p class="validation-subtitle" v-if="progressPercentage < 100">
-                               ⚠️ Você possui {{ validationData.totalErrors }} pendência(s) antes de publicar.
+                               Você possui {{ validationData.totalErrors }} pendência(s) antes de publicar.
                    </p>
                    <p class="validation-subtitle success-text" v-else>
                                Tudo certo! Edital validado e pronto para publicação.
@@ -54,9 +54,7 @@
                    <div :class="['pending-list-wrapper', { 'is-open': isExpanded(group.stepNumber) }]">
                       <div class="pending-list-inner">
                          <ul class="pending-list">
-                            <li v-for="(error, i) in group.errors" :key="i">
-                               • {{ error }}
-                            </li>
+                            <li v-for="(error, i) in group.errors" :key="i">{{ error }}</li>
                          </ul>
                       </div>
                    </div>
@@ -131,14 +129,14 @@
              <div class="timeline-point">0</div>
              <div class="timeline-info">
                 <strong>Período de Inscrições</strong>
-                <p>Data de início: {{ displayDates.startDate || 'Não definido' }} • Data de encerramento: {{ displayDates.endDate || 'Não definido' }}</p>
+                <p>Data de início: {{ displayDates.startDate || 'Não definido' }} - Data de encerramento: {{ displayDates.endDate || 'Não definido' }}</p>
              </div>
           </div>
           <div v-for="stage in stageList" :key="stage.id" class="timeline-step">
              <div class="timeline-point">{{ stage.id + 1 }}</div>
              <div class="timeline-info">
                 <strong>{{ stage.title }}</strong>
-                <p>Modalidade: {{ stage.modality }} • Duração prevista: {{ stage.duration || 'Não definida' }}</p>
+                <p>Modalidade: {{ stage.modality }} - Duração prevista: {{ stage.duration || 'Não definida' }}</p>
              </div>
           </div>
        </div>
@@ -193,11 +191,11 @@
        </div>
        <div class="rules-review-box">
           <div class="rule-review-item">
-             <strong>Etapa Inscrição — Nivelamento</strong>
+             <strong>Etapa Inscrição → Nivelamento</strong>
              <p>{{ inscriptionForm.classification.count }} candidatos classificados por {{ inscriptionForm.classification.criteria.toLowerCase() }}</p>
           </div>
           <div class="rule-review-item">
-             <strong>Etapa Nivelamento — Imersão</strong>
+             <strong>Etapa Nivelamento → Imersão</strong>
              <p>{{ nivelamentoForm.grading.approvedCount }} aprovados com base em: Nota de prova ({{ nivelamentoForm.grading.examWeight }}%) + Cursos opcionais ({{ nivelamentoForm.grading.optionalWeight }}%)</p>
           </div>
           <div class="rule-review-item">
@@ -284,13 +282,13 @@ export default {
       return !!(this.formData.programName && this.formData.executor && this.formData.fundingEntity && this.formData.generalCoordinator && this.formData.programValue && this.formData.supportEmail);
     },
 
-    // LÃ“GICA MESTRA: Varre absolutamente todos os campos de todas as abas
+    // LÓGICA MESTRA: Varre absolutamente todos os campos de todas as abas
     validationData() {
       const steps = [];
       let totalChecks = 0;
       let totalErrors = 0;
 
-      // FunÃ§Ã£o ajudante para encurtar a verificaÃ§Ã£o
+      // Função ajudante para encurtar a verificação
       const checkField = (condition, errorMessage, stepArray) => {
         totalChecks++;
         if (!condition) {
@@ -301,18 +299,18 @@ export default {
 
       // ETAPA 1 - Dados do Programa
       const step1Errors = [];
-      checkField(this.formData.programName, 'Nome do programa nÃ£o preenchido.', step1Errors);
-      checkField(this.formData.batchName, 'Turma/EdiÃ§Ã£o nÃ£o preenchida.', step1Errors);
-      checkField(this.formData.executor, 'Executora do programa nÃ£o definida.', step1Errors);
-      checkField(this.formData.fundingEntity, 'Entidade de fomento nÃ£o definida.', step1Errors);
-      checkField(this.formData.generalCoordinator, 'Coordenador geral nÃ£o definido.', step1Errors);
-      checkField(this.formData.programValue, 'Valor do programa nÃ£o informado.', step1Errors);
-      checkField(this.formData.objective, 'Objetivo do programa nÃ£o preenchido.', step1Errors);
-      checkField(this.formData.location, 'Local de realizaÃ§Ã£o nÃ£o definido.', step1Errors);
-      checkField(this.formData.supportEmail, 'E-mail de suporte nÃ£o configurado.', step1Errors);
-      checkField(this.displayDates.publishDate, 'Data de publicaÃ§Ã£o nÃ£o definida.', step1Errors);
-      checkField(this.displayDates.startDate, 'Data de inÃ­cio do programa nÃ£o definida.', step1Errors);
-      checkField(this.displayDates.endDate, 'Data de fim do programa nÃ£o definida.', step1Errors);
+      checkField(this.formData.programName, 'Nome do programa não preenchido.', step1Errors);
+      checkField(this.formData.batchName, 'Turma/Edição não preenchida.', step1Errors);
+      checkField(this.formData.executor, 'Executora do programa não definida.', step1Errors);
+      checkField(this.formData.fundingEntity, 'Entidade de fomento não definida.', step1Errors);
+      checkField(this.formData.generalCoordinator, 'Coordenador geral não definido.', step1Errors);
+      checkField(this.formData.programValue, 'Valor do programa não informado.', step1Errors);
+      checkField(this.formData.objective, 'Objetivo do programa não preenchido.', step1Errors);
+      checkField(this.formData.location, 'Local de realização não definido.', step1Errors);
+      checkField(this.formData.supportEmail, 'E-mail de suporte não configurado.', step1Errors);
+      checkField(this.displayDates.publishDate, 'Data de publicação não definida.', step1Errors);
+      checkField(this.displayDates.startDate, 'Data de início do programa não definida.', step1Errors);
+      checkField(this.displayDates.endDate, 'Data de fim do programa não definida.', step1Errors);
       
       if (step1Errors.length > 0) {
          steps.push({ stepNumber: 1, stepName: 'Dados do Programa', errors: step1Errors });
@@ -322,76 +320,76 @@ export default {
       const step2Errors = [];
       checkField(this.stageList.length > 0, 'Nenhuma etapa foi criada no fluxo.', step2Errors);
       this.stageList.forEach((stage, idx) => {
-         checkField(stage.title, `Etapa ${idx + 1}: Nome nÃ£o preenchido.`, step2Errors);
-         checkField(stage.duration, `Etapa ${idx + 1}: DuraÃ§Ã£o nÃ£o definida.`, step2Errors);
-         checkField(stage.slots, `Etapa ${idx + 1}: Quantidade de vagas nÃ£o informada.`, step2Errors);
+         checkField(stage.title, `Etapa ${idx + 1}: Nome não preenchido.`, step2Errors);
+         checkField(stage.duration, `Etapa ${idx + 1}: Duração não definida.`, step2Errors);
+         checkField(stage.slots, `Etapa ${idx + 1}: Quantidade de vagas não informada.`, step2Errors);
       });
 
       if (step2Errors.length > 0) {
          steps.push({ stepNumber: 2, stepName: 'Estrutura das Etapas', errors: step2Errors });
       }
 
-      // ETAPA 3 - InscriÃ§Ã£o
+      // ETAPA 3 - Inscrição
       const step3Errors = [];
-      checkField(this.displayDates.inscStart, 'Data de inÃ­cio das inscriÃ§Ãµes nÃ£o definida.', step3Errors);
-      checkField(this.displayDates.inscEnd, 'Data de fim das inscriÃ§Ãµes nÃ£o definida.', step3Errors);
+      checkField(this.displayDates.inscStart, 'Data de início das inscrições não definida.', step3Errors);
+      checkField(this.displayDates.inscEnd, 'Data de fim das inscrições não definida.', step3Errors);
       
       const q = this.inscriptionForm.quotas;
       const totalQuotas = Number(q.ampla) + Number(q.pcd) + Number(q.negros) + Number(q.mulheres) + Number(q.age45);
-      checkField(totalQuotas === 100, `DistribuiÃ§Ã£o de cotas invÃ¡lida (${totalQuotas}% em vez de 100%).`, step3Errors);
+      checkField(totalQuotas === 100, `Distribuição de cotas inválida (${totalQuotas}% em vez de 100%).`, step3Errors);
       
       if (step3Errors.length > 0) {
-         steps.push({ stepNumber: 3, stepName: 'InscriÃ§Ã£o', errors: step3Errors });
+         steps.push({ stepNumber: 3, stepName: 'Inscrição', errors: step3Errors });
       }
 
       // ETAPA 4 - Nivelamento
       const step4Errors = [];
-      checkField(this.displayDates.nivStart, 'Data de inÃ­cio do nivelamento nÃ£o definida.', step4Errors);
-      checkField(this.displayDates.nivEnd, 'Data de fim do nivelamento nÃ£o definida.', step4Errors);
-      checkField(this.nivelamentoForm.workload, 'Carga horÃ¡ria do nivelamento nÃ£o informada.', step4Errors);
-      checkField(this.nivelamentoForm.platform, 'Plataforma do curso nÃ£o definida.', step4Errors);
+      checkField(this.displayDates.nivStart, 'Data de início do nivelamento não definida.', step4Errors);
+      checkField(this.displayDates.nivEnd, 'Data de fim do nivelamento não definida.', step4Errors);
+      checkField(this.nivelamentoForm.workload, 'Carga horária do nivelamento não informada.', step4Errors);
+      checkField(this.nivelamentoForm.platform, 'Plataforma do curso não definida.', step4Errors);
       
       if (this.nivelamentoForm.finalExam.active) {
-         checkField(this.displayDates.nivExamDate, 'Data da prova final nÃ£o definida.', step4Errors);
-         checkField(this.nivelamentoForm.finalExam.time, 'HorÃ¡rio da prova final nÃ£o definido.', step4Errors);
-         checkField(this.nivelamentoForm.finalExam.duration, 'DuraÃ§Ã£o da prova final nÃ£o informada.', step4Errors);
+         checkField(this.displayDates.nivExamDate, 'Data da prova final não definida.', step4Errors);
+         checkField(this.nivelamentoForm.finalExam.time, 'Horário da prova final não definido.', step4Errors);
+         checkField(this.nivelamentoForm.finalExam.duration, 'Duração da prova final não informada.', step4Errors);
       }
 
       if (step4Errors.length > 0) {
          steps.push({ stepNumber: 4, stepName: 'Nivelamento', errors: step4Errors });
       }
 
-      // ETAPA 5 - ImersÃ£o
+      // ETAPA 5 - Imersão
       const step5Errors = [];
-      checkField(this.displayDates.imerStart, 'Data de inÃ­cio da imersÃ£o nÃ£o definida.', step5Errors);
-      checkField(this.displayDates.imerEnd, 'Data de fim da imersÃ£o nÃ£o definida.', step5Errors);
-      checkField(this.imersaoForm.cargaHoraria, 'Carga horÃ¡ria da imersÃ£o nÃ£o definida.', step5Errors);
-      checkField(this.imersaoForm.duracaoMeses, 'DuraÃ§Ã£o em meses da imersÃ£o nÃ£o informada.', step5Errors);
-      checkField(this.imersaoForm.mediaHoras, 'MÃ©dia de horas semanais nÃ£o informada.', step5Errors);
+      checkField(this.displayDates.imerStart, 'Data de início da imersão não definida.', step5Errors);
+      checkField(this.displayDates.imerEnd, 'Data de fim da imersão não definida.', step5Errors);
+      checkField(this.imersaoForm.cargaHoraria, 'Carga horária da imersão não definida.', step5Errors);
+      checkField(this.imersaoForm.duracaoMeses, 'Duração em meses da imersão não informada.', step5Errors);
+      checkField(this.imersaoForm.mediaHoras, 'Média de horas semanais não informada.', step5Errors);
       
-      // Validar local apenas se a modalidade nÃ£o for Online
+      // Validar local apenas se a modalidade não for Online
       if (this.imersaoForm.modalidade !== 'Online') {
-         checkField(this.imersaoForm.local, 'Local da imersÃ£o nÃ£o informado.', step5Errors);
+         checkField(this.imersaoForm.local, 'Local da imersão não informado.', step5Errors);
       }
       
-      checkField(this.imersaoForm.presenca.responsavelJustificativa, 'ResponsÃ¡vel pela anÃ¡lise de justificativas nÃ£o informado.', step5Errors);
+      checkField(this.imersaoForm.presenca.responsavelJustificativa, 'Responsável pela análise de justificativas não informado.', step5Errors);
 
       if (this.imersaoForm.beneficios.hasBolsa) {
-        checkField(this.imersaoForm.beneficios.valorBolsa, 'Valor financeiro da bolsa nÃ£o informado.', step5Errors);
-        checkField(this.imersaoForm.beneficios.mesesBolsa, 'Quantidade de meses da bolsa nÃ£o definida.', step5Errors);
+        checkField(this.imersaoForm.beneficios.valorBolsa, 'Valor financeiro da bolsa não informado.', step5Errors);
+        checkField(this.imersaoForm.beneficios.mesesBolsa, 'Quantidade de meses da bolsa não definida.', step5Errors);
       }
       
       if (this.imersaoForm.beneficios.hasNotebook) {
-        checkField(this.imersaoForm.beneficios.modeloNotebook, 'Modelo/especificaÃ§Ã£o do notebook nÃ£o informado.', step5Errors);
-        checkField(this.displayDates.prazoDevolucaoNotebook, 'Prazo de devoluÃ§Ã£o do equipamento nÃ£o definido.', step5Errors);
+        checkField(this.imersaoForm.beneficios.modeloNotebook, 'Modelo/especificação do notebook não informado.', step5Errors);
+        checkField(this.displayDates.prazoDevolucaoNotebook, 'Prazo de devolução do equipamento não definido.', step5Errors);
       }
       
       if (this.imersaoForm.beneficios.exigirContrato) {
-        checkField(this.imersaoForm.beneficios.prazoContrato, 'Prazo para assinatura do contrato nÃ£o estipulado.', step5Errors);
+        checkField(this.imersaoForm.beneficios.prazoContrato, 'Prazo para assinatura do contrato não estipulado.', step5Errors);
       }
       
       if (step5Errors.length > 0) {
-         steps.push({ stepNumber: 5, stepName: 'ImersÃ£o', errors: step5Errors });
+         steps.push({ stepNumber: 5, stepName: 'Imersão', errors: step5Errors });
       }
 
       return {
