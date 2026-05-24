@@ -385,7 +385,7 @@
                   <strong>Pessoas</strong>
                   <span>Consultar base completa e cadastros detalhados.</span>
                 </button>
-                <button type="button" class="shortcut-card" @click="openAcademicStaffModule">
+                <button v-if="isAdmin" type="button" class="shortcut-card" @click="openAcademicStaffModule">
                   <strong>Equipe acadêmica</strong>
                   <span>Gerenciar professores, gestores e orientadores em uma base dedicada.</span>
                 </button>
@@ -762,6 +762,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import * as XLSX from 'xlsx';
 import api from '@/services/api';
+import { authService } from '@/services/authService';
 import { courseService } from '@/services/courseService';
 import { logService } from '@/services/logService';
 import { peopleService } from '@/services/peopleService';
@@ -829,6 +830,8 @@ const dropzoneClass = computed(() => ({
   success: uploadState.value === 'success',
   warning: uploadState.value === 'error'
 }));
+
+const isAdmin = computed(() => String(authService.getUser()?.role || '').toUpperCase() === 'ADMIN');
 
 const canSubmitImport = computed(() => Boolean(selectedFile.value) && !isUploadBusy.value);
 

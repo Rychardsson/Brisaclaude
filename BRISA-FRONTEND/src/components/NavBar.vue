@@ -41,7 +41,7 @@
             Pessoas
           </router-link>
         </li>
-        <li>
+        <li v-if="isAdmin">
           <router-link to="/academic-staff" :class="{ active: $route.path === '/academic-staff' }">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 3v18"></path>
@@ -120,9 +120,15 @@ export default {
       return Object.keys(q).length ? { path: '/dashboard', query: q } : '/dashboard';
     });
 
+    const isAdmin = computed(() => {
+      const currentUser = authService.getUser();
+      return String(currentUser?.role || '').toUpperCase() === 'ADMIN';
+    });
+
     return {
       logout,
       dashboardLink,
+      isAdmin,
     };
   }
 };

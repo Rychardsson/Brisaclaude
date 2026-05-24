@@ -49,7 +49,7 @@ const routes = [
     path: '/academic-staff',
     name: 'AcademicStaff',
     component: AcademicStaffView,
-    meta: { requiresAuth: true, title: 'Equipe Acadêmica' }
+    meta: { requiresAuth: true, requiresAdmin: true, title: 'Equipe Acadêmica' }
   },
   {
     path: '/people/:id',
