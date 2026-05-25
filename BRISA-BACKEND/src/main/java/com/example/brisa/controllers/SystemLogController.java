@@ -32,6 +32,7 @@ public class SystemLogController {
             @RequestParam(required = false) LogAction action,
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String entityId,
             @RequestParam(required = false) LocalDateTime startDate,
             @RequestParam(required = false) LocalDateTime endDate,
             @RequestParam(defaultValue = "0") Integer page,
@@ -44,6 +45,7 @@ public class SystemLogController {
             filter.setAction(action);
             filter.setUserId(userId);
             filter.setEntityType(entityType);
+            filter.setEntityId(entityId);
             filter.setStartDate(startDate);
             filter.setEndDate(endDate);
             filter.setPage(page);

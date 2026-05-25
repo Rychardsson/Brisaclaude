@@ -16,6 +16,7 @@ public class SystemLogFilterDTO {
     private LogAction action;
     private UUID userId;
     private String entityType;
+    private String entityId;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Integer page = 0;

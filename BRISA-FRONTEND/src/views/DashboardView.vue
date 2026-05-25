@@ -1672,7 +1672,19 @@ function isTechPosition(position, company) {
 }
 
 .table-card {
-  overflow: hidden;
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.table-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-card::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .filters-row {
@@ -1874,6 +1886,27 @@ function isTechPosition(position, company) {
 .section-card,
 .profile-section-card {
   padding: 24px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stat-card,
+.insight-card,
+.phase-card,
+.section-card,
+.profile-card,
+.impact-card {
+  min-width: 0;
+}
+
+.stat-card,
+.mini-stat-card,
+.alert-item,
+.profile-card,
+.event-item,
+.impact-card,
+.funnel-step {
+  overflow-wrap: anywhere;
 }
 
 .insight-header,
@@ -2079,6 +2112,9 @@ function isTechPosition(position, company) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 315px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .alert-item {
@@ -2185,6 +2221,9 @@ function isTechPosition(position, company) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .distribution-row,
@@ -2235,6 +2274,9 @@ function isTechPosition(position, company) {
   color: #334155;
   font-size: 13px;
   line-height: 1.6;
+  max-height: 140px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .profile-grid {
@@ -2259,6 +2301,9 @@ function isTechPosition(position, company) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .histogram {
@@ -2306,6 +2351,9 @@ function isTechPosition(position, company) {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .institution-row {
@@ -2462,6 +2510,41 @@ function isTechPosition(position, company) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.alerts-list,
+.progress-distribution,
+.score-list,
+.phase-attention ul,
+.stack-bars,
+.institution-bars,
+.events-list {
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.alerts-list::-webkit-scrollbar,
+.progress-distribution::-webkit-scrollbar,
+.score-list::-webkit-scrollbar,
+.phase-attention ul::-webkit-scrollbar,
+.stack-bars::-webkit-scrollbar,
+.institution-bars::-webkit-scrollbar,
+.events-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.alerts-list::-webkit-scrollbar-thumb,
+.progress-distribution::-webkit-scrollbar-thumb,
+.score-list::-webkit-scrollbar-thumb,
+.phase-attention ul::-webkit-scrollbar-thumb,
+.stack-bars::-webkit-scrollbar-thumb,
+.institution-bars::-webkit-scrollbar-thumb,
+.events-list::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .event-item {

@@ -60,6 +60,7 @@ public class CareerService {
     private static final String DISPATCH_STATUS_SENT = "SENT";
     private static final String DISPATCH_STATUS_FAILED = "FAILED";
     private static final String DISPATCH_STATUS_RESPONDED = "RESPONDED";
+    private static final int PUBLIC_RESPONSE_TOKEN_VALID_DAYS = 1;
 
     private final CareerProgressionRepository careerProgressionRepository;
     private final CareerAutomationSettingsRepository careerAutomationSettingsRepository;
@@ -587,6 +588,7 @@ public class CareerService {
                           <p style="margin:0 0 6px;font-size:14px;line-height:1.6;">Ao abrir o link, confirme seu e-mail e o token abaixo para liberar o formulario.</p>
                           <p style="margin:0;font-size:15px;line-height:1.6;font-weight:700;word-break:break-all;">%s</p>
                         </div>
+                        <p style="margin:0 0 10px;font-size:13px;line-height:1.7;color:#526078;">Token valido por 1 dia a partir do envio.</p>
                         <p style="margin:0 0 14px;font-size:13px;line-height:1.7;color:#526078;">Se preferir, copie o link completo: <a href="%s" style="color:#0f766e;word-break:break-all;">%s</a></p>
                         """.formatted(
                         safeResponseLink,
@@ -745,17 +747,31 @@ public class CareerService {
             throw new ValidationException(List.of("Este formulario de carreira ja foi respondido."));
         }
 
+        if (dispatch.getRespondedAt() == null && isDispatchResponseTokenExpired(dispatch, LocalDateTime.now())) {
+            throw new ValidationException(List.of("Token expirado. Solicite um novo link de acompanhamento de carreira."));
+        }
+
         return dispatch;
     }
 
     private String ensureDispatchResponseToken(CareerAutomationDispatchModel dispatch, LocalDateTime referenceTime) {
-        if (isBlank(dispatch.getResponseToken())) {
+        LocalDateTime now = referenceTime != null ? referenceTime : LocalDateTime.now();
+        if (isBlank(dispatch.getResponseToken()) || isDispatchResponseTokenExpired(dispatch, now)) {
             dispatch.setResponseToken(UUID.randomUUID().toString());
+            dispatch.setTokenGeneratedAt(now);
         }
         if (dispatch.getTokenGeneratedAt() == null) {
-            dispatch.setTokenGeneratedAt(referenceTime != null ? referenceTime : LocalDateTime.now());
+            dispatch.setTokenGeneratedAt(now);
         }
         return dispatch.getResponseToken();
+    }
+
+    private boolean isDispatchResponseTokenExpired(CareerAutomationDispatchModel dispatch, LocalDateTime referenceTime) {
+        if (dispatch == null || dispatch.getTokenGeneratedAt() == null) {
+            return true;
+        }
+        LocalDateTime now = referenceTime != null ? referenceTime : LocalDateTime.now();
+        return !dispatch.getTokenGeneratedAt().plusDays(PUBLIC_RESPONSE_TOKEN_VALID_DAYS).isAfter(now);
     }
 
     private String buildPublicCareerLink(String responseToken) {

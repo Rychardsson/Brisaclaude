@@ -2,5 +2,6 @@ package com.example.brisa.enums;
 
 public enum AdvisorRoleType {
     ORIENTADOR,
-    GESTOR
+    GESTOR,
+    PROFESSOR
 }

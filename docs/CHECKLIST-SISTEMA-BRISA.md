@@ -16,8 +16,8 @@ Legenda:
 | --- | --- | --- |
 | Gestao academica de programas BRISA | OK | O sistema cobre programas, turmas, escolas/parceiros, pessoas, etapas, cursos, avaliacoes, desempenho, projetos e carreira. |
 | Contrato e aditivos | OK | Contrato permanece dentro de Programas. Aditivos ficam vinculados ao programa, numeram automaticamente quando nao informado e atualizam a data final. |
-| Orientador no lugar de professor | OK | Busca atual nao encontrou mais uso de `professor`, `Professor` ou `Prof.` no frontend/backend principal. |
-| Automacao de carreira com link/token | OK | Disparo gera token, e-mail inclui link publico, egresso valida email + token e envia formulario de carreira. |
+| Orientador no lugar de professor | OK | Interface e regras usam Orientador/Gestor; o enum legado `PROFESSOR` fica apenas para normalizar dados antigos. |
+| Automacao de carreira com link/token | OK | Disparo gera token valido por 1 dia, e-mail inclui link publico, egresso valida email + token e envia formulario de carreira. |
 | Planilhas reais principais | OK | Candidatos, aprovados, prova de nivelamento e relatorios semanais de cursos foram contemplados. |
 | Planilha de imersao completa | PARCIAL | Estruturas de projetos/orientadores existem, mas a importacao automatica de bancas, pares, competencias e projetos da planilha de imersao ainda nao foi fechada. |
 
@@ -27,7 +27,7 @@ Legenda:
 | --- | --- | --- |
 | Programa -> Turma | OK | Turmas vinculadas ao programa. |
 | Programa -> Turma -> Parceiro/Escola | OK | Escolas/parceiros e turmas existem no dominio. |
-| Programa -> Contrato -> Aditivo | OK | Contrato fica como campos do programa; aditivos ficam vinculados ao programa. |
+| Programa -> Contrato -> Aditivo | OK | Contrato fica como campos do programa, aparece tambem na visao da turma; aditivos ficam vinculados ao programa. |
 | Programa -> Turma -> Parceiro/Escola -> Etapa -> Curso -> Avaliacoes ate 4 | OK | Etapas, cursos e avaliacoes existem; backend limita curso a no maximo 4 avaliacoes. |
 | Programa -> Turma -> Parceiro/Escola -> Aluno -> Curso terminado | OK | Desempenho por curso e conclusao sao importados e consultados. |
 | Programa -> Turma -> Parceiro/Escola -> Projeto -> Aluno | PARCIAL | Cadastro/manual de grupos existe; importacao automatica da planilha de imersao segue pendente. |
@@ -102,18 +102,20 @@ Legenda:
 | Item | Status | Observacao |
 | --- | --- | --- |
 | Abas de Programa | OK | Visao Geral, Pessoas, Processo Seletivo e Etapas estao coerentes. |
-| Aba Carreira/Automacao | OK | Textarea com altura controlada, historico com rolagem e fluxo publico de egresso. |
+| Aba Carreira/Automacao | OK | Textarea com altura controlada, historico com rolagem e fluxo publico de egresso com token de 1 dia. |
 | Tela publica de carreira | OK | Rota `/carreira/acompanhamento` valida email + token e abre formulario sem navbar. |
 | Termos de interface | OK | Interface principal usa Orientador/Gestor. |
 | Cursos/avaliacoes da turma | OK | Rota real de cursos da turma esta acessivel. |
-| Responsividade visual completa | PARCIAL | Builds passaram; ainda falta varredura manual completa em todas as telas com massa real grande. |
+| Visao geral da turma | OK | Ciclo, contrato, cronograma, distribuicoes e ultimas atualizacoes agora sao calculados a partir de dados reais/mockados. |
+| Cards/listas longas em Programas/Turmas | OK | Listas de etapas, cursos, grupos de imersao, distribuicoes e atualizacoes possuem altura limitada e rolagem interna. |
+| Responsividade visual completa | PARCIAL | Builds passaram e as areas criticas receberam rolagem; ainda falta homologacao manual completa em mobile com massa real grande. |
 
 ## 8. Requisitos nao funcionais
 
 | Categoria | Status | Criterio de aceite |
 | --- | --- | --- |
 | Desempenho | PARCIAL | Importacoes grandes devem concluir sem travar UI e retornar erros por linha. Builds passaram, mas falta teste de carga real. |
-| Seguranca | PARCIAL | Rotas autenticadas protegidas por JWT; formulario publico exige email + token. Falta politica formal de expiracao/rotacao do token publico. |
+| Seguranca | OK | Rotas autenticadas protegidas por JWT; formulario publico exige email + token, expira em 1 dia e gera novo token em reenvios. |
 | Usabilidade | OK | Fluxos principais tem UI para cadastro, importacao, consulta e acompanhamento. |
 | Confiabilidade | PARCIAL | Importacoes principais tratam duplicidades/atualizacoes; falta suite automatizada cobrindo todos os formatos reais. |
 | Auditoria/Historico | OK | Acoes relevantes geram logs; resposta publica de carreira tambem registra evento. |
@@ -133,7 +135,7 @@ Legenda:
 | Montar grupo de projeto manualmente | OK | Grupo recebe alunos, tema, empresa/parceira, repositorio e orientador. |
 | Importar grupo/projeto da planilha de imersao | PARCIAL | Pendente importador especifico. |
 | Acompanhar egresso manualmente | OK | Historico salva status, empresa, cargo e data. |
-| Acompanhar egresso por link publico | OK | E-mail de automacao leva token; egresso valida e responde formulario. |
+| Acompanhar egresso por link publico | OK | E-mail de automacao leva token valido por 1 dia; egresso valida e responde formulario. |
 
 ## 10. Pendencias restantes
 
@@ -141,12 +143,14 @@ Legenda:
 2. Confirmar se `cod_assunto` por questao de prova precisa de cadastro proprio; hoje o sistema cobre resultado/questoes, mas nao uma entidade formal de assunto da questao.
 3. Fazer homologacao visual completa em desktop/mobile de todas as abas com massa real grande.
 4. Documentar layouts aceitos das planilhas e colunas obrigatorias/opcionais.
-5. Definir politica de expiracao/renovacao para token publico de carreira, caso a BRISA queira limitar prazo de resposta.
+5. Homologar com usuarios reais os textos e indicadores da visao geral da turma antes da apresentacao final.
 
 ## 11. Validacoes executadas
 
 | Validacao | Resultado |
 | --- | --- |
-| `mvnw.cmd -q -DskipTests package` | OK |
+| `mvnw.cmd -DskipTests package` | OK |
 | `npm run build` | OK, com aviso padrao de chunk grande do Vite |
-| Busca por `Professor`, `professor`, `Prof.` | OK, sem ocorrencias no frontend/backend principal |
+| Revisao de termos Orientador/Gestor | OK, interface principal alinhada; `PROFESSOR` permanece somente como compatibilidade legada no backend |
+| `docker compose up -d --build frontend backend` | OK |
+| API local da turma UFG 2025.2 | OK, contrato presente, 50 matriculas, 50 candidatos por etapa e 11 grupos de projeto |

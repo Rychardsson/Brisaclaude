@@ -148,6 +148,19 @@
             </p>
           </article>
 
+          <article class="panel contract-panel">
+            <div class="panel-head">
+              <h3>Contrato do Programa</h3>
+              <button type="button" class="details-link contract-link" @click="goToProgramDetails">Ver programa</button>
+            </div>
+            <div class="contract-grid">
+              <div v-for="item in programContractItems" :key="item.label" class="contract-item">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+            </div>
+          </article>
+
           <article class="panel">
             <div class="panel-head">
               <h3>Ciclo do Programa</h3>
@@ -160,10 +173,10 @@
 
             <div class="cycle">
               <div v-for="(item, index) in overviewCycle" :key="item" class="cycle-item">
-                <div class="cycle-pill" :class="{ done: overviewCycleHasStudents(item) }">
+                <div class="cycle-pill" :class="{ done: overviewCycleHasStudents(item), current: index === overviewCurrentCycleIndex }">
                   {{ item }}
                 </div>
-                <div v-if="index < overviewCycle.length - 1" class="cycle-line" :class="{ done: overviewCycleHasStudents(item) }" />
+                <div v-if="index < overviewCycle.length - 1" class="cycle-line" :class="{ done: index < overviewCurrentCycleIndex }" />
               </div>
             </div>
           </article>
@@ -2098,14 +2111,6 @@ import {
 
 const cycle = ['Inscrição', 'Seleção', 'Nivelamento', 'Imersão', 'Encerrado'];
 const overviewCycle = ['Inscrição', 'Processo Seletivo', 'Nivelamento', 'Prova', 'Imersão', 'Avaliação final', 'Encerramento'];
-// Remove hardcoded mock data — these will be populated from backend-driven computations
-const overviewStageCards = [];
-const overviewTimeline = [];
-const quotaDistribution = [];
-const genderDistribution = [];
-const cityDistribution = [];
-const educationDistribution = [];
-const overviewUpdates = [];
 const peopleSpreadsheetColumns = PEOPLE_SPREADSHEET_COLUMNS;
 
 const selectionQuotaLabels = [
@@ -2490,15 +2495,52 @@ export default {
         : '';
       return `Turma ${classStatusLabel.value.toLowerCase()} na etapa ${currentStageLabel.value}.${milestone}`;
     });
-    const overviewCurrentCycleIndex = computed(() => {
-      const normalized = normalizeText(classData.value?.currentStage || classData.value?.status || '');
-      if (normalized.includes('imersa')) return 4;
-      if (normalized.includes('nivel')) return 2;
-      if (normalized.includes('sele')) return 1;
-      if (normalized.includes('prova')) return 3;
-      if (normalized.includes('encer')) return 6;
+    const overviewStageIndexFromLabel = (value) => {
+      const normalized = normalizeText(value);
+      if (!normalized) return -1;
+      if (normalized.includes('encerr')) return 6;
       if (normalized.includes('avali')) return 5;
-      return 0;
+      if (normalized.includes('imersa') || normalized.includes('imers')) return 4;
+      if (normalized.includes('prova')) return 3;
+      if (normalized.includes('nivel')) return 2;
+      if (normalized.includes('process') || normalized.includes('sele')) return 1;
+      if (normalized.includes('inscri')) return 0;
+      return -1;
+    };
+    const latestStartedOverviewStageIndex = () => {
+      const now = Date.now();
+      const isStarted = (value) => {
+        const date = parseDateValue(value);
+        return date && date.getTime() <= now;
+      };
+
+      let index = isStarted(classData.value?.applicationStartDate) ? 0 : -1;
+      if (isStarted(classData.value?.applicationEndDate) || isStarted(classData.value?.levelingSelectionAnnouncementDate)) index = Math.max(index, 1);
+      if (isStarted(classData.value?.levelingStartDate)) index = Math.max(index, 2);
+      if (isStarted(classData.value?.levelingFinalExamDate)) index = Math.max(index, 3);
+      if (isStarted(classData.value?.immersionStartDate)) index = Math.max(index, 4);
+      if (isStarted(classData.value?.finalEvaluationDate)) index = Math.max(index, 5);
+      if (isStarted(classData.value?.certificateIssueDate) || isStarted(classData.value?.endDate)) index = Math.max(index, 6);
+      return Math.max(index, 0);
+    };
+    const overviewCurrentCycleIndex = computed(() => {
+      const statusIndex = normalizeText(classData.value?.status).includes('encerr') ? 6 : -1;
+      const explicitIndex = overviewStageIndexFromLabel(
+        overviewProgramItem.value?.etapaAtual ||
+        overviewProgramItem.value?.currentStage ||
+        classData.value?.currentStage ||
+        currentStageLabel.value
+      );
+      const countIndex = [
+        overviewStageCounts.value.inscricao > 0 ? 0 : -1,
+        overviewStageCounts.value.selecao > 0 ? 1 : -1,
+        overviewStageCounts.value.nivelamento > 0 ? 2 : -1,
+        overviewStageCounts.value.prova > 0 ? 3 : -1,
+        overviewStageCounts.value.imersao > 0 ? 4 : -1,
+        overviewStageCounts.value.avaliacao > 0 ? 5 : -1,
+      ].reduce((max, item) => Math.max(max, item), -1);
+
+      return Math.max(statusIndex, explicitIndex, countIndex, latestStartedOverviewStageIndex(), 0);
     });
     const overviewProgressPct = computed(() => Math.round((overviewCurrentCycleIndex.value / (overviewCycle.length - 1)) * 100));
     const hasStartedInscricao = computed(() => {
@@ -2543,6 +2585,9 @@ export default {
     });
 
     const overviewCycleHasStudents = (label) => {
+      const index = overviewCycle.indexOf(label);
+      if (index >= 0 && index <= overviewCurrentCycleIndex.value) return true;
+
       const value = normalizeText(label);
       if (value.includes('inscri')) {
         return overviewStageCounts.value.inscricao > 0 || hasStartedInscricao.value;
@@ -2558,6 +2603,43 @@ export default {
       }
       return false;
     };
+
+    const activeClassPeopleCount = computed(() => {
+      const activePeopleIds = new Set();
+      (classEnrollments.value || []).forEach((enrollment) => {
+        const personId = enrollment?.people?.id;
+        if (!personId || !isConflictRelevantStatus(enrollment?.status)) return;
+        activePeopleIds.add(personId);
+      });
+      return activePeopleIds.size;
+    });
+
+    const imersaoActiveStudentsCount = computed(() => {
+      const fromStage = imersaoStageCandidates.value.filter((candidate) => String(candidate?.status || '').toUpperCase() !== 'REPROVADO').length;
+      return fromStage || activeClassPeopleCount.value;
+    });
+
+    const formatCurrency = (value) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return '-';
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numeric);
+    };
+
+    const programContractItems = computed(() => {
+      const program = classData.value?.program || {};
+      const vigencia = program.startDate || program.endDate
+        ? `${formatDate(program.startDate)} até ${formatDate(program.endDate)}`
+        : classPeriodLabel.value;
+
+      return [
+        { label: 'Contrato/Fomento', value: program.contractNumber || '-' },
+        { label: 'Entidade de fomento', value: program.fundingEntity || '-' },
+        { label: 'Valor do programa', value: formatCurrency(program.programValue) },
+        { label: 'Coordenador geral', value: program.generalCoordinator || '-' },
+        { label: 'Vigência', value: vigencia || '-' },
+        { label: 'Executor/Parceiro', value: program.executorName || program.executor || executorLabel.value || '-' },
+      ];
+    });
 
     const overviewStageCards = computed(() => [
       {
@@ -2577,7 +2659,7 @@ export default {
         statusClass: overviewStageCounts.value.nivelamento > 0 ? 'pill-teal' : 'pill-slate',
         items: [
           { label: 'Selecionados', value: overviewStageCounts.value.nivelamento || '-' },
-          { label: 'Ativos', value: classStatusReport.value?.activeStudents ?? '-' },
+          { label: 'Ativos', value: classStatusReport.value?.activeStudents ?? activeClassPeopleCount.value },
           { label: 'Cursos obrigatórios', value: courseItems.value.filter((course) => course.required).length },
           { label: 'Prova final', value: formatDate(classData.value?.levelingFinalExamDate) },
         ],
@@ -2588,7 +2670,7 @@ export default {
         statusClass: overviewStageCounts.value.imersao > 0 ? 'pill-teal' : 'pill-slate',
         items: [
           { label: 'Aprovados', value: overviewStageCounts.value.imersao || '-' },
-          { label: 'Alunos ativos', value: imersaoMetricsCards.value?.[0]?.value ?? '-' },
+          { label: 'Alunos ativos', value: imersaoActiveStudentsCount.value || '-' },
           { label: 'Grupos formados', value: imersaoGroups.value.length },
           { label: 'Avaliação final', value: formatDate(classData.value?.finalEvaluationDate) },
         ],
@@ -2932,6 +3014,115 @@ export default {
       if (!total) return 'Nenhum inscrito encontrado';
       return `Mostrando ${selectionProcessPageStart.value}-${selectionProcessPageEnd.value} de ${total} inscritos`;
     });
+
+    const distributionPalette = ['#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#64748b'];
+    const distributionRows = computed(() => (
+      classPeopleRows.value.length ? classPeopleRows.value : selectionProcessBaseRows.value
+    ));
+    const buildCountDistribution = (rows, resolveLabel, fallbackLabel = 'Não informado', maxItems = 6) => {
+      const counts = new Map();
+      (rows || []).forEach((row) => {
+        const rawLabel = resolveLabel(row);
+        const label = rawLabel && rawLabel !== '-' ? rawLabel : fallbackLabel;
+        counts.set(label, (counts.get(label) || 0) + 1);
+      });
+
+      if (!counts.size) {
+        return [{ label: 'Sem dados', value: 0, count: 0 }];
+      }
+
+      return Array.from(counts.entries())
+        .map(([label, count]) => ({ label, value: count, count }))
+        .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label, 'pt-BR'))
+        .slice(0, maxItems);
+    };
+    const buildPercentDistribution = (rows, resolveLabel, fallbackLabel = 'Não informado') => {
+      const source = buildCountDistribution(rows, resolveLabel, fallbackLabel);
+      const total = source.reduce((sum, item) => sum + item.count, 0);
+      if (!total) {
+        return [{ label: 'Sem dados', value: 0, color: '#cbd5e1' }];
+      }
+
+      return source.map((item, index) => ({
+        label: item.label,
+        value: Math.round((item.count / total) * 100),
+        count: item.count,
+        color: distributionPalette[index % distributionPalette.length],
+      }));
+    };
+
+    const quotaDistribution = computed(() =>
+      buildPercentDistribution(distributionRows.value, (row) => normalizeQuotaLabel(row.quota || row.peopleQuotaCategory))
+    );
+    const genderDistribution = computed(() =>
+      buildPercentDistribution(distributionRows.value, (row) => formatGender(row.gender || row.peopleGender))
+    );
+    const cityDistribution = computed(() =>
+      buildCountDistribution(distributionRows.value, (row) => row.city || formatCity(row), 'Não informado', 5)
+    );
+    const educationDistribution = computed(() =>
+      buildCountDistribution(distributionRows.value, (row) => formatEducation(row.educationLevel || row.education), 'Não informado', 5)
+    );
+
+    const timelinePeriodLabel = (start, end) => {
+      const startLabel = formatDate(start);
+      const endLabel = formatDate(end);
+      if (startLabel !== '-' && endLabel !== '-') return `${startLabel} a ${endLabel}`;
+      return startLabel !== '-' ? startLabel : endLabel;
+    };
+    const timelineStatus = (dateValue) => {
+      const date = parseDateValue(dateValue);
+      if (!date) return 'Pendente';
+      return date.getTime() <= Date.now() ? 'Concluído' : 'Previsto';
+    };
+    const timelinePeriodStatus = (start, end) => timelineStatus(end || start);
+    const overviewTimeline = computed(() => [
+      { label: 'Publicação do edital', date: formatDate(classData.value?.publicationDate), status: timelineStatus(classData.value?.publicationDate) },
+      { label: 'Inscrições', date: timelinePeriodLabel(classData.value?.applicationStartDate, classData.value?.applicationEndDate), status: timelinePeriodStatus(classData.value?.applicationStartDate, classData.value?.applicationEndDate) },
+      { label: 'Selecionados para nivelamento', date: formatDate(classData.value?.levelingSelectionAnnouncementDate), status: timelineStatus(classData.value?.levelingSelectionAnnouncementDate) },
+      { label: 'Nivelamento', date: timelinePeriodLabel(classData.value?.levelingStartDate, classData.value?.levelingEndDate), status: timelinePeriodStatus(classData.value?.levelingStartDate, classData.value?.levelingEndDate) },
+      { label: 'Prova final', date: formatDate(classData.value?.levelingFinalExamDate), status: timelineStatus(classData.value?.levelingFinalExamDate) },
+      { label: 'Selecionados para imersão', date: formatDate(classData.value?.immersionSelectionAnnouncementDate), status: timelineStatus(classData.value?.immersionSelectionAnnouncementDate) },
+      { label: 'Imersão', date: timelinePeriodLabel(classData.value?.immersionStartDate, classData.value?.immersionEndDate), status: timelinePeriodStatus(classData.value?.immersionStartDate, classData.value?.immersionEndDate) },
+      { label: 'Avaliação parcial', date: formatDate(classData.value?.partialEvaluationDate), status: timelineStatus(classData.value?.partialEvaluationDate) },
+      { label: 'Avaliação final', date: formatDate(classData.value?.finalEvaluationDate), status: timelineStatus(classData.value?.finalEvaluationDate) },
+      { label: 'Certificados', date: formatDate(classData.value?.certificateIssueDate), status: timelineStatus(classData.value?.certificateIssueDate) },
+    ]);
+
+    const overviewUpdates = computed(() => [
+      {
+        action: `${selectionProcessBaseRows.value.length || totalCandidates.value} inscrição(ões) no processo seletivo`,
+        author: 'Processo seletivo',
+        date: formatDate(classData.value?.applicationEndDate || classData.value?.applicationStartDate),
+        status: 'Sincronizado',
+        statusClass: 'pill-teal',
+        dotClass: 'dot-green',
+      },
+      {
+        action: `${courseItems.value.length} curso(s) vinculado(s) ao nivelamento`,
+        author: 'Cursos',
+        date: formatDate(classData.value?.levelingStartDate),
+        status: courseItems.value.length ? 'Atualizado' : 'Pendente',
+        statusClass: courseItems.value.length ? 'pill-teal' : 'pill-slate',
+        dotClass: courseItems.value.length ? 'dot-green' : 'dot-slate',
+      },
+      {
+        action: `${overviewStageCounts.value.imersao || imersaoActiveStudentsCount.value} aluno(s) aprovado(s) para imersão`,
+        author: 'Imersão',
+        date: formatDate(classData.value?.immersionSelectionAnnouncementDate || classData.value?.immersionStartDate),
+        status: overviewStageCounts.value.imersao ? 'Consolidado' : 'Pendente',
+        statusClass: overviewStageCounts.value.imersao ? 'pill-teal' : 'pill-slate',
+        dotClass: overviewStageCounts.value.imersao ? 'dot-green' : 'dot-slate',
+      },
+      {
+        action: `${imersaoGroups.value.length} grupo(s) de projeto cadastrado(s)`,
+        author: 'Projetos',
+        date: formatDate(classData.value?.immersionStartDate),
+        status: imersaoGroups.value.length ? 'Atualizado' : 'Pendente',
+        statusClass: imersaoGroups.value.length ? 'pill-teal' : 'pill-slate',
+        dotClass: imersaoGroups.value.length ? 'dot-green' : 'dot-slate',
+      },
+    ]);
 
     const openUpdateSelectionModal = (context = 'selecao') => {
       updateStageContext.value = context;
@@ -3806,6 +3997,8 @@ export default {
           loadSelectionProcessContext(),
           loadProgramOverviewItem(),
           loadNivelamentoData(),
+          loadClassStatusReport(),
+          loadImersaoGroups(),
           loadExamInsights(),
         ]);
       } catch (err) {
@@ -3951,6 +4144,15 @@ export default {
         return;
       }
       router.push({ path: '/programs/register', query: { edit: String(programId.value) } });
+    };
+
+    const goToProgramDetails = () => {
+      const resolvedProgramId = classData.value?.program?.id || programId.value;
+      if (!resolvedProgramId) {
+        router.push({ name: 'Programs' });
+        return;
+      }
+      router.push({ name: 'ProgramDetails', params: { id: resolvedProgramId } });
     };
 
     const closeCreateStageModal = () => {
@@ -4272,6 +4474,7 @@ export default {
       goBack,
       goToClassCourses,
       goToPeople,
+      goToProgramDetails,
       goToStageDetails,
       classModelLabel,
       classLocationLabel,
@@ -4306,6 +4509,7 @@ export default {
       overviewTimeline,
       overviewTopCards,
       overviewUpdates,
+      programContractItems,
       paginatedClassPeople,
       executorLabel,
       peopleCityOptions,
@@ -4810,6 +5014,46 @@ export default {
   font-size: 15px;
 }
 
+.contract-panel {
+  padding-bottom: 12px;
+}
+
+.contract-link {
+  margin-top: 0;
+}
+
+.contract-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.contract-item {
+  min-width: 0;
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  background: var(--slate-100);
+  padding: 10px 12px;
+}
+
+.contract-item span {
+  display: block;
+  color: var(--slate-600);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.contract-item strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--brand-900);
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .panel-progress {
   font-size: 13px;
   color: var(--slate-600);
@@ -4900,6 +5144,8 @@ export default {
   border: 1px solid var(--brand-300);
   border-radius: 12px;
   padding: 14px;
+  max-height: 260px;
+  overflow-y: auto;
 }
 
 .summary-card-head {
@@ -4966,6 +5212,9 @@ export default {
 
 .timeline-list {
   margin-top: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .timeline-row {
@@ -5037,6 +5286,9 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .quota-row {
@@ -5102,6 +5354,9 @@ export default {
 
 .simple-list {
   margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .simple-list div {
@@ -5129,6 +5384,9 @@ export default {
 
 .updates-list {
   margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .update-row {
@@ -5239,6 +5497,9 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 12px;
+  max-height: min(68vh, 640px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .stage-card {
@@ -5248,6 +5509,8 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 170px;
+  max-height: 260px;
+  overflow-y: auto;
 }
 
 .stage-top {
@@ -5279,6 +5542,9 @@ export default {
   color: var(--slate-600);
   font-size: 14px;
   flex-grow: 1;
+  max-height: 92px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
 }
 
 .stage-actions {
@@ -6736,6 +7002,10 @@ textarea.field {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .contract-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .summary-grid {
     grid-template-columns: 1fr;
   }
@@ -6814,6 +7084,7 @@ textarea.field {
   }
 
   .status-grid,
+  .contract-grid,
   .metrics {
     grid-template-columns: 1fr;
   }
@@ -7026,6 +7297,9 @@ textarea.field {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: min(68vh, 660px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .imersao-group-item {
@@ -7144,6 +7418,8 @@ textarea.field {
 .imersao-group-expanded {
   border-top: 1px solid var(--slate-200);
   padding: 12px 16px 14px;
+  max-height: 430px;
+  overflow: auto;
 }
 
 .imersao-group-tabs {
@@ -7235,6 +7511,9 @@ textarea.field {
   display: flex;
   flex-direction: column;
   gap: 17px;
+  max-height: min(62vh, 620px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .class-status-report {

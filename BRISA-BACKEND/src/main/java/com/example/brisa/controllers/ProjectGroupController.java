@@ -3,15 +3,13 @@ package com.example.brisa.controllers;
 import com.example.brisa.dtos.ProjectGroupCreateRequestDTO;
 import com.example.brisa.dtos.ProjectGroupDetailResponseDTO;
 import com.example.brisa.dtos.ProjectGroupResponseDTO;
-import com.example.brisa.models.StageCandidateModel;
-import com.example.brisa.repositories.StageCandidateRepository;
+import com.example.brisa.models.PeopleModel;
 import com.example.brisa.services.ProjectGroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.text.Normalizer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +21,6 @@ import java.util.stream.Collectors;
 public class ProjectGroupController {
 
     private final ProjectGroupService projectGroupService;
-    private final StageCandidateRepository stageCandidateRepository;
 
     // Endpoint para criar grupo
     @PostMapping("/groups")
@@ -100,16 +97,14 @@ public class ProjectGroupController {
     @GetMapping("/immersion-students")
     public ResponseEntity<?> getImmersionStudents(@PathVariable Long classId) {
         try {
-            List<StageCandidateModel> immersionCandidates = stageCandidateRepository.findByClassIdWithPeople(classId).stream()
-                    .filter(sc -> sc.getStage() != null && normalizeStageName(sc.getStage().getName()).contains("imers"))
-                    .collect(Collectors.toList());
+            List<PeopleModel> availableStudents = projectGroupService.getAvailableImmersionStudents(classId);
 
-            List<Map<String, Object>> students = immersionCandidates.stream()
-                    .map(sc -> {
+            List<Map<String, Object>> students = availableStudents.stream()
+                    .map(people -> {
                         Map<String, Object> student = new HashMap<>();
-                        student.put("id", sc.getPeople().getId());
-                        student.put("name", sc.getPeople().getName());
-                        student.put("email", sc.getPeople().getEmail());
+                        student.put("id", people.getId());
+                        student.put("name", people.getName());
+                        student.put("email", people.getEmail());
                         return student;
                     })
                     .collect(Collectors.toList());
@@ -120,15 +115,6 @@ public class ProjectGroupController {
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
-    }
-
-    private String normalizeStageName(String value) {
-        if (value == null) {
-            return "";
-        }
-        return Normalizer.normalize(value, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .toLowerCase();
     }
 }
 

@@ -202,6 +202,7 @@ public class MockDataSeeder implements ApplicationListener<ApplicationReadyEvent
         ensureProgramInstitution(programs.get("DADOS"), institutions.get("SENAI"), institutionRoles.get("PARCEIRA"));
         ensureProgramInstitution(programs.get("FULLSTACK"), institutions.get("UNEAL"), institutionRoles.get("EXECUTORA"));
         ensureProgramInstitution(programs.get("FULLSTACK"), institutions.get("CESMAC"), institutionRoles.get("APOIO"));
+        ensureProgramInstitution(programs.get("UFG"), institutions.get("UFG"), institutionRoles.get("EXECUTORA"));
 
         Map<String, ClassModel> classes = seedClasses(programs, institutions, today);
         Map<String, StageModel> stages = seedStages(classes);
@@ -260,6 +261,7 @@ public class MockDataSeeder implements ApplicationListener<ApplicationReadyEvent
         seedExams(classes, knowledgeAreas, class1Applicants, class4Applicants, today);
         seedProjectGroups(classes, institutions, staff, class1Applicants, class4Applicants, today);
         seedCareerData(programs, classes, class3Applicants, class4Applicants, today);
+        seedUfgPresentationData(programs, classes, stages, academicRoles, knowledgeAreas, institutions, staff, today);
         seedSystemLogs(today);
 
         alreadySetup = true;
@@ -299,6 +301,7 @@ public class MockDataSeeder implements ApplicationListener<ApplicationReadyEvent
         result.put("SENAI", ensureInstitution("SENAI-AL", "SENAI Alagoas", "SENAI", "AL", "Roberta Acioli"));
         result.put("SEBRAE", ensureInstitution("SEBRAE-AL", "Sebrae Alagoas", "SEBRAE", "AL", "Gustavo Lira"));
         result.put("CESMAC", ensureInstitution("CESMAC", "Centro Universitario CESMAC", "CESMAC", "AL", "Renata Ferraz"));
+        result.put("UFG", ensureInstitution("UFG", "Universidade Federal de Goias", "UFG", "GO", "Coordenacao EASY/UFG"));
         return result;
     }
 
@@ -383,9 +386,36 @@ public class MockDataSeeder implements ApplicationListener<ApplicationReadyEvent
                 "UNEAL, CESMAC"
         );
 
+        ProgramModel programUfg = ensureProgram(
+                "BRISA-UFG-2025.2",
+                "Residencia em TIC BRISA/EASY/UFG 2025.2",
+                "PPI-SOFTEX-UFG-2025.2",
+                "BRISA em parceria com EASY/UFG",
+                "MCTI - Lei de Informatica / PPI SOFTEX",
+                "Coordenacao BRISA ONE",
+                BigDecimal.valueOf(1260000.00),
+                LocalDate.of(2025, 7, 1),
+                LocalDate.of(2026, 5, 27),
+                "Graduados, graduandos e tecnicos de nivel medio em areas de exatas.",
+                "100% a distancia, assincrono",
+                "2 meses",
+                "6 meses",
+                480,
+                "Mulheres 20%, negros e pardos 20%, PCD/neurodiversos 5%, 45+ 5%",
+                "Prova de nivelamento, cursos concluidos, cotas, projetos e avaliacoes da imersao.",
+                "BRISA / EASY / UFG",
+                "Goiania - GO",
+                "suporte.ufg@brisa.mock",
+                "https://inscricoesrestic.brisabr.com.br/",
+                "Goiania - GO",
+                "Seed de apresentacao criado com base nas planilhas reais da turma UFG.",
+                "UFG, EASY, BRISA"
+        );
+
         result.put("IA", programIa);
         result.put("DADOS", programDados);
         result.put("FULLSTACK", programFullstack);
+        result.put("UFG", programUfg);
         return result;
     }
 
@@ -500,6 +530,33 @@ public class MockDataSeeder implements ApplicationListener<ApplicationReadyEvent
                 today.minusMonths(4)
         ));
 
+        result.put("UFG-GOIANIA", ensureClass(
+                "UFG 2025.2",
+                programs.get("UFG"),
+                institutions.get("UFG"),
+                "Goiania - GO",
+                50,
+                785,
+                250,
+                50,
+                5,
+                LocalDate.of(2025, 7, 1),
+                LocalDate.of(2026, 5, 27),
+                LocalDate.of(2025, 7, 1),
+                LocalDate.of(2025, 7, 10),
+                LocalDate.of(2025, 8, 5),
+                LocalDate.of(2025, 8, 12),
+                LocalDate.of(2025, 8, 18),
+                LocalDate.of(2025, 10, 31),
+                LocalDate.of(2025, 11, 4),
+                LocalDate.of(2025, 11, 12),
+                LocalDate.of(2025, 11, 24),
+                LocalDate.of(2026, 5, 18),
+                LocalDate.of(2026, 2, 18),
+                LocalDate.of(2026, 5, 20),
+                LocalDate.of(2026, 5, 27)
+        ));
+
         return result;
     }
 
@@ -516,9 +573,17 @@ public class MockDataSeeder implements ApplicationListener<ApplicationReadyEvent
     private void seedProgramAddendums(Map<String, ProgramModel> programs) {
         ensureAddendum(programs.get("IA"), 1, programs.get("IA").getStartDate().plusMonths(2), programs.get("IA").getEndDate(), BigDecimal.valueOf(120000.00));
         ensureAddendum(programs.get("FULLSTACK"), 1, programs.get("FULLSTACK").getStartDate().plusMonths(3), programs.get("FULLSTACK").getEndDate(), BigDecimal.valueOf(80000.00));
+        ensureAddendum(programs.get("UFG"), 1, LocalDate.of(2025, 11, 24), programs.get("UFG").getEndDate(), BigDecimal.valueOf(180000.00));
     }
 
     private void seedAdvisors() {
+        advisorRepository.findAll().stream()
+                .filter(advisor -> advisor.getRoleType() == AdvisorRoleType.PROFESSOR)
+                .forEach(advisor -> {
+                    advisor.setRoleType(AdvisorRoleType.ORIENTADOR);
+                    advisorRepository.save(advisor);
+                });
+
         ensureAdvisor("70000000001", "Elisa Rocha", AdvisorRoleType.GESTOR, "elisa.rocha@brisa.mock", "Administracao", LocalDate.of(1983, 4, 15));
         ensureAdvisor("70000000002", "Bruno Lima", AdvisorRoleType.ORIENTADOR, "bruno.lima@brisa.mock", "Ciencia da Computacao", LocalDate.of(1988, 8, 2));
         ensureAdvisor("70000000003", "Carla Nunes", AdvisorRoleType.ORIENTADOR, "carla.nunes@brisa.mock", "Sistemas de Informacao", LocalDate.of(1990, 11, 9));
@@ -937,12 +1002,233 @@ public class MockDataSeeder implements ApplicationListener<ApplicationReadyEvent
         }
     }
 
+    private void seedUfgPresentationData(
+            Map<String, ProgramModel> programs,
+            Map<String, ClassModel> classes,
+            Map<String, StageModel> stages,
+            Map<String, AcademicRoleModel> academicRoles,
+            Map<String, KnowledgeAreaModel> knowledgeAreas,
+            Map<String, InstitutionModel> institutions,
+            Map<String, PeopleModel> staff,
+            LocalDate today
+    ) {
+        ProgramModel program = programs.get("UFG");
+        ClassModel classModel = classes.get("UFG-GOIANIA");
+        if (program == null || classModel == null) {
+            return;
+        }
+
+        StageModel selectionStage = stages.get("UFG-GOIANIA-SELECAO");
+        StageModel levelingStage = stages.get("UFG-GOIANIA-NIVELAMENTO");
+        StageModel immersionStage = stages.get("UFG-GOIANIA-IMERSAO");
+        AcademicRoleModel studentRole = academicRoles.get("ALUNO");
+
+        List<CourseModel> courses = List.of(
+                ensureCourse("Curso Introdutorio", "Ambientacao na plataforma de EaD da BRISA.", 10, knowledgeAreas.get("Produto"), knowledgeAreas.get("Soft Skills")),
+                ensureCourse("Logica de Programacao", "Fundamentos de logica com Python.", 30, knowledgeAreas.get("Programacao"), knowledgeAreas.get("Soft Skills")),
+                ensureCourse("Programacao Python", "Programacao aplicada e automacoes.", 40, knowledgeAreas.get("Programacao"), knowledgeAreas.get("Dados")),
+                ensureCourse("Organizacao de Computadores", "Arquitetura, memoria e sistemas computacionais.", 30, knowledgeAreas.get("Programacao"), knowledgeAreas.get("Cloud")),
+                ensureCourse("Banco de Dados", "Modelagem, SQL e consultas.", 30, knowledgeAreas.get("Dados"), knowledgeAreas.get("Programacao")),
+                ensureCourse("Empreendedorismo e Gerencia de Projetos", "Produto, gestao e planejamento de entregas.", 30, knowledgeAreas.get("Gestao"), knowledgeAreas.get("Produto")),
+                ensureCourse("Desenvolvimento de Aplicativos Mobile", "Fundamentos para aplicacoes moveis.", 30, knowledgeAreas.get("Programacao"), knowledgeAreas.get("Produto")),
+                ensureCourse("Business Intelligence", "Indicadores e visualizacao de dados.", 30, knowledgeAreas.get("Dados"), knowledgeAreas.get("Produto")),
+                ensureCourse("Big Data", "Introducao a processamento de grandes volumes de dados.", 30, knowledgeAreas.get("Dados"), knowledgeAreas.get("Cloud")),
+                ensureCourse("Introducao a Inteligencia Artificial", "Conceitos basicos de IA e aprendizado de maquina.", 30, knowledgeAreas.get("Dados"), knowledgeAreas.get("Programacao")),
+                ensureCourse("Internet das Coisas", "Dispositivos conectados e aplicacoes IoT.", 30, knowledgeAreas.get("Cloud"), knowledgeAreas.get("Programacao")),
+                ensureCourse("Introducao a Engenharia de Requisitos", "Levantamento, escrita e validacao de requisitos.", 30, knowledgeAreas.get("Produto"), knowledgeAreas.get("Gestao")),
+                ensureCourse("Introducao ao Treinamento de IA", "Dados, treino e avaliacao de modelos.", 30, knowledgeAreas.get("Dados"), knowledgeAreas.get("Programacao")),
+                ensureCourse("Introducao a UI e UX", "Pesquisa, interface e experiencia do usuario.", 30, knowledgeAreas.get("Design"), knowledgeAreas.get("Produto"))
+        );
+
+        for (int index = 0; index < courses.size(); index++) {
+            assignCourse(classModel, courses.get(index), index < 6);
+        }
+
+        ensureCourseEvaluation(courses.get(1), "UFG-LOG-01", "FIXACAO", "Questoes de Fixacao - Logica", 5.0, 10.0, LocalDate.of(2025, 9, 10));
+        ensureCourseEvaluation(courses.get(2), "UFG-PY-01", "FIXACAO", "Questoes de Fixacao - Python", 5.0, 10.0, LocalDate.of(2025, 9, 17));
+        ensureCourseEvaluation(courses.get(4), "UFG-BD-01", "FIXACAO", "Questoes de Fixacao - Banco de Dados", 5.0, 10.0, LocalDate.of(2025, 9, 24));
+        ensureCourseEvaluation(courses.get(5), "UFG-EMP-01", "FIXACAO", "Entrega de Empreendedorismo", 5.0, 10.0, LocalDate.of(2025, 10, 1));
+
+        String[][] studentRows = {
+                {"Andriel De Figueredo Furtado", "andriel@discente.ufg.br", "Ampla concorrencia", "0", "0"},
+                {"Arthur Trindade Da Silva", "arthur.trindade@discente.ufg.br", "Negros e pardos", "3", "3"},
+                {"Aureo Bento Xavier Junior", "aureojrster@gmail.com", "Ampla concorrencia", "2", "2"},
+                {"Bruna Borges Da Silva", "bruborges12@gmail.com", "Mulheres", "5", "5"},
+                {"Delvo Resende", "delvoresende@ufg.br", "45+", "14", "6"},
+                {"Eduarda Lima Claudio Reges Campos", "dudalreges@gmail.com", "Ampla concorrencia", "6", "6"},
+                {"Fabio Sodre Rocha", "fabiosodremat@gmail.com", "Ampla concorrencia", "3", "3"},
+                {"Fernando Cardoso Houara Brettas", "fernandochbrettas@gmail.com", "Ampla concorrencia", "6", "6"},
+                {"Flavia Rosado Lima", "flaviarosadolima@gmail.com", "Mulheres", "2", "2"},
+                {"Francieli Moreira De Carvalho", "francieli.mcarvalho@gmail.com", "Mulheres", "2", "1"},
+                {"Gabriel Marques Laer Da Silva", "gabriel.laer@discente.ufg.br", "Ampla concorrencia", "14", "6"},
+                {"Gabriel Queiroz Rodrigues", "gabriel.qr.10@gmail.com", "Negros e pardos", "6", "6"},
+                {"Gabriel Silva Taveira", "gabrieltaveira@discente.ufg.br", "Ampla concorrencia", "14", "6"},
+                {"Gilvan Jose Meireles", "gil-van-jose@hotmail.com", "45+", "14", "6"},
+                {"Giovanna Lyssa Rodrigues Borges Teles", "giovannalyssa@discente.ufg.br", "Mulheres", "0", "0"},
+                {"Guilherme Goulart Caldas Araujo", "guilherme94barcelona@gmail.com", "Ampla concorrencia", "5", "4"},
+                {"Guilherme Henrique Candido De Moraes", "guilhermehenriqueif@gmail.com", "Ampla concorrencia", "4", "4"},
+                {"Guilherme Silva Virgilli", "gsvirgilli@gmail.com", "Ampla concorrencia", "1", "1"},
+                {"Gustavo Fagundes Vicente", "brttplobbr@gmail.com", "PCDs", "9", "6"},
+                {"Hailton David Lemos", "hailton.david@gmail.com", "45+", "14", "6"},
+                {"Helder Dos Santos Lima", "heldersantos@discente.ufg.br", "Negros e pardos", "9", "4"},
+                {"Isabela Cristina Gomes Da Fonseca", "isabela.cristina@discente.ufg.br", "Mulheres", "3", "1"},
+                {"Isabela Jung Cardoso", "jung2@discente.ufg.br", "Mulheres", "4", "4"},
+                {"Itallo Junior Chaves Dos Santos", "itallosantos@discente.ufg.br", "Negros e pardos", "0", "0"},
+                {"Italo Marques Rodrigues Silva", "italomarques1235@gmail.com", "Negros e pardos", "3", "3"},
+                {"Joao Pedro Campos Constantino", "pedrocns@discente.ufg.br", "Negros e pardos", "14", "6"},
+                {"Joao Pedro Ribeiro Barbosa", "joao1.barbosa@outlook.com", "Ampla concorrencia", "1", "1"},
+                {"Joao Vitor Da Costa Almeida", "jhovitor98@discente.ufg.br", "Negros e pardos", "1", "1"},
+                {"Joao Vitor Gomes De Oliveira", "vecctor.vitor15@gmail.com", "Negros e pardos", "14", "6"},
+                {"Jorge Lucas Pimmel Pacheco", "jorgelucas011@gmail.com", "Ampla concorrencia", "10", "6"},
+                {"Joyce Beatriz Ferreira Da Costa Silva", "joycesilva@discente.ufg.br", "Mulheres", "1", "1"},
+                {"Kathleen Caroline Barbosa De Oliveira", "kathleencaroline357@gmail.com", "Mulheres", "7", "6"},
+                {"Lara Souza Ribeiro Vargas E Aragao", "alloymemory@gmail.com", "Mulheres", "12", "6"},
+                {"Leidiane Beatriz Passos Rodrigues", "leidianebeatrizpassosrodrigues@gmail.com", "Mulheres", "4", "4"},
+                {"Lucio Flavio De Paula Couto", "luciosistemainf@hotmail.com", "Ampla concorrencia", "4", "3"},
+                {"Mariana Goncalves Landi", "mariana26landii@gmail.com", "Mulheres", "14", "6"},
+                {"Mateus Rodrigues Soares", "mateusmk04@gmail.com", "Ampla concorrencia", "1", "1"},
+                {"Mirmila Socrates Do Nascimento", "mirmilasocrates@discente.ufg.br", "Mulheres", "7", "5"},
+                {"Natalie Almeida Coelho", "natalie.coelho@discente.ufg.br", "PCDs", "9", "6"},
+                {"Pedro Carlos Da Conceicao Arantes", "pedro.carlos@discente.ufg.br", "Ampla concorrencia", "7", "6"},
+                {"Rafael Augusto Da Silva Januario", "rafaasjgames@gmail.com", "Ampla concorrencia", "3", "3"},
+                {"Rafael Barbosa Da Silva", "rafaelbrbsilva@gmail.com", "Negros e pardos", "1", "1"},
+                {"Rafael Bueno Pires", "rafaelbuenoh@discente.ufg.br", "Ampla concorrencia", "0", "0"},
+                {"Ricardo Da Silva Santos", "ricardo.santos@ifg.edu.br", "Ampla concorrencia", "14", "6"},
+                {"Talison Amorim Do Nascimento", "amorimtalison9@gmail.com", "PCDs", "14", "6"},
+                {"Ubiratan Alves Paniago Filho", "ubiratan.filho@ufg.br", "Ampla concorrencia", "2", "2"},
+                {"Vinicius Amorim Da Silva", "amorimm.viniciuss@gmail.com", "Ampla concorrencia", "14", "6"},
+                {"Vitor Vinicius Gomes Cerqueira", "eng.vitorvg@gmail.com", "Ampla concorrencia", "1", "1"},
+                {"Webse Da Mota Costa", "websecosta@gmail.com", "Negros e pardos", "0", "0"},
+                {"Yasmin Souza De Castro", "yasminsdcastro@gmail.com", "Mulheres", "10", "6"}
+        };
+
+        List<PeopleModel> approvedStudents = new ArrayList<>();
+        ExamModel levelingExam = ensureExam("Prova de Nivelamento - UFG 2025.2", classModel, LocalDate.of(2025, 11, 4));
+        List<ExamQuestionModel> questions = new ArrayList<>();
+        for (int number = 1; number <= 20; number++) {
+            KnowledgeAreaModel subject = number <= 8 ? knowledgeAreas.get("Programacao") : number <= 14 ? knowledgeAreas.get("Dados") : knowledgeAreas.get("Produto");
+            questions.add(ensureExamQuestion(levelingExam, number, subject, 4.0));
+        }
+
+        for (int index = 0; index < studentRows.length; index++) {
+            String[] row = studentRows[index];
+            int completedCourses = Integer.parseInt(row[3]);
+            int requiredCourses = Integer.parseInt(row[4]);
+            String gender = row[2].equals("Mulheres") || row[0].contains("Bruna") || row[0].contains("Isabela")
+                    || row[0].contains("Joyce") || row[0].contains("Kathleen") || row[0].contains("Lara")
+                    || row[0].contains("Mariana") || row[0].contains("Natalie") || row[0].contains("Yasmin")
+                    ? "Feminino" : "Masculino";
+            String cpf = String.format(Locale.ROOT, "%011d", 91000000000L + index + 1);
+            PeopleModel student = ensurePerson(
+                    cpf,
+                    row[0],
+                    row[1],
+                    index % 5 == 0 ? "Tecnico em area de exatas" : "Graduacao",
+                    "Endereco real protegido - planilha UFG " + (index + 1),
+                    null,
+                    index % 4 == 0 ? "Aparecida de Goiania" : "Goiania",
+                    "GO",
+                    gender,
+                    row[2],
+                    "6298000" + String.format(Locale.ROOT, "%04d", index + 1),
+                    LocalDate.of(1980 + (index % 24), (index % 12) + 1, (index % 27) + 1),
+                    institutions.get("UFG").getName(),
+                    index % 3 == 0 ? "Engenharia de Software" : index % 3 == 1 ? "Ciencia da Computacao" : "Analise e Desenvolvimento de Sistemas",
+                    index % 4 == 0 ? "Concluido" : "Cursando",
+                    index % 4 == 0 ? LocalDate.of(2024, 12, 15) : null
+            );
+            approvedStudents.add(student);
+
+            createStageCandidate(selectionStage, student, StageStatus.APROVADO, "Selecionado a partir da planilha de candidatos UFG.");
+            createStageCandidate(levelingStage, student, StageStatus.APROVADO, "Resultado consolidado no relatorio semanal UFG.");
+            createStageCandidate(immersionStage, student, StageStatus.APROVADO, "Aprovado para imersao: " + row[2]);
+
+            boolean concludedImmersion = completedCourses >= 6 && !classModel.getImmersionEndDate().isAfter(today);
+            createEnrollment(
+                    student,
+                    classModel,
+                    studentRole,
+                    concludedImmersion ? "CONCLUIDO" : "ATIVO",
+                    classModel.getLevelingStartDate(),
+                    concludedImmersion ? classModel.getImmersionEndDate() : null,
+                    Math.min(100.0, 72.0 + completedCourses + (index % 6)),
+                    Math.min(100.0, 70.0 + (requiredCourses * 4.0) + (index % 5))
+            );
+
+            for (int courseIndex = 0; courseIndex < courses.size(); courseIndex++) {
+                double percentage;
+                String status;
+                LocalDate completionDate = null;
+                if (courseIndex < completedCourses) {
+                    percentage = 100.0;
+                    status = "Concluido";
+                    completionDate = LocalDate.of(2025, 9, 1).plusDays(courseIndex * 3L + (index % 5));
+                } else if (courseIndex < Math.max(requiredCourses, completedCourses + 1)) {
+                    percentage = 35.0 + ((index + courseIndex) % 6) * 10.0;
+                    status = "Em andamento";
+                } else {
+                    percentage = 0.0;
+                    status = "Nao iniciado";
+                }
+                createCourseProgression(courses.get(courseIndex), student, completionDate, percentage, status, LocalDate.of(2025, 11, 3).minusDays(index % 7));
+            }
+
+            double score = Math.min(80.0, 48.0 + (index % 12) * 2.0 + Math.min(requiredCourses, 6));
+            ensureExamResult(levelingExam, student, score, 39 + (index % 24));
+            int correctLimit = Math.max(1, (int) Math.round(score / 4.0));
+            for (ExamQuestionModel question : questions) {
+                boolean correct = question.getQuestionNumber() <= correctLimit;
+                ensureExamAnswer(student, question, correct, correct ? "Acerto" : "Erro", correct ? 4.0 : 0.0);
+            }
+        }
+
+        String[][] projectRows = {
+                {"GoLeadger", "Agente de BlockChain", "Agentes de IA para plataforma de orquestracao de blockchain."},
+                {"Oficina de Ensino", "Gerador de Questoes", "Motor gerador de questoes para apoio didatico."},
+                {"Clarion Lex", "Agente Juridico Trabalhista", "Agente inteligente para producao de pecas trabalhistas."},
+                {"Apoema Tecnologia e Inovacao", "IA para Ecossistema de Inovacao", "Interface conversacional para o ecossistema de inovacao."},
+                {"BRISA", "Prova Online", "Aplicacao de provas online com recursos de seguranca."},
+                {"Pingo Solucoes Tecnologicas", "Mamae Pingo", "Promocao da parentalidade na primeira infancia."},
+                {"SECTI", "Sukatech", "Pontos e cashback para descarte de lixo eletronico."},
+                {"BP Company Sistemas", "Processos com IA", "Automatizacao de acoes de processo com agentes de IA."},
+                {"ERP para Clinica Psico", "ERP para Clinica Psico", "Solucao operacional para startup de saude."},
+                {"Truth DAO", "Extrator de Noticias", "Extracao de noticias de midias digitais."},
+                {"LABIIH", "Prova Segura", "Tecnologia para integridade de vestigios criminais papiloscopicos."}
+        };
+
+        List<PeopleModel> leaders = new ArrayList<>(staff.values());
+        for (int projectIndex = 0; projectIndex < projectRows.length; projectIndex++) {
+            PeopleModel leader = leaders.get(projectIndex % leaders.size());
+            ProjectGroupModel group = ensureProjectGroup(
+                    projectRows[projectIndex][1],
+                    classModel,
+                    projectRows[projectIndex][2],
+                    institutions.get("UFG"),
+                    projectRows[projectIndex][0],
+                    leader,
+                    "https://github.com/brisa/ufg-" + normalizeSlug(projectRows[projectIndex][1]).replace(".", "-"),
+                    DayOfWeek.of((projectIndex % 5) + 1),
+                    LocalDate.of(2025, 11, 26).plusDays(projectIndex)
+            );
+
+            int start = projectIndex * 5;
+            int end = Math.min(start + 5, approvedStudents.size());
+            for (int studentIndex = start; studentIndex < end; studentIndex++) {
+                addGroupMember(group, approvedStudents.get(studentIndex));
+            }
+            ensureMeeting(group, LocalDate.of(2025, 12, 3).plusWeeks(projectIndex % 4), "COMPLETED");
+            ensureMeeting(group, LocalDate.of(2026, 2, 18), "COMPLETED");
+            ensureMeeting(group, LocalDate.of(2026, 5, 20), "SCHEDULED");
+        }
+    }
+
     private void seedSystemLogs(LocalDate today) {
         UserModel admin = userRepository.getByLogin("admin").orElse(null);
         createSystemLog(LogAction.USER_LOGIN, "Administrador acessou o sistema de homologacao.", "Auth", "admin", admin, "127.0.0.1");
         createSystemLog(LogAction.PROGRAM_CREATE, "Programa BRISA One - IA Aplicada registrado na base mock.", "Program", "BRISA-IA-2026", admin, "127.0.0.1");
         createSystemLog(LogAction.CLASS_CREATE, "Turma UFAL 2026.1 preparada para demonstracao.", "Class", "UFAL 2026.1", admin, "127.0.0.1");
         createSystemLog(LogAction.PEOPLE_IMPORT, "Participantes de exemplo importados para navegacao do sistema.", "People", "mock-batch", admin, "127.0.0.1");
+        createSystemLog(LogAction.PEOPLE_IMPORT, "Planilhas UFG 2025.2 consolidadas no seed de apresentacao.", "People", "UFG 2025.2", admin, "127.0.0.1");
         createSystemLog(LogAction.ENROLLMENT_IMPORT, "Matriculas de exemplo disponibilizadas para testes visuais.", "Enrollment", "mock-enrollments", admin, "127.0.0.1");
         createSystemLog(LogAction.ADVISOR_CREATE, "Equipe academica mockada com orientadores e gestores.", "Advisor", "mock-team", admin, "127.0.0.1");
         createSystemLog(LogAction.SYSTEM_INFO, "Automacao de carreira mockada com historico de disparos.", "CareerAutomation", "career-automation-base", admin, "127.0.0.1");

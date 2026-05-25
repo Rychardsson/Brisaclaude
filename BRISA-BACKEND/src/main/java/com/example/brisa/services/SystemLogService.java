@@ -132,10 +132,12 @@ public class SystemLogService {
 
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
         String entityType = normalizeEntityType(filter.getEntityType());
+        String entityId = normalizeEntityId(filter.getEntityId());
         Specification<SystemLogModel> specification = buildSpecification(
                 filter.getAction(),
                 filter.getUserId(),
                 entityType,
+                entityId,
                 filter.getStartDate(),
                 filter.getEndDate()
         );
@@ -250,6 +252,15 @@ public class SystemLogService {
         return normalized.isEmpty() ? null : normalized;
     }
 
+    private String normalizeEntityId(String entityId) {
+        if (entityId == null) {
+            return null;
+        }
+
+        String normalized = entityId.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
     private String resolveSortBy(String sortBy) {
         Set<String> allowedSortFields = Set.of("id", "action", "entityType", "entityId", "createdAt");
         return allowedSortFields.contains(sortBy) ? sortBy : "createdAt";
@@ -259,6 +270,7 @@ public class SystemLogService {
             LogAction action,
             UUID userId,
             String entityType,
+            String entityId,
             LocalDateTime startDate,
             LocalDateTime endDate
     ) {
@@ -275,6 +287,10 @@ public class SystemLogService {
 
             if (entityType != null) {
                 predicates.add(criteriaBuilder.equal(root.get("entityType"), entityType));
+            }
+
+            if (entityId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("entityId"), entityId));
             }
 
             if (startDate != null) {

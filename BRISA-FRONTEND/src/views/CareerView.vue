@@ -1927,7 +1927,19 @@ function formatDateTime(value) {
 }
 
 .table-card {
-  overflow: hidden;
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.table-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-card::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .filters-row {
@@ -2542,7 +2554,7 @@ function formatDateTime(value) {
 }
 
 .automation-panel-config .field-message-grow textarea.automation-message-input {
-  min-height: 200px;
+  min-height: 320px;
   max-height: none;
   height: 100%;
   flex: 1;
@@ -2760,16 +2772,18 @@ function formatDateTime(value) {
 
 .automation-panel-config .automation-form-grid-fill {
   flex: 1;
+  height: 100%;
   margin-top: 0;
   min-height: 0;
-  grid-template-rows: auto auto auto auto auto minmax(200px, 1fr);
-  align-content: start;
+  grid-template-rows: auto auto auto minmax(320px, 1fr);
+  align-content: stretch;
 }
 
 .automation-panel-config .field-message-grow {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  height: 100%;
+  min-height: 320px;
   align-self: stretch;
 }
 

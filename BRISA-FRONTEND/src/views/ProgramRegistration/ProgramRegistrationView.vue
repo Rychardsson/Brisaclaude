@@ -1598,19 +1598,19 @@ export default {
 .alert-icon { flex-shrink: 0; margin-top: 2px; } /* Ícone da caixa de alerta */
 .alert-content strong { display: block; font-size: 14px; margin-bottom: 4px; } /* Título em negrito do alerta */
 .alert-content p { margin: 0; font-size: 13px; line-height: 1.4; opacity: 0.9; } /* Texto descritivo do alerta */
-.stages-list { display: flex; flex-direction: column; gap: 16px; } /* Container vertical para lista de etapas (cards) */
-.stage-card { display: flex; background: white; border: 1px solid #dfe7f1; border-radius: 18px; overflow: hidden; transition: all 0.2s ease; box-shadow: 0 8px 24px rgba(13, 27, 42, 0.04); } /* Card individual de etapa */
+.stages-list { display: flex; flex-direction: column; gap: 16px; max-height: min(68vh, 680px); overflow-y: auto; padding-right: 4px; } /* Container vertical para lista de etapas (cards) */
+.stage-card { display: flex; background: white; border: 1px solid #dfe7f1; border-radius: 18px; overflow: auto; max-height: 300px; transition: all 0.2s ease; box-shadow: 0 8px 24px rgba(13, 27, 42, 0.04); } /* Card individual de etapa */
 .stage-card.is-dragged { opacity: 0.4; border: 2px dashed #9ca3af; } /* Estilo do card de etapa quando está sendo arrastado */
 .stage-card.is-dragover { border-top: 4px solid #0288d1; margin-top: 8px; } /* Indicador visual onde o card arrastado será solto */
 .stage-drag-handle { padding: 0 12px; display: flex; align-items: center; justify-content: center; color: #d1d5db; cursor: grab; border-right: 1px solid #e5edf5; background: #f8fbff; } /* Alça lateral esquerda para arrastar o card */
 .stage-drag-handle:active { cursor: grabbing; } /* Cursor muda ao segurar a alça de arrastar */
-.stage-body { padding: 20px; flex: 1; } /* Corpo de conteúdo do card de etapa */
+.stage-body { padding: 20px; flex: 1; min-width: 0; } /* Corpo de conteúdo do card de etapa */
 .stage-header { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; } /* Cabeçalho interno do card de etapa */
 .stage-number { width: 32px; height: 32px; border-radius: 50%; background-color: var(--teal-600); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; } /* Círculo azul com número da etapa */
 .stage-titles h4 { margin: 0 0 4px 0; font-size: 15px; color: #1a233a; display: flex; align-items: center; } /* Título interno do card de etapa */
 .badge-padrao { background-color: #ecfdf5; color: #0f766e; font-size: 10px; padding: 3px 8px; border-radius: 999px; margin-left: 8px; font-weight: 700; border: 1px solid #99f6e4; } /* Etiqueta indicando que a etapa é padrão do sistema */
 .stage-type { font-size: 12px; color: #6b7280; } /* Texto do tipo da etapa abaixo do título */
-.stage-description { margin: 0 0 20px 0; font-size: 13px; color: #4b5563; } /* Parágrafo de descrição dentro do card de etapa */
+.stage-description { margin: 0 0 20px 0; font-size: 13px; color: #4b5563; max-height: 72px; overflow-y: auto; overflow-wrap: anywhere; } /* Parágrafo de descrição dentro do card de etapa */
 .stage-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f3f4f6; } /* Grid com ícones e métricas da etapa */
 .info-item { display: flex; align-items: flex-start; gap: 8px; color: #6b7280; } /* Item individual no grid de métricas */
 .info-item svg { margin-top: 2px; color: #9ca3af; } /* Ícone SVG da métrica na etapa */
