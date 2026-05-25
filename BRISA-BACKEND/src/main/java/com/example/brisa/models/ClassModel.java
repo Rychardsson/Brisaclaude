@@ -1,5 +1,6 @@
 package com.example.brisa.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,20 +10,26 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.time.LocalDate;
 
 @Data
 @Entity
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"program", "location"})
 @Table(name = "classes")
 public class ClassModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(unique = true)
     private String code;
 
+    @JsonIgnoreProperties({"classes"})
     @ManyToOne
     @JoinColumn(name = "program_id", nullable = false)
     private ProgramModel program;
@@ -36,6 +43,7 @@ public class ClassModel {
     @Column(name = "locality")
     private String locality;
 
+    @JsonIgnoreProperties({"programMemberships"})
     @ManyToOne
     @JoinColumn(name = "location_id")
     private InstitutionModel location;

@@ -30,7 +30,8 @@ import java.time.LocalDateTime;
         },
         indexes = {
                 @Index(name = "idx_career_dispatch_status", columnList = "status"),
-                @Index(name = "idx_career_dispatch_due_date", columnList = "due_date")
+                @Index(name = "idx_career_dispatch_due_date", columnList = "due_date"),
+                @Index(name = "idx_career_dispatch_response_token", columnList = "response_token")
         }
 )
 public class CareerAutomationDispatchModel {
@@ -67,6 +68,12 @@ public class CareerAutomationDispatchModel {
     @Column(name = "subject_snapshot", length = 255)
     private String subjectSnapshot;
 
+    @Column(name = "response_token", unique = true, length = 120)
+    private String responseToken;
+
+    @Column(name = "token_generated_at")
+    private LocalDateTime tokenGeneratedAt;
+
     @Column(name = "status", nullable = false, length = 32)
     private String status;
 
@@ -78,6 +85,9 @@ public class CareerAutomationDispatchModel {
 
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
+
+    @Column(name = "responded_at")
+    private LocalDateTime respondedAt;
 
     @Column(name = "last_error", length = 1000)
     private String lastError;

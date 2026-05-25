@@ -12,3 +12,6 @@ backend-career-run*.log
 
 # Docker – variáveis de ambiente (contém segredos)
 .env
+
+# Planilhas locais (dados de teste/importação)
+planilhas/

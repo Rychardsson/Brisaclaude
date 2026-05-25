@@ -1,4 +1,4 @@
-﻿?<template>
+﻿<template>
   <div class="figma-page">
     <ConfirmDialog ref="confirmDialog" />
 
@@ -68,6 +68,7 @@
           <article class="hero-card">
             <span class="hero-label">Inscritos</span>
             <strong>{{ totalCandidates || 0 }}</strong>
+            <small>{{ selectionWaitlistCount }} em lista</small>
             <small class="hero-support">Candidatos cadastrados</small>
           </article>
           <article class="hero-card">
@@ -90,12 +91,14 @@
           </article>
         </div>
 
-        <div class="tabs">
+        <div class="tabs" role="tablist" aria-label="Seções da turma">
           <button
             v-for="tab in tabs"
             :key="tab.id"
             type="button"
             class="tab"
+            role="tab"
+            :aria-selected="activeTab === tab.id"
             :class="{ active: activeTab === tab.id }"
             @click="activeTab = tab.id"
           >
@@ -140,7 +143,22 @@
               </div>
             </div>
 
-            <p v-if="classData.description || classData.observations" class="status-note">{{ classData.description || classData.observations }}</p>
+            <p class="status-note">
+              {{ classData.description || classData.observations || currentStatusNote }}
+            </p>
+          </article>
+
+          <article class="panel contract-panel">
+            <div class="panel-head">
+              <h3>Contrato do Programa</h3>
+              <button type="button" class="details-link contract-link" @click="goToProgramDetails">Ver programa</button>
+            </div>
+            <div class="contract-grid">
+              <div v-for="item in programContractItems" :key="item.label" class="contract-item">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+            </div>
           </article>
 
           <article class="panel">
@@ -155,10 +173,10 @@
 
             <div class="cycle">
               <div v-for="(item, index) in overviewCycle" :key="item" class="cycle-item">
-                <div class="cycle-pill" :class="{ done: overviewCycleHasStudents(item) }">
+                <div class="cycle-pill" :class="{ done: overviewCycleHasStudents(item), current: index === overviewCurrentCycleIndex }">
                   {{ item }}
                 </div>
-                <div v-if="index < overviewCycle.length - 1" class="cycle-line" :class="{ done: overviewCycleHasStudents(item) }" />
+                <div v-if="index < overviewCycle.length - 1" class="cycle-line" :class="{ done: index < overviewCurrentCycleIndex }" />
               </div>
             </div>
           </article>
@@ -177,7 +195,7 @@
                     <strong :class="item.valueClass">{{ item.value }}</strong>
                   </div>
                 </div>
-                <button type="button" class="details-link">Ver detalhes ?</button>
+                <button type="button" class="details-link" @click="openOverviewStageDetails(card.title)">Ver detalhes</button>
               </article>
             </div>
           </section>
@@ -187,7 +205,7 @@
             <div class="timeline-list">
               <div v-for="item in overviewTimeline" :key="item.label" class="timeline-row">
                 <div class="timeline-left">
-                  <span class="timeline-check">?</span>
+                  <span class="timeline-check">✓</span>
                   <span class="timeline-label">{{ item.label }}</span>
                 </div>
                 <div class="timeline-right">
@@ -196,7 +214,7 @@
                 </div>
               </div>
             </div>
-            <button type="button" class="details-link timeline-link">Ver cronograma completo ?</button>
+            <button type="button" class="details-link timeline-link" @click="openFullTimeline">Ver cronograma completo</button>
           </article>
 
           <section class="overview-block">
@@ -281,7 +299,15 @@
                     placeholder="Buscar por nome, CPF ou e-mail..."
                   />
                 </div>
-                <button type="button" class="people-search-btn">Pesquisar</button>
+                <button type="button" class="people-search-btn" @click="applyPeopleFilters">Pesquisar</button>
+                <button
+                  v-if="hasPeopleFilters"
+                  type="button"
+                  class="people-clear-btn"
+                  @click="clearPeopleFilters"
+                >
+                  Limpar filtros
+                </button>
               </div>
 
               <div class="people-select-row">
@@ -404,7 +430,7 @@
             </div>
           </article>
 
-          <div class="alert-banner alert-warning">
+          <div v-if="selectionConflictCount > 0" class="alert-banner alert-warning">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 9v4" />
               <path d="M12 17h.01" />
@@ -519,11 +545,11 @@
               </div>
                <div class="n-card teal">
                 <div class="label">Conclusão obrigatórios</div>
-                <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '?' }}</div>
+                <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '-' }}</div>
               </div>
                <div class="n-card amber">
                 <div class="label">Nota de corte prova</div>
-                <div class="value">39</div>
+                <div class="value">{{ levelingCutoffScore }}</div>
               </div>
                <div class="n-card red">
                 <div class="label">Alertas</div>
@@ -532,12 +558,12 @@
             </div>
 
             <div class="email-banner">
-              <div style="display:flex;align-items:center;gap:12px;justify-content:space-between;width:100%;">
-                <div style="display:flex;align-items:center;gap:12px;">
+              <div class="email-banner-content">
+                <div class="email-banner-main">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
                   <div>
-                    <span style="font-weight:600;color:#075985;">Último e-mail enviado: </span>
-                    <span style="color:#0c4a6e;">{{ lastEmailInfo }}</span>
+                    <span class="email-banner-label">Último e-mail enviado: </span>
+                    <span class="email-banner-value">{{ lastEmailInfo }}</span>
                   </div>
                 </div>
                 <span class="email-banner-status" v-if="lastEmailInfo && lastEmailInfo !== 'Nenhum e-mail enviado recentemente'">Enviado</span>
@@ -592,10 +618,11 @@
                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
                  </svg>
-                 <span class="course-name-new">{{ course?.name || 'Sem nome' }}</span>
-                 <span v-if="course?.required" class="course-badge course-badge-required">Obrigatório</span>
-                 <span v-if="course?.knowledgeArea" class="course-badge">{{ course.knowledgeArea }}</span>
-               </div>
+                  <span class="course-name-new">{{ course?.name || 'Sem nome' }}</span>
+                  <span v-if="course?.required" class="course-badge course-badge-required">Obrigatório</span>
+                  <span v-if="course?.knowledgeArea" class="course-badge">{{ course.knowledgeArea }}</span>
+                  <span v-if="course?.advisorName" class="course-badge">Orientador: {{ course.advisorName }}</span>
+                </div>
 
                <div class="course-right-new">
                  <div class="course-stats-new">
@@ -659,18 +686,18 @@
              </div>
            </div>
 
-           <div class="alert-banner alert-warning">
+           <div v-if="requiredPendingStudentsCount > 0" class="alert-banner alert-warning">
              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z" />
                <line x1="12" y1="9" x2="12" y2="13" />
                <line x1="12" y1="17" x2="12.01" y2="17" />
              </svg>
-             <div class="alert-copy">
-               <strong>Cursos obrigatórios com pendências</strong>
-               <p>37 alunos ainda possuem pendências em cursos obrigatórios</p>
-             </div>
-             <button type="button" class="alert-link" @click="showSendMessageModal = true">Enviar mensagem</button>
-           </div>
+              <div class="alert-copy">
+                <strong>Cursos obrigatórios com pendências</strong>
+                <p>{{ requiredPendingStudentsCount }} aluno(s) ainda possuem pendências em cursos obrigatórios</p>
+              </div>
+              <button type="button" class="alert-link" @click="openSendMessageModal({ recipients: 'pending' })">Enviar mensagem</button>
+            </div>
           </article>
 
           <!-- Seção Prova Final do Nivelamento -->
@@ -742,42 +769,52 @@
                </div>
              </article>
 
-             <article class="panel exam-insight-card">
-               <h4>Distribuição de notas</h4>
-               <div class="simple-list">
-                 <div v-for="bucket in examSummaryData.scoreDistribution || []" :key="bucket.label">
-                   <span>{{ bucket.label }}</span>
-                   <strong>{{ bucket.count }}</strong>
-                 </div>
-               </div>
-             </article>
+              <article class="panel exam-insight-card">
+                <h4>Distribuição de notas</h4>
+                <div class="simple-list">
+                  <div v-for="bucket in examSummaryData.scoreDistribution || []" :key="bucket.label">
+                    <span>{{ bucket.label }}</span>
+                    <strong>{{ bucket.count }}</strong>
+                  </div>
+                </div>
+              </article>
 
-             <article class="panel exam-insight-card">
-               <h4>Melhores questões</h4>
-               <div class="simple-list">
-                 <div v-for="question in (examSummaryData.bestQuestions || []).slice(0, 5)" :key="`best-${question.questionNumber}`">
-                   <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
-                   <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
-                 </div>
-               </div>
-             </article>
+              <article class="panel exam-insight-card">
+                <h4>Participantes por cota</h4>
+                <div class="simple-list">
+                  <div v-for="quota in examSummaryData.quotaParticipants || []" :key="`quota-participant-${quota.label}`">
+                    <span>{{ quota.label }}</span>
+                    <strong>{{ quota.count }}</strong>
+                  </div>
+                </div>
+              </article>
 
-             <article class="panel exam-insight-card">
-               <h4>Questões com menor desempenho</h4>
-               <div class="simple-list">
-                 <div v-for="question in (examSummaryData.worstQuestions || []).slice(0, 5)" :key="`worst-${question.questionNumber}`">
-                   <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
-                   <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
-                 </div>
+              <article class="panel exam-insight-card">
+                <h4>15 questões com mais acertos</h4>
+                <div class="simple-list">
+                  <div v-for="question in (examSummaryData.bestQuestions || []).slice(0, 15)" :key="`best-${question.questionNumber}`">
+                    <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
+                    <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article class="panel exam-insight-card">
+                <h4>15 questões com menos acertos</h4>
+                <div class="simple-list">
+                  <div v-for="question in (examSummaryData.worstQuestions || []).slice(0, 15)" :key="`worst-${question.questionNumber}`">
+                    <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
+                    <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
+                  </div>
                </div>
              </article>
            </div>
 
-           <div v-if="examRespondentProfileData" class="exam-profile-grid">
-             <article class="panel exam-insight-card">
-               <h4>Cursos de origem</h4>
-               <div class="simple-list">
-                 <div v-for="item in (examRespondentProfileData.courseDistribution || []).slice(0, 5)" :key="`course-${item.label}`">
+            <div v-if="examRespondentProfileData" class="exam-profile-grid">
+              <article class="panel exam-insight-card">
+                <h4>Cursos de origem</h4>
+                <div class="simple-list">
+                  <div v-for="item in (examRespondentProfileData.courseDistribution || []).slice(0, 5)" :key="`course-${item.label}`">
                    <span>{{ item.label }}</span>
                    <strong>{{ item.count }}</strong>
                  </div>
@@ -811,11 +848,60 @@
                    <span>{{ item.label }}</span>
                    <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
                  </div>
-               </div>
-             </article>
-           </div>
+                </div>
+              </article>
+            </div>
 
-           <div v-if="approvedRankingData" class="exam-ranking-grid">
+            <article class="exam-ranking-config">
+              <div class="exam-ranking-config-head">
+                <h4>Parâmetros da aprovação</h4>
+                <button type="button" class="btn-outline compact-btn" :disabled="approvedRankingLoading" @click="recalculateApprovedRanking">
+                  {{ approvedRankingLoading ? 'Recalculando...' : 'Recalcular' }}
+                </button>
+              </div>
+              <div class="ranking-form-grid">
+                <label class="ranking-field">
+                  <span>Vagas imersão</span>
+                  <input v-model.number="approvedRankingForm.totalVacancies" type="number" min="1" />
+                </label>
+                <label class="ranking-field">
+                  <span>Pontos por curso</span>
+                  <input v-model.number="approvedRankingForm.pointsPerCompletedCourse" type="number" min="0" step="0.5" />
+                </label>
+                <label class="ranking-field">
+                  <span>Bônus cidade</span>
+                  <input v-model.number="approvedRankingForm.bonusPerPriorityCity" type="number" min="0" />
+                </label>
+                <label class="ranking-field ranking-field-wide">
+                  <span>Cidades com bônus</span>
+                  <textarea v-model="approvedRankingForm.priorityCitiesText" rows="2"></textarea>
+                </label>
+              </div>
+              <div class="ranking-form-grid ranking-quota-grid">
+                <label class="ranking-field">
+                  <span>Ampla</span>
+                  <input v-model.number="approvedRankingForm.amplaConcorrenciaSeats" type="number" min="0" />
+                </label>
+                <label class="ranking-field">
+                  <span>PcD/Neuro</span>
+                  <input v-model.number="approvedRankingForm.pcdSeats" type="number" min="0" />
+                </label>
+                <label class="ranking-field">
+                  <span>Negros/Pardos</span>
+                  <input v-model.number="approvedRankingForm.negroPardoSeats" type="number" min="0" />
+                </label>
+                <label class="ranking-field">
+                  <span>Mulheres</span>
+                  <input v-model.number="approvedRankingForm.mulheresSeats" type="number" min="0" />
+                </label>
+                <label class="ranking-field">
+                  <span>45+</span>
+                  <input v-model.number="approvedRankingForm.age45Seats" type="number" min="0" />
+                </label>
+              </div>
+            </article>
+
+            <div v-if="approvedRankingData" class="exam-ranking-grid">
              <article class="panel exam-ranking-card">
                <span>Aprovados</span>
                <strong>{{ approvedRankingData.approved?.length || 0 }}</strong>
@@ -1173,7 +1259,7 @@
         <!-- Individual Registration -->
         <div v-else-if="selectedUpdateAction === 'individual'" class="modal-content modal-large individual-modal">
           <div class="modal-back">
-            <button type="button" @click="closeIndividualRegistration" class="back-link">< Voltar</button>
+            <button type="button" @click="closeIndividualRegistration" class="back-link">Voltar</button>
           </div>
           <h3>Cadastrar aluno individualmente</h3>
 
@@ -1270,7 +1356,7 @@
         <!-- Import Inscricoes -->
         <div v-else-if="selectedUpdateAction === 'import-inscricoes'" class="modal-content import-inscricoes-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">< Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">Voltar</button>
           </div>
           <div class="modal-header-with-action">
             <h3>{{ importStudentsModalTitle }}</h3>
@@ -1337,7 +1423,7 @@
         <!-- Import Aprovados -->
         <div v-else-if="selectedUpdateAction === 'import-aprovados'" class="modal-content import-aprovados-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">< Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">Voltar</button>
           </div>
           <h3>Importar planilha de aprovados</h3>
           <p class="modal-desc">Envie uma planilha com a lista final de candidatos aprovados. O sistema atualizará automaticamente o status de cada candidato.</p>
@@ -1405,7 +1491,7 @@
         <!-- Lista de Espera -->
         <div v-else-if="selectedUpdateAction === 'lista-espera'" class="modal-content modal-large waitlist-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">< Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">Voltar</button>
           </div>
           <h3>Atualizar lista de espera</h3>
 
@@ -1520,9 +1606,12 @@
             <div class="columns-grid-title">A planilha deve conter as seguintes colunas:</div>
             <div class="column-item"><strong>CPF</strong></div>
             <div class="column-item"><strong>Nome</strong></div>
-            <div class="column-item"><strong>Curso</strong></div>
+            <div class="column-item"><strong>Código do curso ou Curso</strong></div>
+            <div class="column-item"><strong>Orientador</strong></div>
+            <div class="column-item"><strong>CPF do orientador</strong></div>
             <div class="column-item"><strong>Percentual de conclusão</strong></div>
             <div class="column-item"><strong>Nota</strong></div>
+            <div class="column-item"><strong>Frequência</strong></div>
             <div class="column-item"><strong>Status</strong></div>
             <div class="column-item"><strong>Data de atualização</strong></div>
           </div>
@@ -1557,7 +1646,7 @@
                 <li>Atualização dos percentuais de conclusão</li>
                 <li>Registro das notas obtidas</li>
                 <li>Identificação de alunos com pendências em cursos obrigatórios</li>
-                <li>Verificação de conflitos com outros programas vigentes</li>
+                <li>Registro da frequência e do status do aluno no curso</li>
               </ul>
             </div>
           </div>
@@ -1596,6 +1685,7 @@
           <div class="columns-grid">
             <p class="columns-grid-title">A planilha deve conter as seguintes colunas:</p>
             <div class="column-item"><strong>Obrigatórias:</strong> CPF, Nome, Nota final, Tempo de conclusão</div>
+            <div class="column-item"><strong>Prova:</strong> Código da prova, Nome da prova, Data da prova</div>
             <div class="column-item"><strong>Questões:</strong> Q1, Q2, Q3... Q80 (respostas ou pontuação por questão)</div>
             <div class="column-item"><strong>Opcional:</strong> Área/Assunto (para análise por tema)</div>
           </div>
@@ -1962,6 +2052,10 @@
               <div class="course-detail-label">Pendentes</div>
               <div class="course-detail-value amber">{{ selectedCourseItem?.pendingCount || 0 }}</div>
             </div>
+            <div class="course-detail-stat">
+              <div class="course-detail-label">Orientador</div>
+              <div class="course-detail-value">{{ selectedCourseItem?.advisorName || '--' }}</div>
+            </div>
           </div>
 
           <div class="alert-banner alert-warning">
@@ -1978,6 +2072,7 @@
           </div>
 
           <div class="modal-actions">
+            <button type="button" class="btn-outline" @click="openClassCourses">Avaliações do curso</button>
             <button type="button" class="btn-outline" @click="closeCourseDetailsModal">Fechar</button>
           </div>
         </div>
@@ -2016,14 +2111,6 @@ import {
 
 const cycle = ['Inscrição', 'Seleção', 'Nivelamento', 'Imersão', 'Encerrado'];
 const overviewCycle = ['Inscrição', 'Processo Seletivo', 'Nivelamento', 'Prova', 'Imersão', 'Avaliação final', 'Encerramento'];
-// Remove hardcoded mock data — these will be populated from backend-driven computations
-const overviewStageCards = [];
-const overviewTimeline = [];
-const quotaDistribution = [];
-const genderDistribution = [];
-const cityDistribution = [];
-const educationDistribution = [];
-const overviewUpdates = [];
 const peopleSpreadsheetColumns = PEOPLE_SPREADSHEET_COLUMNS;
 
 const selectionQuotaLabels = [
@@ -2138,6 +2225,18 @@ export default {
     const examSummaryData = ref(null);
     const examRespondentProfileData = ref(null);
     const approvedRankingData = ref(null);
+    const approvedRankingLoading = ref(false);
+    const approvedRankingForm = ref({
+      totalVacancies: 50,
+      pointsPerCompletedCourse: 2.5,
+      bonusPerPriorityCity: 10,
+      priorityCitiesText: 'Maceió - AL\nArapiraca - AL\nRio Largo - AL',
+      amplaConcorrenciaSeats: 24,
+      pcdSeats: 3,
+      negroPardoSeats: 10,
+      mulheresSeats: 10,
+      age45Seats: 3,
+    });
     const examInsightsLoading = ref(false);
     const examInsightsError = ref('');
     const imersaoMetricsCards = ref([
@@ -2333,15 +2432,23 @@ export default {
     const classModelLabel = computed(() => classData.value?.model || classData.value?.modality || 'Híbrido');
     const classWorkloadLabel = computed(() => {
       const workload = classData.value?.workload || classData.value?.totalHours;
-      return workload ? `${workload}h` : '480h';
+      return workload ? `${workload}h` : '-';
     });
     const classPeriodLabel = computed(() => {
-          if (!classData.value?.startDate || !classData.value?.endDate) return '-';
+      if (!classData.value?.startDate || !classData.value?.endDate) return '-';
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const start = new Date(classData.value.startDate);
       const end = new Date(classData.value.endDate);
       return `${months[start.getMonth()]}/${start.getFullYear()} → ${months[end.getMonth()]}/${end.getFullYear()}`;
     });
+    const partnerLabel = computed(
+      () =>
+        classData.value?.partnerInstitution?.name ||
+        classData.value?.program?.partnerInstitution?.name ||
+        classData.value?.program?.partnerName ||
+        classData.value?.program?.institutionName ||
+        '-'
+    );
     const executorLabel = computed(() => {
       if (overviewProgramItem.value) {
         return (
@@ -2362,6 +2469,7 @@ export default {
         classData.value?.executorName ||
         classData.value?.parceiro ||
         classData.value?.program?.parceiro ||
+        partnerLabel.value ||
         '-'
       );
     });
@@ -2378,18 +2486,61 @@ export default {
 
       return location.name || '-';
     });
-    const currentStagePeriod = computed(() => classData.value?.stagePeriod || '-');
-    const currentStageMilestone = computed(() => classData.value?.nextMilestone || '-');
+    const currentStagePeriod = computed(() => classData.value?.stagePeriod || classPeriodLabel.value);
+    const currentStageMilestone = computed(() => classData.value?.nextMilestone || nextStageLabel.value);
     const currentStageMilestoneDate = computed(() => classData.value?.nextMilestoneDate || '-');
-    const overviewCurrentCycleIndex = computed(() => {
-      const normalized = normalizeText(classData.value?.currentStage || classData.value?.status || '');
-      if (normalized.includes('imersa')) return 4;
-      if (normalized.includes('nivel')) return 2;
-      if (normalized.includes('sele')) return 1;
-      if (normalized.includes('prova')) return 3;
-      if (normalized.includes('encer')) return 6;
+    const currentStatusNote = computed(() => {
+      const milestone = currentStageMilestone.value && currentStageMilestone.value !== '-'
+        ? ` Próximo marco: ${currentStageMilestone.value}.`
+        : '';
+      return `Turma ${classStatusLabel.value.toLowerCase()} na etapa ${currentStageLabel.value}.${milestone}`;
+    });
+    const overviewStageIndexFromLabel = (value) => {
+      const normalized = normalizeText(value);
+      if (!normalized) return -1;
+      if (normalized.includes('encerr')) return 6;
       if (normalized.includes('avali')) return 5;
-      return 0;
+      if (normalized.includes('imersa') || normalized.includes('imers')) return 4;
+      if (normalized.includes('prova')) return 3;
+      if (normalized.includes('nivel')) return 2;
+      if (normalized.includes('process') || normalized.includes('sele')) return 1;
+      if (normalized.includes('inscri')) return 0;
+      return -1;
+    };
+    const latestStartedOverviewStageIndex = () => {
+      const now = Date.now();
+      const isStarted = (value) => {
+        const date = parseDateValue(value);
+        return date && date.getTime() <= now;
+      };
+
+      let index = isStarted(classData.value?.applicationStartDate) ? 0 : -1;
+      if (isStarted(classData.value?.applicationEndDate) || isStarted(classData.value?.levelingSelectionAnnouncementDate)) index = Math.max(index, 1);
+      if (isStarted(classData.value?.levelingStartDate)) index = Math.max(index, 2);
+      if (isStarted(classData.value?.levelingFinalExamDate)) index = Math.max(index, 3);
+      if (isStarted(classData.value?.immersionStartDate)) index = Math.max(index, 4);
+      if (isStarted(classData.value?.finalEvaluationDate)) index = Math.max(index, 5);
+      if (isStarted(classData.value?.certificateIssueDate) || isStarted(classData.value?.endDate)) index = Math.max(index, 6);
+      return Math.max(index, 0);
+    };
+    const overviewCurrentCycleIndex = computed(() => {
+      const statusIndex = normalizeText(classData.value?.status).includes('encerr') ? 6 : -1;
+      const explicitIndex = overviewStageIndexFromLabel(
+        overviewProgramItem.value?.etapaAtual ||
+        overviewProgramItem.value?.currentStage ||
+        classData.value?.currentStage ||
+        currentStageLabel.value
+      );
+      const countIndex = [
+        overviewStageCounts.value.inscricao > 0 ? 0 : -1,
+        overviewStageCounts.value.selecao > 0 ? 1 : -1,
+        overviewStageCounts.value.nivelamento > 0 ? 2 : -1,
+        overviewStageCounts.value.prova > 0 ? 3 : -1,
+        overviewStageCounts.value.imersao > 0 ? 4 : -1,
+        overviewStageCounts.value.avaliacao > 0 ? 5 : -1,
+      ].reduce((max, item) => Math.max(max, item), -1);
+
+      return Math.max(statusIndex, explicitIndex, countIndex, latestStartedOverviewStageIndex(), 0);
     });
     const overviewProgressPct = computed(() => Math.round((overviewCurrentCycleIndex.value / (overviewCycle.length - 1)) * 100));
     const hasStartedInscricao = computed(() => {
@@ -2434,6 +2585,9 @@ export default {
     });
 
     const overviewCycleHasStudents = (label) => {
+      const index = overviewCycle.indexOf(label);
+      if (index >= 0 && index <= overviewCurrentCycleIndex.value) return true;
+
       const value = normalizeText(label);
       if (value.includes('inscri')) {
         return overviewStageCounts.value.inscricao > 0 || hasStartedInscricao.value;
@@ -2448,6 +2602,89 @@ export default {
         return normalizeText(classData.value?.status || '').includes('encerr');
       }
       return false;
+    };
+
+    const activeClassPeopleCount = computed(() => {
+      const activePeopleIds = new Set();
+      (classEnrollments.value || []).forEach((enrollment) => {
+        const personId = enrollment?.people?.id;
+        if (!personId || !isConflictRelevantStatus(enrollment?.status)) return;
+        activePeopleIds.add(personId);
+      });
+      return activePeopleIds.size;
+    });
+
+    const imersaoActiveStudentsCount = computed(() => {
+      const fromStage = imersaoStageCandidates.value.filter((candidate) => String(candidate?.status || '').toUpperCase() !== 'REPROVADO').length;
+      return fromStage || activeClassPeopleCount.value;
+    });
+
+    const formatCurrency = (value) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return '-';
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numeric);
+    };
+
+    const programContractItems = computed(() => {
+      const program = classData.value?.program || {};
+      const vigencia = program.startDate || program.endDate
+        ? `${formatDate(program.startDate)} até ${formatDate(program.endDate)}`
+        : classPeriodLabel.value;
+
+      return [
+        { label: 'Contrato/Fomento', value: program.contractNumber || '-' },
+        { label: 'Entidade de fomento', value: program.fundingEntity || '-' },
+        { label: 'Valor do programa', value: formatCurrency(program.programValue) },
+        { label: 'Coordenador geral', value: program.generalCoordinator || '-' },
+        { label: 'Vigência', value: vigencia || '-' },
+        { label: 'Executor/Parceiro', value: program.executorName || program.executor || executorLabel.value || '-' },
+      ];
+    });
+
+    const overviewStageCards = computed(() => [
+      {
+        title: 'Processo Seletivo',
+        status: overviewStageCounts.value.selecao > 0 ? 'Em andamento' : 'Aguardando dados',
+        statusClass: overviewStageCounts.value.selecao > 0 ? 'pill-teal' : 'pill-slate',
+        items: [
+          { label: 'Inscritos', value: totalCandidates.value },
+          { label: 'Vagas nivelamento', value: classData.value?.defaultLevelingCapacity ?? '-' },
+          { label: 'Lista de espera', value: selectionWaitlistCount.value },
+          { label: 'Conflitos', value: selectionConflictCount.value, valueClass: selectionConflictCount.value ? 'warning-strong' : '' },
+        ],
+      },
+      {
+        title: 'Nivelamento',
+        status: overviewStageCounts.value.nivelamento > 0 ? 'Em andamento' : 'Aguardando dados',
+        statusClass: overviewStageCounts.value.nivelamento > 0 ? 'pill-teal' : 'pill-slate',
+        items: [
+          { label: 'Selecionados', value: overviewStageCounts.value.nivelamento || '-' },
+          { label: 'Ativos', value: classStatusReport.value?.activeStudents ?? activeClassPeopleCount.value },
+          { label: 'Cursos obrigatórios', value: courseItems.value.filter((course) => course.required).length },
+          { label: 'Prova final', value: formatDate(classData.value?.levelingFinalExamDate) },
+        ],
+      },
+      {
+        title: 'Imersão',
+        status: overviewStageCounts.value.imersao > 0 ? 'Em andamento' : 'Aguardando dados',
+        statusClass: overviewStageCounts.value.imersao > 0 ? 'pill-teal' : 'pill-slate',
+        items: [
+          { label: 'Aprovados', value: overviewStageCounts.value.imersao || '-' },
+          { label: 'Alunos ativos', value: imersaoActiveStudentsCount.value || '-' },
+          { label: 'Grupos formados', value: imersaoGroups.value.length },
+          { label: 'Avaliação final', value: formatDate(classData.value?.finalEvaluationDate) },
+        ],
+      },
+    ]);
+
+    const openOverviewStageDetails = (title) => {
+      activeTab.value = 'etapas';
+      etapasSubTab.value = normalizeText(title).includes('imers') ? 'imersao' : 'nivelamento';
+    };
+
+    const openFullTimeline = () => {
+      activeTab.value = 'etapas';
+      etapasSubTab.value = currentStageIndex.value >= 3 ? 'imersao' : 'nivelamento';
     };
 
     const openSendMessageModal = (options = {}) => {
@@ -2778,6 +3015,115 @@ export default {
       return `Mostrando ${selectionProcessPageStart.value}-${selectionProcessPageEnd.value} de ${total} inscritos`;
     });
 
+    const distributionPalette = ['#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#64748b'];
+    const distributionRows = computed(() => (
+      classPeopleRows.value.length ? classPeopleRows.value : selectionProcessBaseRows.value
+    ));
+    const buildCountDistribution = (rows, resolveLabel, fallbackLabel = 'Não informado', maxItems = 6) => {
+      const counts = new Map();
+      (rows || []).forEach((row) => {
+        const rawLabel = resolveLabel(row);
+        const label = rawLabel && rawLabel !== '-' ? rawLabel : fallbackLabel;
+        counts.set(label, (counts.get(label) || 0) + 1);
+      });
+
+      if (!counts.size) {
+        return [{ label: 'Sem dados', value: 0, count: 0 }];
+      }
+
+      return Array.from(counts.entries())
+        .map(([label, count]) => ({ label, value: count, count }))
+        .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label, 'pt-BR'))
+        .slice(0, maxItems);
+    };
+    const buildPercentDistribution = (rows, resolveLabel, fallbackLabel = 'Não informado') => {
+      const source = buildCountDistribution(rows, resolveLabel, fallbackLabel);
+      const total = source.reduce((sum, item) => sum + item.count, 0);
+      if (!total) {
+        return [{ label: 'Sem dados', value: 0, color: '#cbd5e1' }];
+      }
+
+      return source.map((item, index) => ({
+        label: item.label,
+        value: Math.round((item.count / total) * 100),
+        count: item.count,
+        color: distributionPalette[index % distributionPalette.length],
+      }));
+    };
+
+    const quotaDistribution = computed(() =>
+      buildPercentDistribution(distributionRows.value, (row) => normalizeQuotaLabel(row.quota || row.peopleQuotaCategory))
+    );
+    const genderDistribution = computed(() =>
+      buildPercentDistribution(distributionRows.value, (row) => formatGender(row.gender || row.peopleGender))
+    );
+    const cityDistribution = computed(() =>
+      buildCountDistribution(distributionRows.value, (row) => row.city || formatCity(row), 'Não informado', 5)
+    );
+    const educationDistribution = computed(() =>
+      buildCountDistribution(distributionRows.value, (row) => formatEducation(row.educationLevel || row.education), 'Não informado', 5)
+    );
+
+    const timelinePeriodLabel = (start, end) => {
+      const startLabel = formatDate(start);
+      const endLabel = formatDate(end);
+      if (startLabel !== '-' && endLabel !== '-') return `${startLabel} a ${endLabel}`;
+      return startLabel !== '-' ? startLabel : endLabel;
+    };
+    const timelineStatus = (dateValue) => {
+      const date = parseDateValue(dateValue);
+      if (!date) return 'Pendente';
+      return date.getTime() <= Date.now() ? 'Concluído' : 'Previsto';
+    };
+    const timelinePeriodStatus = (start, end) => timelineStatus(end || start);
+    const overviewTimeline = computed(() => [
+      { label: 'Publicação do edital', date: formatDate(classData.value?.publicationDate), status: timelineStatus(classData.value?.publicationDate) },
+      { label: 'Inscrições', date: timelinePeriodLabel(classData.value?.applicationStartDate, classData.value?.applicationEndDate), status: timelinePeriodStatus(classData.value?.applicationStartDate, classData.value?.applicationEndDate) },
+      { label: 'Selecionados para nivelamento', date: formatDate(classData.value?.levelingSelectionAnnouncementDate), status: timelineStatus(classData.value?.levelingSelectionAnnouncementDate) },
+      { label: 'Nivelamento', date: timelinePeriodLabel(classData.value?.levelingStartDate, classData.value?.levelingEndDate), status: timelinePeriodStatus(classData.value?.levelingStartDate, classData.value?.levelingEndDate) },
+      { label: 'Prova final', date: formatDate(classData.value?.levelingFinalExamDate), status: timelineStatus(classData.value?.levelingFinalExamDate) },
+      { label: 'Selecionados para imersão', date: formatDate(classData.value?.immersionSelectionAnnouncementDate), status: timelineStatus(classData.value?.immersionSelectionAnnouncementDate) },
+      { label: 'Imersão', date: timelinePeriodLabel(classData.value?.immersionStartDate, classData.value?.immersionEndDate), status: timelinePeriodStatus(classData.value?.immersionStartDate, classData.value?.immersionEndDate) },
+      { label: 'Avaliação parcial', date: formatDate(classData.value?.partialEvaluationDate), status: timelineStatus(classData.value?.partialEvaluationDate) },
+      { label: 'Avaliação final', date: formatDate(classData.value?.finalEvaluationDate), status: timelineStatus(classData.value?.finalEvaluationDate) },
+      { label: 'Certificados', date: formatDate(classData.value?.certificateIssueDate), status: timelineStatus(classData.value?.certificateIssueDate) },
+    ]);
+
+    const overviewUpdates = computed(() => [
+      {
+        action: `${selectionProcessBaseRows.value.length || totalCandidates.value} inscrição(ões) no processo seletivo`,
+        author: 'Processo seletivo',
+        date: formatDate(classData.value?.applicationEndDate || classData.value?.applicationStartDate),
+        status: 'Sincronizado',
+        statusClass: 'pill-teal',
+        dotClass: 'dot-green',
+      },
+      {
+        action: `${courseItems.value.length} curso(s) vinculado(s) ao nivelamento`,
+        author: 'Cursos',
+        date: formatDate(classData.value?.levelingStartDate),
+        status: courseItems.value.length ? 'Atualizado' : 'Pendente',
+        statusClass: courseItems.value.length ? 'pill-teal' : 'pill-slate',
+        dotClass: courseItems.value.length ? 'dot-green' : 'dot-slate',
+      },
+      {
+        action: `${overviewStageCounts.value.imersao || imersaoActiveStudentsCount.value} aluno(s) aprovado(s) para imersão`,
+        author: 'Imersão',
+        date: formatDate(classData.value?.immersionSelectionAnnouncementDate || classData.value?.immersionStartDate),
+        status: overviewStageCounts.value.imersao ? 'Consolidado' : 'Pendente',
+        statusClass: overviewStageCounts.value.imersao ? 'pill-teal' : 'pill-slate',
+        dotClass: overviewStageCounts.value.imersao ? 'dot-green' : 'dot-slate',
+      },
+      {
+        action: `${imersaoGroups.value.length} grupo(s) de projeto cadastrado(s)`,
+        author: 'Projetos',
+        date: formatDate(classData.value?.immersionStartDate),
+        status: imersaoGroups.value.length ? 'Atualizado' : 'Pendente',
+        statusClass: imersaoGroups.value.length ? 'pill-teal' : 'pill-slate',
+        dotClass: imersaoGroups.value.length ? 'dot-green' : 'dot-slate',
+      },
+    ]);
+
     const openUpdateSelectionModal = (context = 'selecao') => {
       updateStageContext.value = context;
       selectedUpdateAction.value = null;
@@ -2826,32 +3172,75 @@ export default {
       }
     };
 
+    const isCompletedProgression = (progression) => {
+      const normalizedStatus = normalizeText(progression?.status || '');
+      const completion = Number(progression?.completionPercentage ?? progression?.completionPct ?? progression?.completion ?? 0);
+      return normalizedStatus.includes('conclu')
+        || normalizedStatus.includes('realizado')
+        || normalizedStatus.includes('finaliz')
+        || completion >= 100;
+    };
+
+    const isNotStartedProgression = (progression) => {
+      const normalizedStatus = normalizeText(progression?.status || '');
+      const completion = Number(progression?.completionPercentage ?? progression?.completionPct ?? progression?.completion ?? 0);
+      return normalizedStatus.includes('naoiniciado')
+        || normalizedStatus.includes('nao-iniciado')
+        || normalizedStatus.includes('nao-realizado')
+        || normalizedStatus.includes('pendente')
+        || completion <= 0;
+    };
+
     const courseItems = computed(() => {
       if (!courses.value.length) return [];
       return courses.value.map(course => {
         const courseProgressions = progressions.value.filter(p => p.course?.id === course.id);
+        const assignment = assignments.value.find(a => a.course?.id === course.id);
         const total = courseProgressions.length || 1;
-        const notStarted = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('não iniciado') || p.status === 'não iniciado').length;
-        const inProgress = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('em andamento') || p.status === 'em andamento').length;
-        const completed = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('concluído') || p.status === 'concluído').length;
+        const notStarted = courseProgressions.filter(isNotStartedProgression).length;
+        const completed = courseProgressions.filter(isCompletedProgression).length;
+        const inProgress = Math.max(total - notStarted - completed, 0);
         const pending = Math.max(total - completed, 0);
         const workloadHours = Number(course.workloadHours || course.workload || course.hourLoad || course.cargaHoraria || 0);
         const avgCompletion = courseProgressions.length ? Math.round((courseProgressions.reduce((acc, p) => acc + Number(p.completionPercentage || p.completionPct || p.completion || 0), 0)) / total) : 0; // eslint-disable-line
+        const grades = courseProgressions
+          .map((p) => Number(p.grade ?? p.nota))
+          .filter((value) => Number.isFinite(value));
+        const frequencies = courseProgressions
+          .map((p) => Number(p.frequency ?? p.frequencia))
+          .filter((value) => Number.isFinite(value));
         return {
           id: course.id,
           name: course.name,
           knowledgeArea: course.knowledgeArea?.name,
-          required: assignments.value.find(a => a.course?.id === course.id)?.required !== false,
+          code: course.code,
+          required: assignment?.required !== false,
+          advisorName: assignment?.advisor?.name || '',
           completionPct: avgCompletion,
           pctNotStarted: Math.round((notStarted / total) * 100),
           pctInProgress: Math.round((inProgress / total) * 100),
           pctCompleted: Math.round((completed / total) * 100),
           completedCount: completed,
           pendingCount: pending,
+          avgGrade: grades.length ? (grades.reduce((sum, value) => sum + value, 0) / grades.length).toFixed(1) : null,
+          avgFrequency: frequencies.length ? Math.round(frequencies.reduce((sum, value) => sum + value, 0) / frequencies.length) : null,
           workloadHours,
           assigned: assignedIdsIncludes(assignments.value, course.id),
         };
       });
+    });
+
+    const requiredPendingStudentsCount = computed(() => {
+      const requiredCourseIds = new Set(courseItems.value.filter((course) => course.required).map((course) => course.id));
+      if (!requiredCourseIds.size) return 0;
+      const pendingPeopleIds = new Set();
+      progressions.value.forEach((progression) => {
+        const courseId = progression?.course?.id;
+        const peopleId = progression?.people?.id || progression?.peopleId || progression?.personId || progression?.person?.id;
+        if (!requiredCourseIds.has(courseId) || !peopleId) return;
+        if (!isCompletedProgression(progression)) pendingPeopleIds.add(peopleId);
+      });
+      return pendingPeopleIds.size;
     });
 
     function assignedIdsIncludes(list, id) {
@@ -2934,6 +3323,15 @@ export default {
         const closeCourseDetailsModal = () => {
           showCourseDetailsModal.value = false;
           selectedCourseItem.value = null;
+        };
+        const openClassCourses = () => {
+          router.push({
+            name: 'ClassCourses',
+            params: {
+              programId: route.params.programId || classData.value?.program?.id || route.params.id,
+              classId: classId.value,
+            },
+          });
         };
 
         // Load nivelamento data when Etapas tab is opened
@@ -3127,6 +3525,20 @@ export default {
     const peopleQuotaOptions = computed(() => [...new Set(classPeopleRows.value.map((row) => row.quota).filter((item) => item && item !== '-'))]);
     const peopleCityOptions = computed(() => [...new Set(classPeopleRows.value.map((row) => row.city).filter((item) => item && item !== '-'))]);
     const peopleGenderOptions = computed(() => [...new Set(classPeopleRows.value.map((row) => row.gender).filter((item) => item && item !== '-'))]);
+    const hasPeopleFilters = computed(() => Boolean(
+      peopleSearch.value.trim()
+      || peopleFilterStage.value
+      || peopleFilterStatus.value
+      || peopleFilterQuota.value
+      || peopleFilterCity.value
+      || peopleFilterGender.value
+    ));
+    const levelingCutoffScore = computed(() => (
+      classData.value?.levelingPassingScore
+      ?? classData.value?.passingScore
+      ?? classData.value?.minimumExamScore
+      ?? '-'
+    ));
 
     const filteredClassPeople = computed(() => {
       const term = normalizeText(peopleSearch.value);
@@ -3174,26 +3586,78 @@ export default {
       }
       return pages;
     });
+    const applyPeopleFilters = () => {
+      classPeoplePage.value = 1;
+    };
+    const clearPeopleFilters = () => {
+      peopleSearch.value = '';
+      peopleFilterStage.value = '';
+      peopleFilterStatus.value = '';
+      peopleFilterQuota.value = '';
+      peopleFilterCity.value = '';
+      peopleFilterGender.value = '';
+      classPeoplePage.value = 1;
+    };
+
+    const toPositiveNumber = (value, fallback = 0) => {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) && numeric >= 0 ? numeric : fallback;
+    };
+
+    const toPositiveInteger = (value, fallback = 0) => Math.round(toPositiveNumber(value, fallback));
+
+    const quotaSeatsFromTotal = (total) => {
+      const totalSeats = Math.max(toPositiveInteger(total, 50), 1);
+      const pcdSeats = Math.ceil(totalSeats * 0.05);
+      const negroPardoSeats = Math.round(totalSeats * 0.20);
+      const mulheresSeats = Math.round(totalSeats * 0.20);
+      const age45Seats = Math.ceil(totalSeats * 0.05);
+      const amplaConcorrenciaSeats = Math.max(totalSeats - pcdSeats - negroPardoSeats - mulheresSeats - age45Seats, 0);
+      return { amplaConcorrenciaSeats, pcdSeats, negroPardoSeats, mulheresSeats, age45Seats };
+    };
+
+    const syncApprovedRankingDefaults = () => {
+      const totalVacancies = Math.max(toPositiveInteger(
+        classData.value?.defaultImmersionCapacity ?? classData.value?.qtdVagas,
+        50
+      ), 1);
+      approvedRankingForm.value = {
+        ...approvedRankingForm.value,
+        totalVacancies,
+        pointsPerCompletedCourse: 2.5,
+        bonusPerPriorityCity: 10,
+        ...quotaSeatsFromTotal(totalVacancies),
+      };
+    };
 
     const buildApprovedRankingPayload = () => {
-      const totalVacancies = Number(classData.value?.defaultLevelingCapacity ?? 250);
-      const amplaConcorrenciaSeats = Math.round(totalVacancies * 0.45);
-      const mulheresSeats = Math.round(totalVacancies * 0.25);
-      const negroPardoSeats = Math.round(totalVacancies * 0.15);
-      const pcdSeats = Math.round(totalVacancies * 0.10);
-      const age45Seats = Math.max(totalVacancies - amplaConcorrenciaSeats - mulheresSeats - negroPardoSeats - pcdSeats, 0);
-
+      const form = approvedRankingForm.value;
       return {
-        totalVacancies,
-        pointsPerCompletedCourse: 1,
-        bonusPerPriorityCity: 2,
-        priorityCities: ['Maceió - AL', 'Arapiraca - AL', 'Rio Largo - AL'],
-        amplaConcorrenciaSeats,
-        pcdSeats,
-        negroPardoSeats,
-        mulheresSeats,
-        age45Seats,
+        totalVacancies: Math.max(toPositiveInteger(form.totalVacancies, 50), 1),
+        pointsPerCompletedCourse: toPositiveNumber(form.pointsPerCompletedCourse, 2.5),
+        bonusPerPriorityCity: toPositiveInteger(form.bonusPerPriorityCity, 10),
+        priorityCities: String(form.priorityCitiesText || '')
+          .split(/[\n;,]+/)
+          .map((city) => city.trim())
+          .filter(Boolean),
+        amplaConcorrenciaSeats: toPositiveInteger(form.amplaConcorrenciaSeats, 0),
+        pcdSeats: toPositiveInteger(form.pcdSeats, 0),
+        negroPardoSeats: toPositiveInteger(form.negroPardoSeats, 0),
+        mulheresSeats: toPositiveInteger(form.mulheresSeats, 0),
+        age45Seats: toPositiveInteger(form.age45Seats, 0),
       };
+    };
+
+    const recalculateApprovedRanking = async () => {
+      approvedRankingLoading.value = true;
+      examInsightsError.value = '';
+      try {
+        approvedRankingData.value = await examService.calculateApprovedRanking(classId.value, buildApprovedRankingPayload());
+      } catch (err) {
+        examInsightsError.value = err.response?.data?.message || err.message || 'Erro ao recalcular aprovados.';
+      } finally {
+        approvedRankingLoading.value = false;
+      }
     };
 
     const loadSelectionStageCandidates = async () => {
@@ -3526,12 +3990,15 @@ export default {
       error.value = null;
       try {
         classData.value = await classService.getById(classId.value);
+        syncApprovedRankingDefaults();
         await Promise.all([
           loadStages(),
           loadClassPeople(),
           loadSelectionProcessContext(),
           loadProgramOverviewItem(),
           loadNivelamentoData(),
+          loadClassStatusReport(),
+          loadImersaoGroups(),
           loadExamInsights(),
         ]);
       } catch (err) {
@@ -3677,6 +4144,15 @@ export default {
         return;
       }
       router.push({ path: '/programs/register', query: { edit: String(programId.value) } });
+    };
+
+    const goToProgramDetails = () => {
+      const resolvedProgramId = classData.value?.program?.id || programId.value;
+      if (!resolvedProgramId) {
+        router.push({ name: 'Programs' });
+        return;
+      }
+      router.push({ name: 'ProgramDetails', params: { id: resolvedProgramId } });
     };
 
     const closeCreateStageModal = () => {
@@ -3979,6 +4455,7 @@ export default {
       currentStageMilestone,
       currentStageMilestoneDate,
       currentStagePeriod,
+      currentStatusNote,
       cycle,
       deleteStage,
       displayStageName,
@@ -3991,10 +4468,13 @@ export default {
       formatCPF,
       genderDistribution,
       filteredClassPeople,
+      applyPeopleFilters,
+      clearPeopleFilters,
       getStageCandidatesCount,
       goBack,
       goToClassCourses,
       goToPeople,
+      goToProgramDetails,
       goToStageDetails,
       classModelLabel,
       classLocationLabel,
@@ -4019,6 +4499,8 @@ export default {
       newStage,
       nextStageLabel,
       openEditStageModal,
+      openFullTimeline,
+      openOverviewStageDetails,
       overviewCurrentCycleIndex,
       overviewCycle,
       overviewCycleHasStudents,
@@ -4027,6 +4509,7 @@ export default {
       overviewTimeline,
       overviewTopCards,
       overviewUpdates,
+      programContractItems,
       paginatedClassPeople,
       executorLabel,
       peopleCityOptions,
@@ -4037,6 +4520,7 @@ export default {
       peopleFilterStage,
       peopleFilterStatus,
       peopleGenderOptions,
+      hasPeopleFilters,
       peopleLoading,
       peopleQuotaOptions,
       peopleSearch,
@@ -4093,6 +4577,7 @@ export default {
       tabs,
       etapasSubTab,
       lastEmailInfo,
+      levelingCutoffScore,
       totalCandidates,
       selectionCandidatesLoading,
       updateStage,
@@ -4136,6 +4621,9 @@ export default {
       examSummaryData,
       examRespondentProfileData,
       approvedRankingData,
+      approvedRankingForm,
+      approvedRankingLoading,
+      recalculateApprovedRanking,
       examInsightsLoading,
       examInsightsError,
       imersaoMetricsCards,
@@ -4155,6 +4643,7 @@ export default {
       courses,
       courseItems,
       courseStats,
+      requiredPendingStudentsCount,
       getNivelamentoStudents,
       getCompletionColor,
       loadingNivelamento,
@@ -4163,6 +4652,7 @@ export default {
       removeCourse,
       openCourseDetails,
       closeCourseDetailsModal,
+      openClassCourses,
       onGroupCreated,
     };
   },
@@ -4368,7 +4858,7 @@ export default {
   border-top: 1px solid var(--slate-200);
   padding: 0 32px;
   display: flex;
-  gap: 2px;
+  gap: 8px;
   overflow-x: auto;
 }
 
@@ -4376,17 +4866,28 @@ export default {
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
-  padding: 13px 12px;
+  padding: 13px 10px;
   font-size: 14px;
   font-weight: 600;
   color: var(--slate-600);
   cursor: pointer;
   white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.tab:hover {
+  color: var(--brand-900);
+}
+
+.tab:focus-visible {
+  outline: 3px solid rgba(20, 184, 166, 0.22);
+  outline-offset: -3px;
 }
 
 .tab.active {
   color: var(--teal-600);
   border-bottom-color: var(--teal-500);
+  font-weight: 700;
 }
 
 .content {
@@ -4513,6 +5014,46 @@ export default {
   font-size: 15px;
 }
 
+.contract-panel {
+  padding-bottom: 12px;
+}
+
+.contract-link {
+  margin-top: 0;
+}
+
+.contract-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.contract-item {
+  min-width: 0;
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  background: var(--slate-100);
+  padding: 10px 12px;
+}
+
+.contract-item span {
+  display: block;
+  color: var(--slate-600);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.contract-item strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--brand-900);
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .panel-progress {
   font-size: 13px;
   color: var(--slate-600);
@@ -4587,7 +5128,7 @@ export default {
 .overview-title {
   margin: 0;
   color: var(--brand-900);
-  font-size: 28px;
+  font-size: 20px;
   line-height: 1.1;
   font-weight: 700;
 }
@@ -4603,6 +5144,8 @@ export default {
   border: 1px solid var(--brand-300);
   border-radius: 12px;
   padding: 14px;
+  max-height: 260px;
+  overflow-y: auto;
 }
 
 .summary-card-head {
@@ -4614,7 +5157,7 @@ export default {
 
 .summary-card-head h4 {
   margin: 0;
-  font-size: 30px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--brand-900);
   line-height: 1.1;
@@ -4641,7 +5184,7 @@ export default {
 
 .summary-card-list strong {
   color: var(--brand-900);
-  font-size: 30px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -4662,13 +5205,16 @@ export default {
 .section-subtitle {
   margin: 0;
   color: var(--brand-900);
-  font-size: 28px;
+  font-size: 20px;
   line-height: 1.1;
   font-weight: 700;
 }
 
 .timeline-list {
   margin-top: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .timeline-row {
@@ -4701,7 +5247,7 @@ export default {
 
 .timeline-label {
   color: var(--brand-900);
-  font-size: 30px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 1.1;
 }
@@ -4730,7 +5276,7 @@ export default {
 
 .distribution-panel h4 {
   margin: 0;
-  font-size: 30px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.1;
 }
@@ -4740,6 +5286,9 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .quota-row {
@@ -4805,6 +5354,9 @@ export default {
 
 .simple-list {
   margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .simple-list div {
@@ -4832,6 +5384,9 @@ export default {
 
 .updates-list {
   margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .update-row {
@@ -4942,6 +5497,9 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 12px;
+  max-height: min(68vh, 640px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .stage-card {
@@ -4951,6 +5509,8 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 170px;
+  max-height: 260px;
+  overflow-y: auto;
 }
 
 .stage-top {
@@ -4982,6 +5542,9 @@ export default {
   color: var(--slate-600);
   font-size: 14px;
   flex-grow: 1;
+  max-height: 92px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
 }
 
 .stage-actions {
@@ -5123,6 +5686,12 @@ export default {
   font-family: inherit;
 }
 
+textarea.field {
+  max-height: 220px;
+  overflow-y: auto;
+  resize: vertical;
+}
+
 .field:focus {
   outline: none;
   border-color: var(--teal-500);
@@ -5217,7 +5786,8 @@ export default {
   box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
 }
 
-.people-search-btn {
+.people-search-btn,
+.people-clear-btn {
   border: 1px solid var(--brand-300);
   background: #fff;
   color: var(--brand-900);
@@ -5231,6 +5801,15 @@ export default {
 
 .people-search-btn:hover {
   background: var(--slate-100);
+}
+
+.people-clear-btn {
+  color: var(--slate-600);
+}
+
+.people-clear-btn:hover {
+  background: var(--slate-100);
+  color: var(--brand-900);
 }
 
 .people-select-row {
@@ -5455,7 +6034,7 @@ export default {
 .metric-card strong {
   display: block;
   color: var(--brand-900);
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 600;
 }
 
@@ -6181,6 +6760,8 @@ export default {
   font-family: inherit;
   resize: vertical;
   min-height: 120px;
+  max-height: 240px;
+  overflow-y: auto;
 }
 
 .textarea-input:focus {
@@ -6421,6 +7002,10 @@ export default {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .contract-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .summary-grid {
     grid-template-columns: 1fr;
   }
@@ -6499,6 +7084,7 @@ export default {
   }
 
   .status-grid,
+  .contract-grid,
   .metrics {
     grid-template-columns: 1fr;
   }
@@ -6587,6 +7173,25 @@ export default {
 .n-card.amber .value { color:#d97706; }
 .n-card.red .value { color:#dc2626; }
 .email-banner { background:#f0f9ff; border:1px solid #dbeafe; border-radius:8px; padding:12px 16px; margin:0 24px; }
+.email-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  width: 100%;
+}
+.email-banner-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.email-banner-label {
+  color: #075985;
+  font-weight: 600;
+}
+.email-banner-value {
+  color: #0c4a6e;
+}
 .email-banner-status {
   color: #2563eb;
   font-size: 13px;
@@ -6653,7 +7258,7 @@ export default {
   display: block;
   margin-top: 6px;
   color: var(--brand-900);
-  font-size: 34px;
+  font-size: 24px;
   line-height: 1;
   font-weight: 700;
 }
@@ -6692,6 +7297,9 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: min(68vh, 660px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .imersao-group-item {
@@ -6810,6 +7418,8 @@ export default {
 .imersao-group-expanded {
   border-top: 1px solid var(--slate-200);
   padding: 12px 16px 14px;
+  max-height: 430px;
+  overflow: auto;
 }
 
 .imersao-group-tabs {
@@ -6901,6 +7511,9 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 17px;
+  max-height: min(62vh, 620px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .class-status-report {
@@ -7226,6 +7839,81 @@ export default {
   font-size: 15px;
 }
 
+.exam-ranking-config {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--brand-300);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.exam-ranking-config-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.exam-ranking-config-head h4 {
+  margin: 0;
+  color: var(--brand-900);
+  font-size: 15px;
+}
+
+.compact-btn {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
+.ranking-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ranking-quota-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.ranking-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ranking-field-wide {
+  grid-column: span 1;
+}
+
+.ranking-field span {
+  color: var(--slate-600);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ranking-field input,
+.ranking-field textarea {
+  width: 100%;
+  border: 1px solid var(--brand-300);
+  border-radius: 8px;
+  padding: 9px 10px;
+  color: var(--brand-900);
+  font-size: 14px;
+  line-height: 1.25;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.ranking-field textarea {
+  resize: vertical;
+  min-height: 40px;
+  max-height: 96px;
+}
+
 .exam-ranking-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -7327,12 +8015,16 @@ export default {
 @media (max-width: 1200px) {
   .nivelamento-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .imersao-metrics-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ranking-form-grid,
+  .ranking-quota-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .imersao-group-card { grid-template-columns: 1fr; gap: 8px; }
   .imersao-group-arrow { display: none; }
 }
 @media (max-width: 760px) {
   .nivelamento-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .imersao-metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ranking-form-grid,
+  .ranking-quota-grid { grid-template-columns: 1fr; }
   .presenca-filters-grid { grid-template-columns: 1fr; }
   .presenca-row { flex-direction: column; align-items: flex-start; }
   .imersao-group-tabs { overflow-x: auto; white-space: nowrap; }

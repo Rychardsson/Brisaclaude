@@ -14,4 +14,6 @@ public interface CareerAutomationDispatchRepository extends JpaRepository<Career
     List<CareerAutomationDispatchModel> findByEnrollment_IdIn(Collection<Long> enrollmentIds);
 
     Optional<CareerAutomationDispatchModel> findByEnrollment_IdAndCheckpointMonths(Long enrollmentId, Integer checkpointMonths);
+
+    Optional<CareerAutomationDispatchModel> findByResponseToken(String responseToken);
 }

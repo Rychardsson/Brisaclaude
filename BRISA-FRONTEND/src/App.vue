@@ -19,7 +19,7 @@ export default {
     const route = useRoute();
     
     // Mostrar NavBar apenas em rotas autenticadas (não na tela de login)
-    const showNavBar = computed(() => route.path !== '/');
+    const showNavBar = computed(() => Boolean(route.meta?.requiresAuth));
 
     return {
       showNavBar

@@ -162,7 +162,7 @@
             </div>
 
             <div class="automation-grid">
-              <article class="automation-panel">
+              <article class="automation-panel automation-panel-config">
                 <div class="automation-panel-header">
                   <div>
                     <h3>Configuração</h3>
@@ -171,7 +171,8 @@
                   <span>{{ automationScopeLabel }}</span>
                 </div>
 
-                <div class="form-grid automation-form-grid">
+                <div class="automation-panel-body">
+                <div class="form-grid automation-form-grid automation-form-grid-fill">
                   <label class="field">
                     <span>Programa</span>
                     <select v-model="automationScopeProgramId">
@@ -231,14 +232,19 @@
                     />
                   </label>
 
-                  <label class="field field-full">
+                  <label class="field field-full field-message-grow">
                     <span>Mensagem-base</span>
                     <textarea
+                      class="automation-message-input"
                       v-model="automationMessage"
-                      rows="5"
+                      rows="6"
                       placeholder="Digite aqui a mensagem inicial do acompanhamento."
                     ></textarea>
+                    <small class="field-hint">
+                      A mensagem é enviada junto com o template institucional do e-mail de carreira.
+                    </small>
                   </label>
+                </div>
                 </div>
 
                 <div class="automation-actions">
@@ -1921,7 +1927,19 @@ function formatDateTime(value) {
 }
 
 .table-card {
-  overflow: hidden;
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.table-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-card::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .filters-row {
@@ -2137,6 +2155,12 @@ function formatDateTime(value) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.history-list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .ranking-item {
@@ -2523,7 +2547,26 @@ function formatDateTime(value) {
 }
 
 .field textarea {
+  min-height: 118px;
+  max-height: 180px;
+  overflow-y: auto;
   resize: vertical;
+}
+
+.automation-panel-config .field-message-grow textarea.automation-message-input {
+  min-height: 320px;
+  max-height: none;
+  height: 100%;
+  flex: 1;
+  resize: vertical;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 8px;
+  color: #7b8ba3;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .field-full {
@@ -2716,6 +2759,36 @@ function formatDateTime(value) {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  height: 100%;
+}
+
+.automation-panel-config .automation-panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 16px;
+}
+
+.automation-panel-config .automation-form-grid-fill {
+  flex: 1;
+  height: 100%;
+  margin-top: 0;
+  min-height: 0;
+  grid-template-rows: auto auto auto minmax(320px, 1fr);
+  align-content: stretch;
+}
+
+.automation-panel-config .field-message-grow {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 320px;
+  align-self: stretch;
+}
+
+.automation-panel-config .field-message-grow .field-hint {
+  flex-shrink: 0;
 }
 
 .automation-panel-header {
@@ -2755,6 +2828,10 @@ function formatDateTime(value) {
   margin-top: 16px;
 }
 
+.automation-panel-config .automation-form-grid-fill {
+  margin-top: 0;
+}
+
 .checkpoint-row {
   display: flex;
   flex-wrap: wrap;
@@ -2782,6 +2859,7 @@ function formatDateTime(value) {
 .automation-actions {
   margin-top: auto;
   padding-top: 16px;
+  flex-shrink: 0;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -2859,6 +2937,12 @@ function formatDateTime(value) {
   gap: 10px;
 }
 
+.automation-history-list {
+  max-height: 390px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 .automation-list-item,
 .automation-history-item {
   border: 1px solid #e2e8f0;
@@ -2869,6 +2953,11 @@ function formatDateTime(value) {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.automation-history-item {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.45fr) minmax(0, 1fr);
 }
 
 .automation-list-main {
@@ -2900,10 +2989,20 @@ function formatDateTime(value) {
   gap: 4px;
 }
 
+.automation-history-meta {
+  min-width: 0;
+  align-items: flex-end;
+}
+
 .automation-list-side small,
 .automation-history-meta small {
   color: #6a7a90;
   font-size: 12px;
+}
+
+.automation-history-meta small {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .automation-history-meta span {
@@ -2984,6 +3083,7 @@ function formatDateTime(value) {
   .automation-list-item,
   .automation-history-item,
   .agenda-item {
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
   }

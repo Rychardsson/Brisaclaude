@@ -130,6 +130,15 @@
               <span class="filters-badge">{{ activeFiltersCount }}</span>
             </button>
 
+            <button
+              v-if="hasActiveListingFilters"
+              type="button"
+              class="clear-filters-button"
+              @click="clearListingFilters"
+            >
+              Limpar filtros
+            </button>
+
             <button type="button" class="search-button" @click="applySearch">
               Pesquisar
             </button>
@@ -199,7 +208,6 @@
             v-for="program in paginatedPrograms"
             :key="`${program.programId}-${program.classId}`"
             class="program-row"
-            :class="{ 'program-row-active-tab': activeTab === 'ativos' }"
             @click="viewProgram(program)"
           >
             <div class="program-main">
@@ -237,7 +245,7 @@
 
               <div class="progress-wrap">
                 <div class="progress-bar">
-                  <div class="progress-fill" :style="{ width: `${program.progresso}%` }" />
+                  <div class="progress-fill" :style="{ width: `${progressPercent(program.progresso)}%` }" />
                 </div>
               </div>
 
@@ -306,7 +314,7 @@
                   </button>
                   <button type="button" class="options-danger" @click="askDelete(program)">
                     <Trash2 :size="16" />
-                    Excluir programa
+                    {{ deleteActionLabel(program) }}
                   </button>
                 </div>
               </div>
@@ -579,7 +587,7 @@
       <div class="modal-content modal-sm">
         <div class="modal-header">
           <div>
-            <h3>Excluir programa</h3>
+            <h3>{{ deleteModalTitle }}</h3>
             <p class="modal-subtitle">Essa ação não poderá ser desfeita.</p>
           </div>
           <button type="button" class="btn-close-modal" @click="closeDeleteModal">
@@ -589,14 +597,14 @@
 
         <div class="modal-body">
           <p class="delete-text">
-            Deseja excluir <strong>{{ programToDelete.nome }} - Turma {{ programToDelete.turma }}</strong>?
+            Deseja excluir <strong>{{ deleteModalSubject }}</strong>?
           </p>
         </div>
 
         <div class="modal-footer">
           <button type="button" class="footer-btn secondary" @click="closeDeleteModal">Cancelar</button>
           <button type="button" class="footer-btn danger" :disabled="deletingProgram" @click="deleteProgram">
-            {{ deletingProgram ? 'Excluindo...' : 'Excluir programa' }}
+            {{ deletingProgram ? 'Excluindo...' : deleteModalConfirmLabel }}
           </button>
         </div>
       </div>
@@ -990,6 +998,36 @@ const activeFiltersCount = computed(() => {
   return [selectedStatus.value, selectedStage.value, selectedYear.value, selectedLocality.value].filter(Boolean).length;
 });
 
+const hasActiveListingFilters = computed(() => {
+  return Boolean(
+    searchInput.value.trim()
+    || appliedSearch.value
+    || selectedStatus.value
+    || selectedStage.value
+    || selectedYear.value
+    || selectedLocality.value
+  );
+});
+
+const deleteTargetClassId = computed(() => {
+  return programToDelete.value
+    ? resolveClassId(programToDelete.value) || resolveClassIdByCode(programToDelete.value)
+    : null;
+});
+
+const deleteModalTitle = computed(() => (deleteTargetClassId.value == null ? 'Excluir programa' : 'Excluir turma'));
+
+const deleteModalConfirmLabel = computed(() => (deleteTargetClassId.value == null ? 'Excluir programa' : 'Excluir turma'));
+
+const deleteModalSubject = computed(() => {
+  if (!programToDelete.value) return '';
+
+  const classLabel = programToDelete.value.turma ? `Turma ${programToDelete.value.turma}` : 'turma selecionada';
+  return deleteTargetClassId.value == null
+    ? String(programToDelete.value.nome || 'programa selecionado')
+    : `${classLabel} - ${programToDelete.value.nome || 'Programa'}`;
+});
+
 const filteredPrograms = computed(() => {
   let items = [...classesBySelectedProgram.value];
 
@@ -1088,11 +1126,17 @@ function stageConnectorActive(program, index) {
 }
 
 function statusLabel(status) {
-  return statusLabels[status] || status;
+  const key = normalizedStatus(status);
+  return statusLabels[key] || status || '-';
 }
 
 function statusClass(status) {
-  return statusClasses[status] || 'status-slate';
+  return statusClasses[normalizedStatus(status)] || 'status-slate';
+}
+
+function progressPercent(value) {
+  const parsed = numberValue(value);
+  return Math.min(100, Math.max(0, parsed));
 }
 
 function goToPage(page) {
@@ -1114,6 +1158,16 @@ function resetClassListingFilters() {
   selectedStage.value = '';
   selectedYear.value = '';
   selectedLocality.value = '';
+}
+
+function clearListingFilters() {
+  searchInput.value = '';
+  appliedSearch.value = '';
+  selectedStatus.value = '';
+  selectedStage.value = '';
+  selectedYear.value = '';
+  selectedLocality.value = '';
+  currentPage.value = 1;
 }
 
 function toggleProgramSelector() {
@@ -1275,6 +1329,10 @@ function askDelete(program) {
   showOptionsMenu.value = null;
 }
 
+function deleteActionLabel(program) {
+  return (resolveClassId(program) || resolveClassIdByCode(program)) == null ? 'Excluir programa' : 'Excluir turma';
+}
+
 function closeDeleteModal() {
   programToDelete.value = null;
 }
@@ -1284,7 +1342,12 @@ async function deleteProgram() {
 
   deletingProgram.value = true;
   try {
-    await programService.delete(programToDelete.value.programId);
+    const classId = deleteTargetClassId.value;
+    if (classId != null) {
+      await classService.delete(classId);
+    } else {
+      await programService.delete(programToDelete.value.programId);
+    }
     programToDelete.value = null;
     await loadData();
   } catch (error) {
@@ -1668,7 +1731,19 @@ h1 {
 
 .table-card {
   padding: 0;
-  overflow: hidden;
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.table-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-card::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .tabs-bar {
@@ -1785,6 +1860,25 @@ h1 {
   border-color: #cfd9e6;
 }
 
+.clear-filters-button {
+  height: 40px;
+  border-radius: 12px;
+  padding: 0 14px;
+  border: 1px solid #d8e1eb;
+  background: #fff;
+  color: #50619e;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.clear-filters-button:hover {
+  background: #f8fafc;
+  border-color: #cfd9e6;
+  color: #13233f;
+}
+
 .search-button {
   height: 40px;
   border-radius: 12px;
@@ -1898,17 +1992,6 @@ h1 {
 
 .program-row:hover {
   background: #f9fbfd;
-}
-
-.program-row-active-tab .program-title-line h3 {
-  font-size: 24px;
-  font-weight: 800;
-}
-
-.program-row-active-tab .class-chip {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 8px;
 }
 
 .program-main {

@@ -60,6 +60,7 @@
                   </div>
                 </div>
                 <p class="selected-count">{{ form.memberIds.length }} aluno(s) selecionado(s)</p>
+                <p class="selection-helper">A lista mostra apenas alunos elegiveis que ainda nao participam de outro projeto de imersao.</p>
               </div>
 
               <div class="form-group">
@@ -355,7 +356,7 @@ export default {
   width: 100%; box-sizing: border-box; height: 42px; border-radius: 12px; border: 1px solid #d7e1eb; padding: 0 12px; color: #13233f; background: #fff; outline: none;
 }
 
-.form-group textarea { height: auto; min-height: 84px; padding: 10px 12px; }
+.form-group textarea { height: auto; min-height: 84px; max-height: 220px; overflow-y: auto; padding: 10px 12px; resize: vertical; }
 .form-group input:focus, .form-group select:focus, textarea:focus { border-color: #14b8a6; box-shadow: 0 0 0 4px rgba(20,184,166,0.1); }
 
 /* multi-select specific */
@@ -364,6 +365,7 @@ export default {
 .checkbox-label { display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:400; margin:0; }
 .checkbox-label input[type="checkbox"] { width:auto; margin:0; }
 .selected-count { margin-top:8px; font-size:12px; color:#666; }
+.selection-helper { margin:4px 0 0; font-size:12px; line-height:1.45; color:#6a7a90; }
 
 /* Actions */
 .modal-actions { margin-top: 0; padding: 14px 22px 18px; border-top: 1px solid #e2eaf2; display:flex; justify-content:flex-end; gap:10px; }

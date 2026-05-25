@@ -9,6 +9,7 @@ public record ExamSummaryDTO(
         int totalParticipants,
         long femaleParticipants,
         long maleParticipants,
+        List<QuotaParticipantDTO> quotaParticipants,
         long zeroScoreCount,
         long highestScoreCount,
         double highestScore,
@@ -18,5 +19,6 @@ public record ExamSummaryDTO(
         List<QuestionPerformanceDTO> worstQuestions
 ) {
     public record ScoreBucketDTO(String label, long count) {}
+    public record QuotaParticipantDTO(String label, long count) {}
     public record QuestionPerformanceDTO(Integer questionNumber, String subject, long correctAnswers, long totalAnswers, double successRate) {}
 }

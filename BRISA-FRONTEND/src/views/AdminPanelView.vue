@@ -1771,7 +1771,19 @@ function closeUserDetails() {
 
 .table-card {
   border-radius: 20px;
-  overflow: hidden;
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.table-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-card::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .tabs-bar {
@@ -2580,6 +2592,9 @@ function closeUserDetails() {
 }
 
 .field textarea {
+  min-height: 118px;
+  max-height: 220px;
+  overflow-y: auto;
   resize: vertical;
 }
 

@@ -158,6 +158,12 @@
   cursor: not-allowed;
 }
 
+textarea.form-control {
+  max-height: 220px;
+  overflow-y: auto;
+  resize: vertical;
+}
+
 /* Search */
 .search-box {
   position: relative;

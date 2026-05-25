@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -94,20 +95,27 @@ public class AnalyticsService {
         List<EnrollmentModel> studentEnrollments = enrollmentRepository.findByClassIdWithRelations(classId).stream()
                 .filter(this::isStudentEnrollment)
                 .toList();
+        List<EnrollmentModel> activeStudentEnrollments = studentEnrollments.stream()
+                .filter(enrollment -> isActiveStatus(enrollment.getStatus()))
+                .toList();
         List<CourseProgressionModel> progressions = courseProgressionRepository.findByClassId(classId);
+
+        Set<Long> activePeopleIds = activeStudentEnrollments.stream()
+                .filter(enrollment -> enrollment.getPeople() != null && enrollment.getPeople().getId() != null)
+                .map(enrollment -> enrollment.getPeople().getId())
+                .collect(Collectors.toSet());
 
         Map<Long, Long> completedByPeople = progressions.stream()
                 .filter(this::isCompletedProgression)
                 .filter(progression -> progression.getPeople() != null && progression.getPeople().getId() != null)
+                .filter(progression -> activePeopleIds.contains(progression.getPeople().getId()))
                 .collect(Collectors.groupingBy(
                         progression -> progression.getPeople().getId(),
                         Collectors.counting()
                 ));
 
-        long activeStudents = studentEnrollments.stream()
-                .filter(enrollment -> isActiveStatus(enrollment.getStatus()))
-                .count();
-        long studentsWithProgress = studentEnrollments.stream()
+        long activeStudents = activeStudentEnrollments.size();
+        long studentsWithProgress = activeStudentEnrollments.stream()
                 .filter(enrollment -> completedByPeople.containsKey(enrollment.getPeople().getId()))
                 .count();
         long maxCompletedCourses = completedByPeople.values().stream()
@@ -120,13 +128,13 @@ public class AnalyticsService {
             buckets.put(completed, 0L);
         }
 
-        for (EnrollmentModel enrollment : studentEnrollments) {
+        for (EnrollmentModel enrollment : activeStudentEnrollments) {
             Long peopleId = enrollment.getPeople().getId();
             int completedCourses = completedByPeople.getOrDefault(peopleId, 0L).intValue();
             buckets.put(completedCourses, buckets.getOrDefault(completedCourses, 0L) + 1L);
         }
 
-        long totalStudents = studentEnrollments.size();
+        long totalStudents = activeStudentEnrollments.size();
         List<ClassStatusReportDTO.CompletionBucketDTO> completionBuckets = buckets.entrySet().stream()
                 .map(entry -> new ClassStatusReportDTO.CompletionBucketDTO(
                         entry.getKey(),

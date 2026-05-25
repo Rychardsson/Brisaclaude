@@ -1416,6 +1416,12 @@ tbody tr:hover {
   box-sizing: border-box;
 }
 
+textarea.form-input {
+  max-height: 220px;
+  overflow-y: auto;
+  resize: vertical;
+}
+
 .form-input:focus {
   outline: none;
   border-color: #0288d1;

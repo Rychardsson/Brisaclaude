@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 public class ApprovedRankingRequestDTO {
     private Integer totalVacancies;
-    private Integer pointsPerCompletedCourse = 1;
+    private Double pointsPerCompletedCourse = 2.5;
     private Integer bonusPerPriorityCity = 2;
     private List<String> priorityCities = new ArrayList<>();
     private Integer amplaConcorrenciaSeats = 0;
@@ -17,4 +17,3 @@ public class ApprovedRankingRequestDTO {
     private Integer mulheresSeats = 0;
     private Integer age45Seats = 0;
 }
-

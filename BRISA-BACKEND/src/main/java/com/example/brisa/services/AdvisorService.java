@@ -17,19 +17,27 @@ public class AdvisorService {
 
     private final AdvisorRepository advisorRepository;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<AdvisorModel> findAll(String roleType) {
         AdvisorRoleType resolvedRole = resolveRoleType(roleType);
+        List<AdvisorModel> advisors = advisorRepository.findAllByOrderByNameAsc()
+                .stream()
+                .map(this::normalizeLegacyRole)
+                .toList();
+
         if (resolvedRole == null) {
-            return advisorRepository.findAllByOrderByNameAsc();
+            return advisors;
         }
-        return advisorRepository.findByRoleTypeOrderByNameAsc(resolvedRole);
+        return advisors.stream()
+                .filter(advisor -> advisor.getRoleType() == resolvedRole)
+                .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AdvisorModel findById(Long id) {
-        return advisorRepository.findById(id)
+        AdvisorModel advisor = advisorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Membro da equipe acadêmica não encontrado."));
+        return normalizeLegacyRole(advisor);
     }
 
     @Transactional
@@ -84,10 +92,20 @@ public class AdvisorService {
         }
         if (advisor.getRoleType() == null) {
             advisor.setRoleType(AdvisorRoleType.ORIENTADOR);
+        } else if (advisor.getRoleType() == AdvisorRoleType.PROFESSOR) {
+            advisor.setRoleType(AdvisorRoleType.ORIENTADOR);
         }
         if (advisor.getActive() == null) {
             advisor.setActive(Boolean.TRUE);
         }
+    }
+
+    private AdvisorModel normalizeLegacyRole(AdvisorModel advisor) {
+        if (advisor.getRoleType() == AdvisorRoleType.PROFESSOR) {
+            advisor.setRoleType(AdvisorRoleType.ORIENTADOR);
+            return advisorRepository.save(advisor);
+        }
+        return advisor;
     }
 
     private void validate(AdvisorModel advisor, Long currentId) {
@@ -119,6 +137,9 @@ public class AdvisorService {
             return null;
         }
         String normalized = rawRoleType.trim().toUpperCase();
+        if ("PROFESSOR".equals(normalized)) {
+            return AdvisorRoleType.ORIENTADOR;
+        }
         try {
             AdvisorRoleType resolved = AdvisorRoleType.valueOf(normalized);
             // Only ORIENTADOR and GESTOR are accepted as explicit roles for creation/update

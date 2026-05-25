@@ -19,12 +19,15 @@ public interface CourseProgressionRepository extends JpaRepository<CourseProgres
 
     Optional<CourseProgressionModel> findByCourseIdAndPeopleId(Long courseId, Long peopleId);
 
+    Optional<CourseProgressionModel> findByCourseIdAndPeopleIdAndClassModelId(Long courseId, Long peopleId, Long classId);
+
     // Busca todas as progressões de cursos dos alunos matriculados em uma turma
     @Query("""
         SELECT cp FROM CourseProgressionModel cp
-        WHERE cp.people.id IN (
+        WHERE cp.classModel.id = :classId
+        OR (cp.classModel IS NULL AND cp.people.id IN (
             SELECT e.people.id FROM EnrollmentModel e WHERE e.classModel.id = :classId
-        )
+        ))
     """)
     List<CourseProgressionModel> findByClassId(@Param("classId") Long classId);
 
@@ -32,8 +35,11 @@ public interface CourseProgressionRepository extends JpaRepository<CourseProgres
     @Query("""
         SELECT cp FROM CourseProgressionModel cp
         WHERE cp.course.id = :courseId
-        AND cp.people.id IN (
-            SELECT e.people.id FROM EnrollmentModel e WHERE e.classModel.id = :classId
+        AND (
+            cp.classModel.id = :classId
+            OR (cp.classModel IS NULL AND cp.people.id IN (
+                SELECT e.people.id FROM EnrollmentModel e WHERE e.classModel.id = :classId
+            ))
         )
     """)
     List<CourseProgressionModel> findByCourseIdAndClassId(
@@ -45,9 +51,10 @@ public interface CourseProgressionRepository extends JpaRepository<CourseProgres
     @Query("""
         SELECT cp.status, COUNT(cp)
         FROM CourseProgressionModel cp
-        WHERE cp.people.id IN (
+        WHERE cp.classModel.id = :classId
+        OR (cp.classModel IS NULL AND cp.people.id IN (
             SELECT e.people.id FROM EnrollmentModel e WHERE e.classModel.id = :classId
-        )
+        ))
         GROUP BY cp.status
     """)
     List<Object[]> countStatusByClass(@Param("classId") Long classId);
@@ -76,8 +83,11 @@ public interface CourseProgressionRepository extends JpaRepository<CourseProgres
                 FROM CourseProgressionModel cp
                 WHERE cp.date IS NOT NULL
                     AND LOWER(cp.status) IN ('concluído', 'concluido')
-                    AND cp.people.id IN (
-                        SELECT e.people.id FROM EnrollmentModel e WHERE e.classModel.id = :classId
+                    AND (
+                        cp.classModel.id = :classId
+                        OR (cp.classModel IS NULL AND cp.people.id IN (
+                            SELECT e.people.id FROM EnrollmentModel e WHERE e.classModel.id = :classId
+                        ))
                     )
         """)
         List<LocalDate> findCompletionDatesByClass(@Param("classId") Long classId);

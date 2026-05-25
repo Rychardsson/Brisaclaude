@@ -213,6 +213,8 @@ const close = () => emit('close');
 .follow-up-modal__field textarea {
   padding: 10px 12px;
   min-height: 120px;
+  max-height: 220px;
+  overflow-y: auto;
   resize: vertical;
 }
 
