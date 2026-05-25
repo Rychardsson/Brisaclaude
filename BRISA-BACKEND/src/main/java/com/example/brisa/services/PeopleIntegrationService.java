@@ -668,9 +668,9 @@ public class PeopleIntegrationService {
     }
 
     private boolean isAlunoEnrollment(EnrollmentModel enrollment) {
-        return enrollment.getAcademicRole() == null
-                || enrollment.getAcademicRole().getName() == null
-                || "ALUNO".equalsIgnoreCase(enrollment.getAcademicRole().getName());
+        return enrollment.getAcademicRole() != null
+                && enrollment.getAcademicRole().getName() != null
+                && "ALUNO".equalsIgnoreCase(enrollment.getAcademicRole().getName());
     }
 
     private int calculateAge(LocalDate birthDate) {

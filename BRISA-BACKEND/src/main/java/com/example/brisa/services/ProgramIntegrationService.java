@@ -83,13 +83,41 @@ public class ProgramIntegrationService {
 
         Map<Long, List<EnrollmentModel>> enrollmentsByClass = enrollments.stream()
                 .collect(Collectors.groupingBy(item -> item.getClassModel().getId()));
+        
+        Map<Long, List<EnrollmentModel>> enrollmentsByProgram = new LinkedHashMap<>();
+        for (ProgramModel program : programs) {
+            List<EnrollmentModel> programEnrollments = enrollments.stream()
+                    .filter(enrollment -> enrollment.getClassModel() != null 
+                            && enrollment.getClassModel().getProgram() != null
+                            && enrollment.getClassModel().getProgram().getId().equals(program.getId()))
+                    .toList();
+            enrollmentsByProgram.put(program.getId(), programEnrollments);
+        }
+        
+        Map<Long, List<StageCandidateModel>> candidatesByProgram = new LinkedHashMap<>();
+        for (ProgramModel program : programs) {
+            List<StageCandidateModel> programCandidates = candidates.stream()
+                    .filter(candidate -> candidate.getStage() != null 
+                            && candidate.getStage().getClassModel() != null
+                            && candidate.getStage().getClassModel().getProgram() != null
+                            && candidate.getStage().getClassModel().getProgram().getId().equals(program.getId()))
+                    .toList();
+            candidatesByProgram.put(program.getId(), programCandidates);
+        }
+        
         Map<Long, List<StageCandidateModel>> candidatesByClass = candidates.stream()
                 .collect(Collectors.groupingBy(item -> item.getStage().getClassModel().getId()));
 
         List<ProgramOverviewItemDTO> allItems = new ArrayList<>();
         for (ProgramModel program : programs) {
             if (program.getClasses() == null || program.getClasses().isEmpty()) {
-                allItems.add(buildProgramOverviewItem(program, null, List.of(), List.of(), 0L));
+                allItems.add(buildProgramOverviewItem(
+                        program, 
+                        null, 
+                        enrollmentsByProgram.getOrDefault(program.getId(), List.of()), 
+                        candidatesByProgram.getOrDefault(program.getId(), List.of()),
+                        0L
+                ));
                 continue;
             }
 
@@ -238,10 +266,14 @@ public class ProgramIntegrationService {
             List<StageCandidateModel> candidates,
             long projectCount
     ) {
-        long inscritos = candidates.stream()
-                .map(candidate -> candidate.getPeople().getId())
+        // Inscritos: conta SEMPRE os enrollments com role ALUNO
+        // (Inscrição = Enrollment, não stage_candidate)
+        long inscritos = enrollments.stream()
+                .filter(this::isAlunoEnrollment)
+                .map(enrollment -> enrollment.getPeople().getId())
                 .distinct()
                 .count();
+        
         long ativos = enrollments.stream()
                 .filter(this::isAlunoEnrollment)
                 .filter(enrollment -> isActiveStatus(enrollment.getStatus()))
@@ -591,9 +623,9 @@ public class ProgramIntegrationService {
     }
 
     private boolean isAlunoEnrollment(EnrollmentModel enrollment) {
-        return enrollment.getAcademicRole() == null
-                || enrollment.getAcademicRole().getName() == null
-                || "ALUNO".equalsIgnoreCase(enrollment.getAcademicRole().getName());
+        return enrollment.getAcademicRole() != null
+                && enrollment.getAcademicRole().getName() != null
+                && "ALUNO".equalsIgnoreCase(enrollment.getAcademicRole().getName());
     }
 
     private boolean isActiveStatus(String status) {

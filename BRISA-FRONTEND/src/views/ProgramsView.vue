@@ -828,29 +828,30 @@ const selectedProgram = computed(() => {
 });
 
 const classesBySelectedProgram = computed(() => {
-  if (!selectedProgramId.value) {
-    if (!showAllProgramsClasses.value) return [];
+  // Se "Todos os programas" está selecionado, retorna TODOS os programas do overview
+  if (showAllProgramsClasses.value) {
+    return allPrograms.value;
+  }
 
-    if (allClasses.value.length > 0) {
-      return allClasses.value.map((item) => mapClassToProgramListItem(item, null));
+  // Se um programa específico foi selecionado
+  if (selectedProgramId.value) {
+    const fromOverview = allPrograms.value.filter((item) => {
+      return String(item.programId) === selectedProgramId.value;
+    });
+
+    if (fromOverview.length > 0) {
+      return fromOverview;
     }
 
-    return allPrograms.value.filter((item) => hasClassLikeData(item) || resolveClassId(item) != null);
+    if (selectedProgramClasses.value.length === 0) {
+      return [];
+    }
+
+    return selectedProgramClasses.value.map((classItem) => mapClassToProgramListItem(classItem, selectedProgram.value));
   }
 
-  const fromOverview = allPrograms.value.filter((item) => {
-    return String(item.programId) === selectedProgramId.value && (hasClassLikeData(item) || resolveClassId(item) != null);
-  });
-
-  if (fromOverview.length > 0) {
-    return fromOverview;
-  }
-
-  if (selectedProgramClasses.value.length === 0) {
-    return [];
-  }
-
-  return selectedProgramClasses.value.map((classItem) => mapClassToProgramListItem(classItem, selectedProgram.value));
+  // Se nada foi selecionado, retorna vazio
+  return [];
 });
 
 function numberValue(value) {
