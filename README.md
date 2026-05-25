@@ -26,7 +26,7 @@ Brisa-ONE/
 
 - Programas, turmas, escolas/parceiros, cursos, etapas, pessoas, matriculas, usuarios e logs.
 - Cadastro de programas com contrato de fomento, entidade de fomento, datas, valor, coordenador geral e dados complementares.
-- Cadastro dedicado de professores, gestores e orientadores com perfil academico e status.
+- Cadastro dedicado de orientadores e gestores com perfil academico e status.
 - Aditivos de programa com numeracao sequencial e atualizacao da data final do programa.
 - Cursos com carga horaria, area de conhecimento e avaliacoes vinculadas.
 - Pessoas/alunos com dados academicos, cidade, genero, cota, formacao e instituicao de origem.
@@ -42,7 +42,7 @@ Brisa-ONE/
 
 ## Pontos modelados de forma integrada
 
-- Professores, orientadores e gestores possuem cadastro dedicado e continuam podendo ser relacionados aos fluxos academicos existentes.
+- Orientadores e gestores possuem cadastro dedicado e continuam podendo ser relacionados aos fluxos academicos existentes.
 - Contrato de fomento continua ancorado no cadastro e no detalhe de programa, com aditivos mantidos no mesmo contexto.
 - Cursos por escola/parceiro sao controlados pelo vinculo dos cursos as turmas do programa.
 

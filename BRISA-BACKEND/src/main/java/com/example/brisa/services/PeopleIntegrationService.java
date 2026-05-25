@@ -279,6 +279,11 @@ public class PeopleIntegrationService {
         StageModel stage = stageRepository.findById(request.getEtapaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Etapa não encontrada."));
 
+        List<String> stageProgressionErrors = validateStageProgression(person, stage);
+        if (!stageProgressionErrors.isEmpty()) {
+            throw new ValidationException(stageProgressionErrors);
+        }
+
         Optional<EnrollmentModel> existingEnrollment = enrollmentRepository.findAllWithRelations().stream()
                 .filter(e -> Objects.equals(e.getPeople().getId(), request.getPeopleId()) &&
                         Objects.equals(e.getClassModel().getId(), request.getTurmaId()))
@@ -367,6 +372,11 @@ public class PeopleIntegrationService {
         PeopleModel person = findExistingPerson(request.getCpf(), request.getEmail()).orElse(null);
         boolean personCreated = false;
 
+        List<String> stageProgressionErrors = validateStageProgression(person, stage);
+        if (!stageProgressionErrors.isEmpty()) {
+            throw new ValidationException(stageProgressionErrors);
+        }
+
         if (person == null) {
             person = new PeopleModel();
             personCreated = true;
@@ -432,6 +442,50 @@ public class PeopleIntegrationService {
                 alerts,
                 buildPeopleListItem(person, personEnrollments, personCandidates)
         );
+    }
+
+    public List<String> validateStageProgression(PeopleModel person, StageModel targetStage) {
+        if (targetStage == null || targetStage.getClassModel() == null || targetStage.getClassModel().getId() == null) {
+            return List.of();
+        }
+
+        String targetStageName = normalize(targetStage.getName());
+        String requiredStageToken;
+        String requiredStageLabel;
+        String targetStageLabel;
+
+        if (targetStageName.contains("nivel")) {
+            requiredStageToken = "selec";
+            requiredStageLabel = "processo seletivo";
+            targetStageLabel = "nivelamento";
+        } else if (targetStageName.contains("imers")) {
+            requiredStageToken = "nivel";
+            requiredStageLabel = "nivelamento";
+            targetStageLabel = "imersão";
+        } else {
+            return List.of();
+        }
+
+        if (person == null || person.getId() == null) {
+            return List.of("Pessoa precisa estar no " + requiredStageLabel + " desta turma antes de entrar na etapa de " + targetStageLabel + ".");
+        }
+
+        List<StageCandidateModel> previousCandidates = stageCandidateRepository.findByClassIdWithPeople(targetStage.getClassModel().getId()).stream()
+                .filter(candidate -> candidate.getPeople() != null && Objects.equals(candidate.getPeople().getId(), person.getId()))
+                .filter(candidate -> candidate.getStage() != null && normalize(candidate.getStage().getName()).contains(requiredStageToken))
+                .toList();
+
+        if (previousCandidates.isEmpty()) {
+            return List.of(person.getName() + " precisa estar no " + requiredStageLabel + " desta turma antes de entrar na etapa de " + targetStageLabel + ".");
+        }
+
+        boolean hasActivePreviousStage = previousCandidates.stream()
+                .anyMatch(candidate -> candidate.getStatus() != StageStatus.REPROVADO);
+        if (!hasActivePreviousStage) {
+            return List.of(person.getName() + " está como reprovado/desclassificado no " + requiredStageLabel + " desta turma.");
+        }
+
+        return List.of();
     }
 
     private Optional<PeopleModel> findExistingPerson(String cpf, String email) {
@@ -820,7 +874,7 @@ public class PeopleIntegrationService {
         if (normalized.contains("espera")) {
             return StageStatus.LISTA_ESPERA;
         }
-        if (normalized.contains("analise")) {
+        if (normalized.contains("analise") || normalized.contains("inscrit") || normalized.contains("pendente")) {
             return StageStatus.EM_ANALISE;
         }
         return StageStatus.APROVADO;

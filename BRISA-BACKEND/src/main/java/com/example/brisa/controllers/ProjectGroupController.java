@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.Normalizer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,9 +100,8 @@ public class ProjectGroupController {
     @GetMapping("/immersion-students")
     public ResponseEntity<?> getImmersionStudents(@PathVariable Long classId) {
         try {
-            List<StageCandidateModel> immersionCandidates = stageCandidateRepository.findAll().stream()
-                    .filter(sc -> sc.getStage().getClassModel().getId().equals(classId)
-                            && "imersao".equalsIgnoreCase(sc.getStage().getName()))
+            List<StageCandidateModel> immersionCandidates = stageCandidateRepository.findByClassIdWithPeople(classId).stream()
+                    .filter(sc -> sc.getStage() != null && normalizeStageName(sc.getStage().getName()).contains("imers"))
                     .collect(Collectors.toList());
 
             List<Map<String, Object>> students = immersionCandidates.stream()
@@ -120,6 +120,15 @@ public class ProjectGroupController {
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
+    }
+
+    private String normalizeStageName(String value) {
+        if (value == null) {
+            return "";
+        }
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase();
     }
 }
 

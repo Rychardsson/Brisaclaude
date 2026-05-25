@@ -192,6 +192,10 @@ public class PeopleController {
     @PostMapping("/import/excel")
     public ResponseEntity<PeopleImportResponseDTO> importPeopleFromExcel(
             @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "programaId", required = false) Long programaId,
+            @RequestParam(value = "turmaId", required = false) Long turmaId,
+            @RequestParam(value = "etapaId", required = false) Long etapaId,
+            @RequestParam(value = "statusInicial", required = false) String statusInicial,
             HttpServletRequest request
     ) {
         if (file.isEmpty()) {
@@ -204,7 +208,7 @@ public class PeopleController {
         }
 
         try {
-            PeopleImportResponseDTO response = peopleService.importPeopleFromExcel(file);
+            PeopleImportResponseDTO response = peopleService.importPeopleFromExcel(file, programaId, turmaId, etapaId, statusInicial);
 
             try {
                 UUID userId = getUserId();

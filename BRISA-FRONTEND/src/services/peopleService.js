@@ -81,12 +81,20 @@ export const peopleService = {
     }
   },
 
-  async importExcel(file) {
+  async importExcel(file, destination = {}) {
     try {
       const formData = new FormData();
       formData.append('file', file);
 
+      const params = {};
+      ['programaId', 'turmaId', 'etapaId', 'statusInicial'].forEach((key) => {
+        if (destination[key] !== undefined && destination[key] !== null && destination[key] !== '') {
+          params[key] = destination[key];
+        }
+      });
+
       const response = await api.post('/people/import/excel', formData, {
+        params,
         headers: {
           'Content-Type': 'multipart/form-data'
         }

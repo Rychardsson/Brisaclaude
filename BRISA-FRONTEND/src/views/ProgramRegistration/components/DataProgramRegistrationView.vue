@@ -37,9 +37,19 @@
            <label>Coordenador Geral <span class="required">*</span></label>
            <input v-model="formData.generalCoordinator" @keydown.enter="$event.target.blur()" type="text" placeholder="Ex: Nome do coordenador" class="form-input"/>
          </div>
-         <div class="form-group">
+         <div class="form-group currency-group">
            <label>Valor do Programa <span class="required">*</span></label>
-           <input v-model="formData.programValue" @keydown.enter="$event.target.blur()" type="number" min="0" step="0.01" placeholder="Ex: 150000.00" class="form-input"/>
+           <div class="currency-row">
+             <input
+               v-model="programValueDisplay"
+               @input="onProgramValueInput"
+               @keydown.enter="$event.target.blur()"
+               type="text"
+               placeholder="Ex: R$ 150.000,00"
+               class="form-input currency-input"
+             />
+             <div class="value-words" aria-live="polite">{{ valuePorExtenso }}</div>
+           </div>
          </div>
        </div>
 
@@ -137,9 +147,9 @@
            
            <div v-if="activeDatePicker === 'publishDate'" class="custom-calendar">
               <div class="calendar-header">
-                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">?</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">‹</button>
                  <span>{{ monthNames[calendarDate.getMonth()] }} {{ calendarDate.getFullYear() }}</span>
-                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">?</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">›</button>
               </div>
               <div class="calendar-grid">
                  <span v-for="d in weekDays" :key="d" class="cal-weekday">{{ d }}</span>
@@ -156,9 +166,9 @@
            </div>
            <div v-if="activeDatePicker === 'startDate'" class="custom-calendar">
               <div class="calendar-header">
-                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">?</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">‹</button>
                  <span>{{ monthNames[calendarDate.getMonth()] }} {{ calendarDate.getFullYear() }}</span>
-                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">?</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">›</button>
               </div>
               <div class="calendar-grid">
                  <span v-for="d in weekDays" :key="d" class="cal-weekday">{{ d }}</span>
@@ -175,9 +185,9 @@
            </div>
            <div v-if="activeDatePicker === 'endDate'" class="custom-calendar">
               <div class="calendar-header">
-                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">?</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('prev-month')">‹</button>
                  <span>{{ monthNames[calendarDate.getMonth()] }} {{ calendarDate.getFullYear() }}</span>
-                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">?</button>
+                 <button type="button" class="cal-btn" @click.stop="$emit('next-month')">›</button>
               </div>
               <div class="calendar-grid">
                  <span v-for="d in weekDays" :key="d" class="cal-weekday">{{ d }}</span>
@@ -193,10 +203,7 @@
 
 <script>
 export default {
-  // Nome oficial deste componente Vue
   name: 'DataProgramRegistrationView',
-  
-  // As propriedades injetadas pelo componente Pai
   props: {
     formData: { type: Object, required: true },
     displayDates: { type: Object, required: true },
@@ -210,33 +217,162 @@ export default {
     isSelectedDay: { type: Function, required: true },
     isToday: { type: Function, required: true }
   },
-
-  // Dados locais (Estado deste componente filho)
   data() {
     return {
-      // Flag para sabermos se o usuário já focou e interagiu com o campo de e-mail
-      emailTouched: false
+      emailTouched: false,
+      programValueDisplay: ''
     }
   },
-
-  // Propriedades computadas (Validação local)
   computed: {
     emailError() {
-      // Se não encostou no campo ainda, não há erro
       if (!this.emailTouched) return false;
-      
-      // Se estiver em branco (usuário apagou), também não mostra "formato inválido"
       if (!this.formData.supportEmail) return false;
-      
-      // Validação com Expressão Regular para "nome@exemplo.com"
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return !emailRegex.test(this.formData.supportEmail);
+    },
+    valuePorExtenso() {
+      const value = Number(this.formData.programValue) || 0;
+      return numberToWordsBR(value);
+    }
+  },
+  watch: {
+    'formData.programValue': {
+      immediate: true,
+      handler(val) {
+        const v = Number(val) || 0;
+        this.programValueDisplay = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+      }
+    }
+  },
+  methods: {
+    onProgramValueInput(e) {
+      const digits = String(e.target.value).replace(/\D/g,'');
+      const value = digits ? parseInt(digits,10)/100 : 0;
+      // Mutating formData is consistent with existing v-model usage in this component
+      this.formData.programValue = value;
+      this.programValueDisplay = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value);
     }
   }
+}
+
+function numberToWordsBR(value) {
+  const v = Math.abs(Number(value) || 0);
+  const inteiro = Math.floor(v);
+  const cents = Math.round((v - inteiro) * 100);
+  if (inteiro === 0 && cents === 0) return 'zero reais';
+
+  // compute groups to decide whether to insert 'de' before 'reais'
+  const groups = [];
+  let rem = inteiro;
+  while (rem > 0) { groups.push(rem % 1000); rem = Math.floor(rem / 1000); }
+  let lowestNonZeroIndex = groups.findIndex(g => g !== 0);
+  if (lowestNonZeroIndex === -1) lowestNonZeroIndex = 0;
+
+  const inteiroWords = integerToWordsBR(inteiro);
+  const centsWords = cents > 0 ? `${integerToWordsBR(cents)} centavo${cents > 1 ? 's' : ''}` : '';
+
+  // singular real
+  if (inteiro === 1) {
+    const reais = `${inteiroWords} real`;
+    return centsWords ? `${reais} e ${centsWords}` : reais;
+  }
+
+  // decide whether to use 'de reais' (when the lowest non-zero group is million or higher)
+  let reais;
+  if (inteiro >= 1000000 && lowestNonZeroIndex >= 2) {
+    reais = `${inteiroWords} de reais`;
+  } else {
+    reais = `${inteiroWords} reais`;
+  }
+
+  return centsWords ? `${reais} e ${centsWords}` : reais;
+}
+
+function integerToWordsBR(n) {
+  n = Math.floor(Math.abs(n));
+  if (n === 0) return 'zero';
+
+  const units = ['','um','dois','três','quatro','cinco','seis','sete','oito','nove'];
+  const teens = ['dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+  const tens = ['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+  const hundreds = ['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+
+  function belowThousand(num) {
+    num = Number(num);
+    if (num === 0) return '';
+    const h = Math.floor(num / 100);
+    const rem = num % 100;
+    const parts = [];
+    if (h > 0) {
+      if (h === 1 && rem === 0) parts.push('cem');
+      else parts.push(hundreds[h]);
+    }
+    if (rem >= 20) {
+      const t = Math.floor(rem / 10);
+      const u = rem % 10;
+      parts.push(tens[t]);
+      if (u > 0) parts.push(units[u]);
+    } else if (rem >= 10) {
+      parts.push(teens[rem - 10]);
+    } else if (rem > 0) {
+      parts.push(units[rem]);
+    }
+    return parts.join(' e ');
+  }
+
+  const scales = [
+    {singular: '', plural: ''},
+    {singular: 'mil', plural: 'mil'},
+    {singular: 'milhão', plural: 'milhões'},
+    {singular: 'bilhão', plural: 'bilhões'},
+    {singular: 'trilhão', plural: 'trilhões'},
+    {singular: 'quadrilhão', plural: 'quadrilhões'}
+  ];
+
+  const groups = [];
+  let remaining = n;
+  while (remaining > 0) {
+    groups.push(remaining % 1000);
+    remaining = Math.floor(remaining / 1000);
+  }
+
+  const parts = [];
+  for (let i = groups.length - 1; i >= 0; i--) {
+    const g = groups[i];
+    if (g === 0) continue;
+    const gWords = belowThousand(g);
+    if (i === 1) {
+      // thousands
+      if (g === 1) parts.push('mil');
+      else parts.push(`${gWords} mil`);
+    } else if (i === 0) {
+      parts.push(gWords);
+    } else {
+      const scale = scales[i];
+      const scaleName = g === 1 ? scale.singular : scale.plural;
+      parts.push(`${gWords} ${scaleName}`);
+    }
+  }
+
+  if (parts.length === 1) return parts[0];
+  const joined = parts.join(', ');
+  const lastComma = joined.lastIndexOf(', ');
+  if (lastComma !== -1) {
+    return joined.substring(0, lastComma) + ' e ' + joined.substring(lastComma + 2);
+  }
+  return joined;
 }
 </script>
 
 <style scoped>
-/* O CSS Global já lida com todo o layout. A tag scoped garante proteção aqui. */
+.currency-row { display:flex; align-items:flex-start; gap:12px; }
+.currency-input { flex: 0 0 160px; width:160px; box-sizing:border-box; }
+.value-words { flex:1; font-size:0.95rem; color:#333; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.3; font-family: inherit; font-weight: 400; }
+.currency-group .form-input { box-sizing:border-box; }
+@media (max-width:600px) {
+  .currency-row { flex-direction:column; align-items:flex-start; gap:6px; }
+  .currency-input { width:100%; max-width:100%; }
+  .value-words { white-space:normal; }
+}
 </style>
 

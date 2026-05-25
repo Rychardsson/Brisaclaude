@@ -37,6 +37,8 @@ public class ProgramService {
         program.setName(programDetails.getName());
         program.setContractNumber(programDetails.getContractNumber());
         program.setExecutorName(programDetails.getExecutorName());
+        // Persist 'executor' (campo usado por overview/integração) para manter compatibilidade com frontend
+        program.setExecutor(programDetails.getExecutor());
         program.setFundingEntity(programDetails.getFundingEntity());
         program.setGeneralCoordinator(programDetails.getGeneralCoordinator());
         program.setProgramValue(programDetails.getProgramValue());

@@ -387,7 +387,7 @@
                 </button>
                 <button v-if="isAdmin" type="button" class="shortcut-card" @click="openAcademicStaffModule">
                   <strong>Equipe acadêmica</strong>
-                  <span>Gerenciar professores, gestores e orientadores em uma base dedicada.</span>
+                  <span>Gerenciar orientadores e gestores em uma base dedicada.</span>
                 </button>
                 <button type="button" class="shortcut-card" @click="openProgramsModule">
                   <strong>Programas e Turmas</strong>

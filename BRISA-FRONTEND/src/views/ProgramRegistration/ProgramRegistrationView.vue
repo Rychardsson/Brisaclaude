@@ -689,7 +689,7 @@ export default {
       // OBJETO: Aba 5 - Configurações da Etapa de Imersão
       imersaoForm: {
         nome: 'Imersão', modalidade: 'Híbrida', cargaHoraria: 960, duracaoMeses: 6, mediaHoras: 40,
-        local: '', nomeProfessor: '',
+              local: '', nomeOrientador: '',
         hasProjetos: true, hasGrupos: true, minGroup: 3, maxGroup: 5, orientador: 'vinculado',
         presenca: {
           encontrosObrigatorios: true, frequenciaSemanal: true, minFrequencia: 75, 
@@ -1088,7 +1088,7 @@ export default {
 
       this.imersaoForm = {
         nome: 'Imersão', modalidade: 'Híbrida', cargaHoraria: 960, duracaoMeses: 6, mediaHoras: 40,
-        local: '', nomeProfessor: '',
+              local: '', nomeOrientador: '',
         hasProjetos: true, hasGrupos: true, minGroup: 3, maxGroup: 5, orientador: 'vinculado',
         presenca: {
           encontrosObrigatorios: true, frequenciaSemanal: true, minFrequencia: 75, 
@@ -1501,6 +1501,7 @@ export default {
       // Aba 1 - Dados gerais do programa
       this.formData.programName = normalizedProgram.name || '';
       this.formData.batchName = normalizedProgram.contractNumber || '';
+      this.formData.executor = normalizedProgram.executor || normalizedProgram.executorName || '';
       this.formData.objective = normalizedProgram.targetAudience || '';
       this.formData.startDate = normalizedProgram.startDate || '';
       this.formData.endDate = normalizedProgram.endDate || '';

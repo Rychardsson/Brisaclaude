@@ -12,16 +12,6 @@
           </div>
 
           <div class="top-actions">
-          <button type="button" class="ghost-btn" @click="showAdvisorModal = true">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <line x1="20" y1="8" x2="20" y2="14"></line>
-              <line x1="23" y1="11" x2="17" y2="11"></line>
-            </svg>
-            Novo orientador
-          </button>
-
           <button type="button" class="ghost-btn" @click="showTemplateModal = true">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -464,7 +454,7 @@
             @drop.prevent="handleDrop"
             @click="fileInput.click()"
           >
-            <input type="file" @change="handleFileSelect" accept=".xlsx,.xls,.csv" ref="fileInput" class="hidden-input" />
+            <input type="file" @change="handleFileSelect" accept=".xlsx,.xls" ref="fileInput" class="hidden-input" />
             <div class="upload-icon-wrap">
               <svg v-if="!selectedFile" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="upload-icon">
                 <polyline points="16 16 12 12 8 16"></polyline>
@@ -479,7 +469,7 @@
             </div>
             <div class="upload-text">
               <p class="upload-main-text">{{ selectedFile ? selectedFile.name : 'Arraste a planilha aqui ou clique para selecionar' }}</p>
-              <p class="upload-sub-text">{{ selectedFile ? 'Clique para trocar o arquivo' : 'Formatos aceitos: .xlsx, .csv' }}</p>
+              <p class="upload-sub-text">{{ selectedFile ? 'Clique para trocar o arquivo' : 'Formatos aceitos: .xlsx, .xls' }}</p>
             </div>
             <button type="button" class="secondary-btn upload-select-btn" @click.stop="fileInput.click()">Selecionar arquivo</button>
           </div>
@@ -902,7 +892,6 @@
       </div>
     </div>
 
-    <NewAdvisorModal v-if="showAdvisorModal" @close="showAdvisorModal = false" @created="(advisor) => { loadData(); }" />
     <div v-if="showTemplateModal" class="modal-overlay" @click="showTemplateModal = false">
       <div class="modal-card modal-card-small" @click.stop>
         <div class="modal-head">
@@ -924,15 +913,9 @@
         </div>
         
         <div class="modal-actions template-actions">
-          <a 
-            href="/Modelo_Planilha_Pessoas.xlsx" 
-            download="Modelo_Planilha_Pessoas.xlsx" 
-            class="primary-btn" 
-            style="text-decoration: none; display: flex; justify-content: center; align-items: center;"
-            @click="showTemplateModal = false"
-          >
+          <button type="button" class="primary-btn" @click="downloadPeopleTemplate">
             Baixar modelo .xlsx
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -948,7 +931,10 @@ import { peopleService } from '@/services/peopleService';
 import { enrollmentService } from '@/services/enrollmentService';
 import { stageService } from '@/services/stageService';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import NewAdvisorModal from '@/components/NewAdvisorModal.vue';
+import {
+  PEOPLE_SPREADSHEET_COLUMNS,
+  downloadPeopleSpreadsheetTemplate
+} from '@/utils/peopleSpreadsheetTemplate';
 
 const router = useRouter();
 const route = useRoute();
@@ -987,20 +973,7 @@ const columnOptions = [
   { key: 'course', label: 'Curso' },
   { key: 'updatedAt', label: 'Última atualização' }
 ];
-const templateColumns = [
-  'Nome completo',
-  'E-mail',
-  'CPF',
-  'Data de Nascimento', 
-  'Gênero',
-  'Cota',
-  'Escolaridade',
-  'Curso',
-  'Tipo de formação',
-  'Status da formação',
-  'Cidade',
-  'Estado'
-];
+const templateColumns = PEOPLE_SPREADSHEET_COLUMNS;
 const fallbackStatusOptions = ['Ativa', 'Pendente', 'Concluída', 'Reprovada', 'Desclassificada'];
 const fallbackQuotaOptions = ['Ampla Concorrência', 'PCD/Neurodivergente', 'Negro/Pardo', 'Mulher', '45+'];
 const fallbackGenderOptions = ['Feminino', 'Masculino', 'Outro', 'Não informado'];
@@ -1031,7 +1004,6 @@ const advancedFilters = ref({
 const showUploadModal = ref(false);
 const showCreateModal = ref(false);
 const showLinkModal = ref(false);
-const showAdvisorModal = ref(false);
 const referenceData = ref(null);
 const referenceLoading = ref(false);
 const referenceError = ref(null);
@@ -1639,8 +1611,9 @@ const handleSoftDelete = async (person) => {
   }
 };
 
-const downloadTemplate = () => {
-  showTemplateModal.value = true;
+const downloadPeopleTemplate = () => {
+  downloadPeopleSpreadsheetTemplate('Modelo_Planilha_Pessoas.xlsx');
+  showTemplateModal.value = false;
 };
 
 const formatCPFInput = (event) => {
@@ -1682,18 +1655,20 @@ const parseUploadFile = async (file) => {
     if (!rows.length) return [];
 
     const headers = rows[0].map((value) => normalizeHeader(value));
-    const idxName = getColumnIndex(headers, ['Nome', 'Name'], 0);
+    const idxName = getColumnIndex(headers, ['Nome do aluno', 'Nome completo', 'Nome', 'Name'], 0);
     const idxBirthDate = getColumnIndex(headers, ['Data de nascimento', 'Nascimento', 'Birth date'], 1);
-    const idxState = getColumnIndex(headers, ['Estado', 'UF'], 2);
-    const idxInstitution = getColumnIndex(headers, ['Instituição', 'Instituicao'], 3);
+    const idxGender = getColumnIndex(headers, ['Gênero', 'Genero'], 2);
+    const idxCota = getColumnIndex(headers, ['Cota'], 3);
     const idxCpf = getColumnIndex(headers, ['CPF', 'Cpf'], 4);
-    const idxGender = getColumnIndex(headers, ['Gênero', 'Genero'], 5);
-    const idxCity = getColumnIndex(headers, ['Cidade'], 6);
-    const idxCourse = getColumnIndex(headers, ['Curso'], 7);
-    const idxEmail = getColumnIndex(headers, ['E-mail', 'Email'], 8);
-    const idxCota = getColumnIndex(headers, ['Cota'], 9);
-    const idxEducationType = getColumnIndex(headers, ['Tipo de formação', 'Tipo de formação', 'Formação'], 10);
-    const idxEducationStatus = getColumnIndex(headers, ['Status da formação', 'Status da formação', 'Status'], 11);
+    const idxEmail = getColumnIndex(headers, ['E-mail', 'Email'], 5);
+    const idxPhone = getColumnIndex(headers, ['Telefone', 'Phone'], 6);
+    const idxState = getColumnIndex(headers, ['Estado de residência', 'Estado residencia', 'Estado', 'UF'], 7);
+    const idxCity = getColumnIndex(headers, ['Cidade de residência', 'Cidade residencia', 'Cidade'], 8);
+    const idxEducationType = getColumnIndex(headers, ['Tipo de formação', 'Tipo de formacao', 'Formação'], 9);
+    const idxInstitution = getColumnIndex(headers, ['Instituição', 'Instituicao'], 10);
+    const idxCourse = getColumnIndex(headers, ['Curso'], 11);
+    const idxEducationStatus = getColumnIndex(headers, ['Status da formação', 'Status da formacao'], 12);
+    const idxCompletionDate = getColumnIndex(headers, ['Data de conclusão', 'Data de conclusao'], 13);
 
     return rows.slice(1).map((row, index) => {
       const record = {
@@ -1704,27 +1679,31 @@ const parseUploadFile = async (file) => {
         institution: String(row[idxInstitution] ?? '').trim(),
         cpf: String(row[idxCpf] ?? '').trim(),
         gender: String(row[idxGender] ?? '').trim(),
+        phone: String(row[idxPhone] ?? '').trim(),
         city: String(row[idxCity] ?? '').trim(),
         course: String(row[idxCourse] ?? '').trim(),
         email: String(row[idxEmail] ?? '').trim(),
         cota: String(row[idxCota] ?? '').trim(),
         educationType: String(row[idxEducationType] ?? '').trim(),
-        educationStatus: String(row[idxEducationStatus] ?? '').trim()
+        educationStatus: String(row[idxEducationStatus] ?? '').trim(),
+        completionDate: String(row[idxCompletionDate] ?? '').trim()
       };
 
       const hasAnyValue = [
         record.name,
         record.birthDate,
         record.state,
-        record.institution,
         record.cpf,
-        record.gender,
-        record.city,
-        record.course,
         record.email,
         record.cota,
+        record.phone,
+        record.state,
+        record.city,
         record.educationType,
-        record.educationStatus
+        record.institution,
+        record.course,
+        record.educationStatus,
+        record.completionDate
       ].some(hasValue);
       return hasAnyValue ? record : null;
     }).filter(Boolean);
@@ -1741,16 +1720,9 @@ const buildUploadPreview = (rows, result) => {
   const expectedFields = [
     { key: 'name', label: 'Nome' },
     { key: 'birthDate', label: 'Data de nascimento' },
-    { key: 'state', label: 'Estado' },
-    { key: 'institution', label: 'Instituição' },
     { key: 'cpf', label: 'CPF' },
-    { key: 'gender', label: 'Gênero' },
-    { key: 'city', label: 'Cidade' },
-    { key: 'course', label: 'Curso' },
     { key: 'email', label: 'E-mail' },
-    { key: 'cota', label: 'Cota' },
-    { key: 'educationType', label: 'Tipo de formação' },
-    { key: 'educationStatus', label: 'Status da formação' }
+    { key: 'cota', label: 'Cota' }
   ];
 
   rows.forEach((row) => {
@@ -1936,11 +1908,11 @@ const handleDragLeave = () => { isDragging.value = false; };
 const handleDrop = (event) => {
   isDragging.value = false;
   const file = event.dataTransfer.files[0];
-  if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv'))) {
+  if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
     selectedFile.value = file;
     resetUploadResults();
   } else if (file) {
-    uploadError.value = 'Formato inválido. Use arquivos .xlsx, .xls ou .csv.';
+    uploadError.value = 'Formato inválido. Use arquivos .xlsx ou .xls.';
   }
 };
 
@@ -1957,7 +1929,12 @@ const uploadFile = async () => {
 
   try {
     const parsedRows = await parseUploadFile(selectedFile.value);
-    const response = await peopleService.importExcel(selectedFile.value);
+    const response = await peopleService.importExcel(selectedFile.value, {
+      programaId: uploadForm.value.programaId,
+      turmaId: uploadForm.value.turmaId,
+      etapaId: uploadForm.value.etapaId,
+      statusInicial: uploadForm.value.statusInicial
+    });
     uploadResult.value = response;
     uploadPreview.value = buildUploadPreview(parsedRows, response);
     uploadTab.value = 'novos';

@@ -3,16 +3,23 @@ package com.example.brisa.services;
 import com.example.brisa.dtos.ProjectGroupCreateRequestDTO;
 import com.example.brisa.dtos.ProjectGroupDetailResponseDTO;
 import com.example.brisa.dtos.ProjectGroupResponseDTO;
+import com.example.brisa.enums.AdvisorRoleType;
 import com.example.brisa.exceptions.ResourceNotFoundException;
 import com.example.brisa.exceptions.ValidationException;
+import com.example.brisa.models.AdvisorModel;
 import com.example.brisa.models.ClassModel;
+import com.example.brisa.models.EnrollmentModel;
 import com.example.brisa.models.InstitutionModel;
 import com.example.brisa.models.PeopleModel;
 import com.example.brisa.models.PeopleProjectGroupModel;
 import com.example.brisa.models.ProjectGroupMeetingModel;
 import com.example.brisa.models.ProjectGroupModel;
 import com.example.brisa.models.StageCandidateModel;
+import com.example.brisa.models.roles.AcademicRoleModel;
+import com.example.brisa.repositories.AcademicRoleRepository;
+import com.example.brisa.repositories.AdvisorRepository;
 import com.example.brisa.repositories.ClassRepository;
+import com.example.brisa.repositories.EnrollmentRepository;
 import com.example.brisa.repositories.InstitutionRepository;
 import com.example.brisa.repositories.PeopleProjectGroupRepository;
 import com.example.brisa.repositories.PeopleRepository;
@@ -23,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -42,6 +50,9 @@ public class ProjectGroupService {
     private final InstitutionRepository institutionRepository;
     private final StageCandidateRepository stageCandidateRepository;
     private final PeopleProjectGroupRepository peopleProjectGroupRepository;
+    private final AdvisorRepository advisorRepository;
+    private final EnrollmentRepository enrollmentRepository;
+    private final AcademicRoleRepository academicRoleRepository;
 
     @Transactional
     public ProjectGroupResponseDTO createProjectGroup(Long classId, ProjectGroupCreateRequestDTO requestDTO) {
@@ -49,9 +60,7 @@ public class ProjectGroupService {
         ClassModel classModel = classRepository.findById(classId)
                 .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada"));
 
-        // Validar orientador
-        PeopleModel leader = peopleRepository.findById(requestDTO.getLeaderId())
-                .orElseThrow(() -> new ResourceNotFoundException("Orientador não encontrado"));
+        PeopleModel leader = resolveLeader(requestDTO.getLeaderId(), classModel);
 
         // Validar empresa/instituição parceira (obrigatória)
         if (requestDTO.getProjectCompanyId() == null) {
@@ -68,9 +77,8 @@ public class ProjectGroupService {
         List<PeopleModel> members = new java.util.ArrayList<>();
         if (requestDTO.getMemberIds() != null && !requestDTO.getMemberIds().isEmpty()) {
             // Buscar candidates da etapa de imersão desta classe
-            List<StageCandidateModel> immersionCandidates = stageCandidateRepository.findAll().stream()
-                    .filter(sc -> sc.getStage().getClassModel().getId().equals(classId)
-                            && "imersao".equalsIgnoreCase(sc.getStage().getName()))
+            List<StageCandidateModel> immersionCandidates = stageCandidateRepository.findByClassIdWithPeople(classId).stream()
+                    .filter(this::isImmersionCandidate)
                     .collect(Collectors.toList());
 
             Set<Long> immersionPeopleIds = immersionCandidates.stream()
@@ -145,6 +153,106 @@ public class ProjectGroupService {
         }
     }
 
+    private PeopleModel resolveLeader(Long leaderId, ClassModel classModel) {
+        if (leaderId == null) {
+            throw new ValidationException(java.util.List.of("Selecione um orientador"));
+        }
+
+        AdvisorModel advisor = advisorRepository.findById(leaderId).orElse(null);
+        PeopleModel leader = advisor != null
+                ? resolvePeopleFromAdvisor(advisor)
+                : peopleRepository.findById(leaderId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Orientador não encontrado"));
+
+        ensureLeaderEnrollment(leader, classModel, advisor != null ? advisor.getRoleType() : AdvisorRoleType.ORIENTADOR);
+        return leader;
+    }
+
+    private PeopleModel resolvePeopleFromAdvisor(AdvisorModel advisor) {
+        String cpf = normalizeCpf(advisor.getCpf());
+        PeopleModel person = null;
+
+        if (!cpf.isBlank()) {
+            person = peopleRepository.findByCpf(cpf).orElse(null);
+        }
+
+        String email = normalizeEmail(advisor.getEmail(), cpf);
+        if (person == null && !email.isBlank()) {
+            person = peopleRepository.findByEmailIgnoreCase(email).orElse(null);
+        }
+
+        if (person == null) {
+            person = new PeopleModel();
+            person.setCpf(cpf);
+            person.setEmail(email);
+        }
+
+        person.setName(advisor.getName());
+        person.setCpf(cpf);
+        person.setEmail(email);
+        person.setEducationLevel(defaultIfBlank(advisor.getFormation(), person.getEducationLevel()));
+        if (advisor.getBirthDate() != null) {
+            person.setBirthDate(advisor.getBirthDate());
+        }
+        if (Boolean.TRUE.equals(person.getSoftDeleted())) {
+            person.setSoftDeleted(false);
+        }
+
+        return peopleRepository.save(person);
+    }
+
+    private void ensureLeaderEnrollment(PeopleModel leader, ClassModel classModel, AdvisorRoleType roleType) {
+        if (leader == null || classModel == null) {
+            return;
+        }
+
+        String roleName = roleType == AdvisorRoleType.GESTOR ? "GESTOR" : "ORIENTADOR";
+        AcademicRoleModel role = academicRoleRepository.findByName(roleName)
+                .orElseGet(() -> academicRoleRepository.save(new AcademicRoleModel(roleName, roleName.equals("GESTOR") ? "Gestor" : "Orientador")));
+
+        enrollmentRepository.findByPeopleIdAndClassModelIdAndAcademicRoleId(leader.getId(), classModel.getId(), role.getId())
+                .orElseGet(() -> {
+                    EnrollmentModel enrollment = new EnrollmentModel();
+                    enrollment.setPeople(leader);
+                    enrollment.setClassModel(classModel);
+                    enrollment.setAcademicRole(role);
+                    enrollment.setEnrollmentDate(LocalDate.now());
+                    enrollment.setStatus("ATIVA");
+                    return enrollmentRepository.save(enrollment);
+                });
+    }
+
+    private String normalizeCpf(String cpf) {
+        return cpf == null ? "" : cpf.replaceAll("\\D", "");
+    }
+
+    private String normalizeEmail(String email, String cpf) {
+        String trimmed = email == null ? "" : email.trim().toLowerCase();
+        if (trimmed.contains("@")) {
+            return trimmed;
+        }
+        return "academico-" + (cpf == null || cpf.isBlank() ? "sem-cpf" : cpf) + "@brisa.local";
+    }
+
+    private String defaultIfBlank(String value, String fallback) {
+        return value == null || value.trim().isBlank() ? fallback : value.trim();
+    }
+
+    private boolean isImmersionCandidate(StageCandidateModel candidate) {
+        return candidate != null
+                && candidate.getStage() != null
+                && normalizeStageName(candidate.getStage().getName()).contains("imers");
+    }
+
+    private String normalizeStageName(String value) {
+        if (value == null) {
+            return "";
+        }
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase();
+    }
+
     @Transactional(readOnly = true)
     public List<ProjectGroupResponseDTO> getGroupsByClass(Long classId) {
         List<ProjectGroupModel> groups = projectGroupRepository.findAll().stream()
@@ -183,8 +291,7 @@ public class ProjectGroupService {
 
         // Atualizar orientador
         if (requestDTO.getLeaderId() != null) {
-            PeopleModel leader = peopleRepository.findById(requestDTO.getLeaderId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Orientador não encontrado"));
+            PeopleModel leader = resolveLeader(requestDTO.getLeaderId(), group.getClassModel());
             group.setLeader(leader);
         }
 

@@ -42,7 +42,7 @@
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
                 </svg>
-                {{ partnerLabel }}
+                {{ executorLabel }}
               </span>
               <span class="meta-item">
                 <svg class="meta-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -67,8 +67,7 @@
         <div class="hero-cards">
           <article class="hero-card">
             <span class="hero-label">Inscritos</span>
-            <strong>{{ totalCandidates || 612 }}</strong>
-            <small>+48 em lista</small>
+            <strong>{{ totalCandidates || 0 }}</strong>
             <small class="hero-support">Candidatos cadastrados</small>
           </article>
           <article class="hero-card">
@@ -141,9 +140,7 @@
               </div>
             </div>
 
-            <p class="status-note">
-              A turma está em desenvolvimento dos projetos, com avaliação parcial como próximo marco.
-            </p>
+            <p v-if="classData.description || classData.observations" class="status-note">{{ classData.description || classData.observations }}</p>
           </article>
 
           <article class="panel">
@@ -397,7 +394,7 @@
           <article class="panel">
             <div class="panel-head">
               <h3>Distribuição de Vagas por Cotas</h3>
-              <button type="button" class="btn-primary" @click="openUpdateSelectionModal">Atualizar dados</button>
+              <button type="button" class="btn-primary" @click="openUpdateSelectionModal('selecao')">Atualizar dados</button>
             </div>
             <div class="quota-distribution">
               <article v-for="item in selectionQuotaCards" :key="item.label" class="quota-item">
@@ -548,7 +545,7 @@
             </div>
 
             <div class="nivelamento-actions">
-              <button type="button" class="btn-outline" @click="openUpdateSelectionModal"><span>Atualizar dados</span></button>
+              <button type="button" class="btn-outline" @click="openUpdateSelectionModal('nivelamento')"><span>Atualizar dados</span></button>
               <button type="button" class="btn-outline" @click="showSubmitCoursesModal = true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -910,6 +907,38 @@
               </button>
             </div>
 
+            <article class="panel imersao-students-panel">
+              <div class="panel-head">
+                <h3>Alunos da imersão</h3>
+                <span class="class-status-pill">{{ imersaoStageStudents.length }} aluno(s)</span>
+              </div>
+
+              <div v-if="!imersaoStageStudents.length" class="state-box">
+                Nenhum aluno vinculado à etapa de imersão.
+              </div>
+
+              <div v-else class="students-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>CPF</th>
+                      <th>E-mail</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="student in imersaoStageStudents" :key="student.id">
+                      <td>{{ student.name }}</td>
+                      <td>{{ formatCPF(student.cpf) }}</td>
+                      <td>{{ student.email }}</td>
+                      <td><span class="status-pill" :class="student.statusClass">{{ student.status }}</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
             <div class="imersao-groups-list">
               <div v-for="group in imersaoGroups" :key="group.id" class="imersao-group-item">
                 <button type="button" class="imersao-group-card" @click="toggleImersaoGroup(group.id)">
@@ -1077,7 +1106,7 @@
     <div v-if="showUpdateSelectionModal" class="modal-overlay" @click="closeUpdateSelectionModal">
       <div :class="['modal', selectedUpdateAction === 'lista-espera' ? 'modal-waitlist' : 'modal-large']" @click.stop>
         <div class="modal-header">
-          <h2>Atualizar dados do processo seletivo</h2>
+          <h2>{{ updateStageModalTitle }}</h2>
           <button type="button" class="modal-close" @click="closeUpdateSelectionModal">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -1087,7 +1116,7 @@
         </div>
 
         <div v-if="!selectedUpdateAction" class="modal-content update-selection-home">
-          <p class="modal-subtitle">Escolha uma das ações abaixo para atualizar os dados do processo seletivo:</p>
+          <p class="modal-subtitle">{{ updateStageModalSubtitle }}</p>
           
           <div class="update-actions-grid">
             <button type="button" class="update-action-card" @click="openIndividualRegistration">
@@ -1098,7 +1127,7 @@
                 </svg>
               </div>
               <h4>Cadastrar aluno individualmente</h4>
-              <p>Adicione um novo candidato manualmente ao processo seletivo</p>
+              <p>{{ individualRegistrationActionDescription }}</p>
             </button>
 
             <button type="button" class="update-action-card" @click="selectedUpdateAction = 'import-inscricoes'">
@@ -1109,11 +1138,11 @@
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
               </div>
-              <h4>Importar planilha de inscritos</h4>
-              <p>Envie uma planilha com a lista de candidatos inscritos</p>
+              <h4>{{ importStudentsActionTitle }}</h4>
+              <p>{{ importStudentsActionDescription }}</p>
             </button>
 
-            <button type="button" class="update-action-card" @click="selectedUpdateAction = 'import-aprovados'">
+            <button v-if="isSelectionUpdateContext" type="button" class="update-action-card" @click="selectedUpdateAction = 'import-aprovados'">
               <div class="card-icon icon-check">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -1124,7 +1153,7 @@
               <p>Atualize os status dos candidatos aprovados via planilha</p>
             </button>
 
-            <button type="button" class="update-action-card" @click="selectedUpdateAction = 'lista-espera'">
+            <button v-if="isSelectionUpdateContext" type="button" class="update-action-card" @click="selectedUpdateAction = 'lista-espera'">
               <div class="card-icon icon-clock">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10" />
@@ -1144,7 +1173,7 @@
         <!-- Individual Registration -->
         <div v-else-if="selectedUpdateAction === 'individual'" class="modal-content modal-large individual-modal">
           <div class="modal-back">
-            <button type="button" @click="closeIndividualRegistration" class="back-link">? Voltar</button>
+            <button type="button" @click="closeIndividualRegistration" class="back-link">< Voltar</button>
           </div>
           <h3>Cadastrar aluno individualmente</h3>
 
@@ -1241,38 +1270,30 @@
         <!-- Import Inscricoes -->
         <div v-else-if="selectedUpdateAction === 'import-inscricoes'" class="modal-content import-inscricoes-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">< Voltar</button>
           </div>
           <div class="modal-header-with-action">
-            <h3>Importar planilha de inscritos</h3>
-            <a href="/Modelo_Inscritos.xlsx" download="Modelo_Inscritos.xlsx" class="ghost-btn hero-btn">
+            <h3>{{ importStudentsModalTitle }}</h3>
+            <button type="button" class="ghost-btn hero-btn" @click="downloadPeopleTemplate(updatePeopleTemplateFileName)">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
               <span>Baixar Modelo .xlsx</span>
-            </a>
+            </button>
           </div>
-          <p class="modal-desc">Envie uma planilha Excel ou CSV com os dados dos candidatos inscritos. A planilha deve conter as seguintes colunas:</p>
+          <p class="modal-desc">{{ importStudentsModalDescription }}</p>
 
           <div class="columns-grid">
-            <div class="column-item">Nome completo</div>
-            <div class="column-item">CPF</div>
-            <div class="column-item">E-mail</div>
-            <div class="column-item">Gênero</div>
-            <div class="column-item">Data de nascimento</div>
-            <div class="column-item">Cidade/UF</div>
-            <div class="column-item">Tipo de formação</div>
-            <div class="column-item">Instituição</div>
-            <div class="column-item">Cota</div>
+            <div v-for="column in peopleSpreadsheetColumns" :key="column" class="column-item">{{ column }}</div>
           </div>
 
           <input
             type="file"
             ref="fileInputImportInscricoes"
             style="display: none"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls"
             @change="handleInscricoesFileChange"
           />
 
@@ -1283,7 +1304,7 @@
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls (máx. 10MB)</small>
           </div>
 
           <div v-if="importInscricoesFile" class="selected-file-name">{{ importInscricoesFile.name }}</div>
@@ -1296,7 +1317,7 @@
             </svg>
             <div>
               <strong>Validação de conflitos</strong>
-              <p>Após o envio, o sistema verificará automaticamente se algum CPF já está vinculado a outro programa vigente e sinalizará os conflitos.</p>
+              <p>Após o envio, o sistema vinculará os alunos à {{ activeUpdateStageLabel }} desta turma e verificará automaticamente conflitos com outros programas vigentes.</p>
             </div>
           </div>
 
@@ -1316,23 +1337,21 @@
         <!-- Import Aprovados -->
         <div v-else-if="selectedUpdateAction === 'import-aprovados'" class="modal-content import-aprovados-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">< Voltar</button>
           </div>
           <h3>Importar planilha de aprovados</h3>
           <p class="modal-desc">Envie uma planilha com a lista final de candidatos aprovados. O sistema atualizará automaticamente o status de cada candidato.</p>
 
           <div class="columns-grid">
-            <div class="columns-grid-title">Colunas necessárias:</div>
-            <div class="column-item"><strong>CPF</strong></div>
-            <div class="column-item"><strong>Status</strong> (Aprovado / Lista de espera)</div>
-            <div class="column-item"><strong>Nome completo</strong></div>
+            <div class="columns-grid-title">Use a mesma estrutura do cadastro de pessoa. Para aprovados, o sistema usa principalmente CPF e Status inicial.</div>
+            <div v-for="column in peopleSpreadsheetColumns" :key="column" class="column-item">{{ column }}</div>
           </div>
 
           <input
             type="file"
             ref="fileInputImportAprovados"
             style="display: none"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls"
             @change="handleAprovadosFileChange"
           />
 
@@ -1342,7 +1361,7 @@
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls (máx. 10MB)</small>
           </div>
 
           <div v-if="importAprovadosFile" class="selected-file-name">{{ importAprovadosFile.name }}</div>
@@ -1386,7 +1405,7 @@
         <!-- Lista de Espera -->
         <div v-else-if="selectedUpdateAction === 'lista-espera'" class="modal-content modal-large waitlist-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">< Voltar</button>
           </div>
           <h3>Atualizar lista de espera</h3>
 
@@ -1512,7 +1531,7 @@
             type="file"
             ref="fileInputSubmitCourses"
             style="display: none"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls"
             @change="handleSubmitCoursesFileChange"
           />
 
@@ -1585,7 +1604,7 @@
             type="file"
             ref="fileInputTestGrades"
             style="display: none"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls"
             @change="handleSubmitProvaFileChange"
           />
 
@@ -1645,11 +1664,28 @@
         </div>
 
         <div class="modal-content import-imersao-modal">
+          <div class="modal-header-with-action" style="margin-bottom: 16px;">
+            <p class="modal-desc" style="margin: 0;">Envie a planilha com os alunos da imersão usando a mesma estrutura do cadastro de pessoa.</p>
+            <button type="button" class="ghost-btn hero-btn" @click="downloadPeopleTemplate('Modelo_Imersao_Alunos.xlsx')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Baixar Modelo .xlsx</span>
+            </button>
+          </div>
+
+          <div class="columns-grid">
+            <div class="columns-grid-title">A planilha deve conter as seguintes colunas:</div>
+            <div v-for="column in peopleSpreadsheetColumns" :key="column" class="column-item">{{ column }}</div>
+          </div>
+
           <input
             type="file"
             ref="fileInputImportImersao"
             style="display: none"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls"
             @change="handleImportImersaoFileChange"
           />
 
@@ -1660,7 +1696,7 @@
               <line x1="12" y1="5" x2="12" y2="17" />
             </svg>
             <p>Envie a planilha com os alunos da imersão</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv</small>
+            <small>Formatos aceitos: .xlsx, .xls</small>
           </div>
 
           <div v-if="importImersaoFile" class="selected-file-name">{{ importImersaoFile.name }}</div>
@@ -1970,129 +2006,25 @@ import { courseService } from '@/services/courseService';
 import { examService } from '@/services/examService';
 import { groupService } from '@/services/groupService';
 import { analyticsService } from '@/services/analyticsService';
+import { programService } from '@/services/programService';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import GroupCreateModal from '@/components/GroupCreateModal.vue';
+import {
+  PEOPLE_SPREADSHEET_COLUMNS,
+  downloadPeopleSpreadsheetTemplate
+} from '@/utils/peopleSpreadsheetTemplate';
 
 const cycle = ['Inscrição', 'Seleção', 'Nivelamento', 'Imersão', 'Encerrado'];
 const overviewCycle = ['Inscrição', 'Processo Seletivo', 'Nivelamento', 'Prova', 'Imersão', 'Avaliação final', 'Encerramento'];
-const overviewStageCards = [
-  {
-    title: 'Processo Seletivo',
-    status: 'Concluído',
-    statusClass: 'pill-green',
-    items: [
-      { label: 'Inscritos', value: '612' },
-      { label: 'Vagas nivelamento', value: '250' },
-      { label: 'Pendências doc.', value: '22', valueClass: 'warning-strong' },
-      { label: 'Conflitos', value: '3', valueClass: 'warning-strong' },
-    ],
-  },
-  {
-    title: 'Nivelamento',
-    status: 'Concluído',
-    statusClass: 'pill-green',
-    items: [
-      { label: 'Selecionados', value: '250' },
-      { label: 'Ativos', value: '229' },
-      { label: 'Cursos obrigatórios', value: '6' },
-      { label: 'Prova final', value: '22/10/2025' },
-    ],
-  },
-  {
-    title: 'Imersão',
-    status: 'Em andamento',
-    statusClass: 'pill-teal',
-    items: [
-      { label: 'Aprovados', value: '50' },
-      { label: 'Alunos ativos', value: '44' },
-      { label: 'Grupos formados', value: '10' },
-      { label: 'Avaliação final', value: '30/11/2025' },
-    ],
-  },
-];
-const overviewTimeline = [
-  { label: 'Período de Inscrição', date: '01/02 - 28/02', status: 'Concluído' },
-  { label: 'Divulgação Resultado Preliminar', date: '05/03', status: 'Concluído' },
-  { label: 'Período de Recursos', date: '06/03 - 10/03', status: 'Concluído' },
-  { label: 'Resultado Final', date: '15/03', status: 'Concluído' },
-  { label: 'Confirmação de Participação', date: '16/03 - 20/03', status: 'Concluído' },
-  { label: 'Nivelamento', date: '21/03 - 30/04', status: 'Concluído' },
-];
-const quotaDistribution = [
-  { label: 'Ampla Concorrência', value: 45, color: '#3b82f6' },
-  { label: 'Mulheres', value: 25, color: '#a855f7' },
-  { label: 'Negros/Pardos', value: 15, color: '#f59e0b' },
-  { label: 'PCD/Neurodivergente', value: 10, color: '#14b8a6' },
-  { label: '45+', value: 5, color: '#64748b' },
-];
-const genderDistribution = [
-  { label: 'Feminino', value: 42 },
-  { label: 'Masculino', value: 56 },
-  { label: 'Outro', value: 1 },
-  { label: 'Não inf.', value: 1 },
-];
-const cityDistribution = [
-  { label: 'Maceió - AL', value: 32 },
-  { label: 'Arapiraca - AL', value: 8 },
-  { label: 'Rio Largo - AL', value: 5 },
-  { label: 'Outros municípios', value: 5 },
-];
-const educationDistribution = [
-  { label: 'Graduação em andamento', value: 28 },
-  { label: 'Graduação concluída', value: 15 },
-  { label: 'Curso técnico', value: 5 },
-  { label: 'Outros cursos', value: 2 },
-];
-const overviewUpdates = [
-  {
-    action: 'Planilha de notas da prova importada',
-    author: 'Ana Souza',
-    date: '24/10/2025 14:32',
-    status: 'Concluído',
-    statusClass: 'pill-green',
-    dotClass: 'dot-green',
-  },
-  {
-    action: 'Dados dos cursos atualizados',
-    author: 'Carlos Lima',
-    date: '21/10/2025 09:18',
-    status: 'Concluído',
-    statusClass: 'pill-green',
-    dotClass: 'dot-green',
-  },
-  {
-    action: 'Lista de aprovados para imersão atualizada',
-    author: 'Mariana Torres',
-    date: '30/10/2025 16:05',
-    status: 'Concluído',
-    statusClass: 'pill-green',
-    dotClass: 'dot-green',
-  },
-  {
-    action: 'Contratos pendentes identificados',
-    author: 'Sistema',
-    date: '05/11/2025 10:44',
-    status: 'Atenção',
-    statusClass: 'pill-amber',
-    dotClass: 'dot-amber',
-  },
-  {
-    action: 'Notas da avaliação parcial aguardando envio',
-    author: 'Sistema',
-    date: '25/02/2026 08:20',
-    status: 'Pendente',
-    statusClass: 'pill-slate',
-    dotClass: 'dot-slate',
-  },
-];
-const overviewTopCards = {
-  nivelamentoSelecionados: 250,
-  nivelamentoAtivos: 229,
-  imersaoAprovados: 50,
-  imersaoGrupos: 10,
-  alertasCriticos: 7,
-  alertasRisco: 3,
-};
+// Remove hardcoded mock data — these will be populated from backend-driven computations
+const overviewStageCards = [];
+const overviewTimeline = [];
+const quotaDistribution = [];
+const genderDistribution = [];
+const cityDistribution = [];
+const educationDistribution = [];
+const overviewUpdates = [];
+const peopleSpreadsheetColumns = PEOPLE_SPREADSHEET_COLUMNS;
 
 const selectionQuotaLabels = [
   'Ampla Concorrência',
@@ -2109,6 +2041,7 @@ export default {
     const route = useRoute();
     const router = useRouter();
     const classData = ref({});
+    const overviewProgramItem = ref(null);
     const stages = ref([]);
     const stageCandidatesCount = ref({});
     const classEnrollments = ref([]);
@@ -2149,11 +2082,16 @@ export default {
     const sendMessageRecipients = ref('all');
     const sendMessageSubject = ref('Pendência na conclusão dos cursos obrigatórios');
     const sendMessageBody = ref('Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.');
+    const downloadPeopleTemplate = (fileName) => {
+      downloadPeopleSpreadsheetTemplate(fileName);
+    };
     const showCourseDetailsModal = ref(false);
     const selectedCourseItem = ref(null);
     const showGroupCreateModal = ref(false);
     const selectedUpdateAction = ref(null);
+    const updateStageContext = ref('selecao');
     const selectionStageCandidates = ref([]);
+    const imersaoStageCandidates = ref([]);
     const selectionCandidatesLoading = ref(false);
     const registeringCandidate = ref(false);
     const registrationError = ref('');
@@ -2348,16 +2286,44 @@ export default {
       return 'badge-green';
     });
 
-    const currentStageIndex = computed(() => {
-      const fromClass = mapCycle(classData.value?.currentStage || classData.value?.status);
-      if (fromClass) return cycle.indexOf(fromClass);
+    const stageIndexFromLabel = (value) => {
+      const label = mapCycle(value);
+      return label ? cycle.indexOf(label) : -1;
+    };
 
-      let maxIndex = 0;
+    const currentStageIndex = computed(() => {
+      if (normalizeText(classData.value?.status).includes('encerr')) {
+        return cycle.indexOf('Encerrado');
+      }
+
+      const explicitStageIndex = stageIndexFromLabel(
+        overviewProgramItem.value?.etapaAtual ||
+        overviewProgramItem.value?.currentStage ||
+        classData.value?.currentStage
+      );
+
+      let maxIndexWithPeople = 0;
       stages.value.forEach((stage) => {
-        const index = cycle.indexOf(mapCycle(stage?.name || ''));
-        if (index > maxIndex) maxIndex = index;
+        const count = Number(stageCandidatesCount.value?.[stage.id] ?? 0);
+        if (!count) return;
+        const index = stageIndexFromLabel(stage?.name || '');
+        if (index > maxIndexWithPeople) maxIndexWithPeople = index;
       });
-      return maxIndex;
+
+      const now = Date.now();
+      const isStarted = (value) => {
+        const date = parseDateValue(value);
+        return date && date.getTime() <= now;
+      };
+
+      let dateStageIndex = 0;
+      if (isStarted(classData.value?.immersionStartDate)) dateStageIndex = cycle.indexOf('Imersão');
+      else if (isStarted(classData.value?.levelingStartDate)) dateStageIndex = cycle.indexOf('Nivelamento');
+      if (isStarted(classData.value?.levelingSelectionAnnouncementDate) || isStarted(classData.value?.applicationEndDate)) {
+        dateStageIndex = Math.max(dateStageIndex, cycle.indexOf('Seleção'));
+      }
+
+      return Math.max(explicitStageIndex, maxIndexWithPeople, dateStageIndex, cycle.indexOf('Inscrição'));
     });
 
     const currentStageLabel = computed(() => cycle[currentStageIndex.value] || 'Inscrição');
@@ -2370,20 +2336,35 @@ export default {
       return workload ? `${workload}h` : '480h';
     });
     const classPeriodLabel = computed(() => {
-      if (!classData.value?.startDate || !classData.value?.endDate) return 'Ago/2025 → Jun/2026';
+          if (!classData.value?.startDate || !classData.value?.endDate) return '-';
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const start = new Date(classData.value.startDate);
       const end = new Date(classData.value.endDate);
       return `${months[start.getMonth()]}/${start.getFullYear()} → ${months[end.getMonth()]}/${end.getFullYear()}`;
     });
-    const partnerLabel = computed(
-      () =>
-        classData.value?.partnerInstitution?.name ||
-        classData.value?.program?.partnerInstitution?.name ||
-        classData.value?.program?.partnerName ||
-        classData.value?.program?.institutionName ||
-        'EASY/UFAL'
-    );
+    const executorLabel = computed(() => {
+      if (overviewProgramItem.value) {
+        return (
+          // Alinhar com ProgramsView: usar o executor vindo do overview.
+          overviewProgramItem.value?.executor ||
+          overviewProgramItem.value?.executora ||
+          overviewProgramItem.value?.parceiro ||
+          '-'
+        );
+      }
+
+      return (
+        classData.value?.executora ||
+        classData.value?.executor ||
+        classData.value?.program?.executora ||
+        classData.value?.program?.executor ||
+        classData.value?.program?.executorName ||
+        classData.value?.executorName ||
+        classData.value?.parceiro ||
+        classData.value?.program?.parceiro ||
+        '-'
+      );
+    });
     const classLocationLabel = computed(() => {
       const locality = classData.value?.locality || classData.value?.localidade;
       if (locality) return locality;
@@ -2397,9 +2378,9 @@ export default {
 
       return location.name || '-';
     });
-    const currentStagePeriod = computed(() => classData.value?.stagePeriod || '17/11/2025 a 18/05/2026');
-    const currentStageMilestone = computed(() => classData.value?.nextMilestone || 'Avaliação parcial');
-    const currentStageMilestoneDate = computed(() => classData.value?.nextMilestoneDate || '03/03/2026');
+    const currentStagePeriod = computed(() => classData.value?.stagePeriod || '-');
+    const currentStageMilestone = computed(() => classData.value?.nextMilestone || '-');
+    const currentStageMilestoneDate = computed(() => classData.value?.nextMilestoneDate || '-');
     const overviewCurrentCycleIndex = computed(() => {
       const normalized = normalizeText(classData.value?.currentStage || classData.value?.status || '');
       if (normalized.includes('imersa')) return 4;
@@ -2438,6 +2419,18 @@ export default {
         if (value.includes('avali')) counts.avaliacao += count;
       });
       return counts;
+    });
+
+    const overviewTopCards = computed(() => {
+      const imersaoActiveStudents = imersaoStageCandidates.value.filter((candidate) => String(candidate?.status || '').toUpperCase() !== 'REPROVADO').length;
+      return {
+        nivelamentoSelecionados: overviewStageCounts.value.nivelamento,
+        nivelamentoAtivos: overviewStageCounts.value.nivelamento,
+        imersaoAprovados: imersaoActiveStudents || overviewStageCounts.value.imersao,
+        imersaoGrupos: imersaoGroups.value.length,
+        alertasCriticos: 0,
+        alertasRisco: 0,
+      };
     });
 
     const overviewCycleHasStudents = (label) => {
@@ -2785,7 +2778,8 @@ export default {
       return `Mostrando ${selectionProcessPageStart.value}-${selectionProcessPageEnd.value} de ${total} inscritos`;
     });
 
-    const openUpdateSelectionModal = () => {
+    const openUpdateSelectionModal = (context = 'selecao') => {
+      updateStageContext.value = context;
       selectedUpdateAction.value = null;
       showUpdateSelectionModal.value = true;
     };
@@ -3023,6 +3017,18 @@ export default {
           imersaoPresencaForm.value.groupId = targetGroup?.id || '';
           imersaoPresencaForm.value.meetingDate = targetGroup?.meetings?.[0]?.value || '';
         };
+
+        const syncImersaoMetrics = () => {
+          const activeStudents = imersaoStageCandidates.value.filter((candidate) => String(candidate?.status || '').toUpperCase() !== 'REPROVADO').length;
+          imersaoMetricsCards.value[0].value = String(imersaoGroups.value.length || 0);
+          imersaoMetricsCards.value[1].value = String(imersaoStageCandidates.value.length || 0);
+          imersaoMetricsCards.value[2].value = String(activeStudents);
+          imersaoMetricsCards.value[5].value = String(
+            imersaoGroups.value.filter((group) => group.statusClass === 'is-warning').length
+          );
+          imersaoMetricsCards.value = [...imersaoMetricsCards.value];
+        };
+
         const loadImersaoGroups = async () => {
           try {
             const groups = await groupService.getGroupsByClass(classId.value);
@@ -3079,22 +3085,14 @@ export default {
               };
             });
             syncImersaoPresenceGroups(imersaoGroups.value);
-            imersaoMetricsCards.value[0].value = String(imersaoGroups.value.length || 0);
-            imersaoMetricsCards.value[1].value = String(imersaoGroups.value.reduce((sum, group) => sum + (group.students || 0), 0));
-            imersaoMetricsCards.value[2].value = imersaoMetricsCards.value[1].value;
-            imersaoMetricsCards.value[5].value = String(
-              imersaoGroups.value.filter((group) => group.statusClass === 'is-warning').length
-            );
+            syncImersaoMetrics();
           } catch (err) {
             console.error('Erro ao carregar grupos:', err);
             imersaoGroups.value = [];
             imersaoPresencaGroups.value = [];
             imersaoPresencaForm.value.groupId = '';
             imersaoPresencaForm.value.meetingDate = '';
-            imersaoMetricsCards.value[0].value = '0';
-            imersaoMetricsCards.value[1].value = '0';
-            imersaoMetricsCards.value[2].value = '0';
-            imersaoMetricsCards.value[5].value = '0';
+            syncImersaoMetrics();
           }
         };
 
@@ -3216,6 +3214,23 @@ export default {
       }
     };
 
+    const loadImersaoStageCandidates = async () => {
+      if (!imersaoStageId.value) {
+        imersaoStageCandidates.value = [];
+        return;
+      }
+
+      try {
+        const data = await stageService.getCandidatesByStageId(imersaoStageId.value);
+        imersaoStageCandidates.value = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.error('Erro ao carregar alunos da imersão:', err);
+        imersaoStageCandidates.value = [];
+      } finally {
+        syncImersaoMetrics();
+      }
+    };
+
     const loadExamInsights = async () => {
       examInsightsLoading.value = true;
       examInsightsError.value = '';
@@ -3242,6 +3257,16 @@ export default {
     const formatImportWarnings = (warnings = []) => {
       if (!Array.isArray(warnings) || warnings.length === 0) return '';
       return ` Avisos: ${warnings.slice(0, 3).join(' | ')}`;
+    };
+
+    const formatStageImportRowErrors = (rowErrors = []) => {
+      if (!Array.isArray(rowErrors) || rowErrors.length === 0) return '';
+      const preview = rowErrors
+        .slice(0, 5)
+        .map((item) => `Linha ${item.row}: ${(item.messages || []).join(' ')}`)
+        .join(' | ');
+      const remaining = rowErrors.length > 5 ? ` (+${rowErrors.length - 5} outras linhas)` : '';
+      return `${preview}${remaining}`;
     };
 
     const handleInscricoesFileChange = (event) => {
@@ -3275,12 +3300,12 @@ export default {
     };
 
     const importSelectionCandidates = async () => {
-      if (!firstSelectionStageId.value) {
-        importInscricoesError.value = 'Nenhuma etapa de seleção foi encontrada para esta turma.';
+      if (!activeUpdateStageId.value) {
+        importInscricoesError.value = `Nenhuma ${activeUpdateStageLabel.value} foi encontrada para esta turma.`;
         return;
       }
       if (!importInscricoesFile.value) {
-        importInscricoesError.value = 'Selecione uma planilha de inscritos para continuar.';
+        importInscricoesError.value = 'Selecione uma planilha para continuar.';
         return;
       }
 
@@ -3290,9 +3315,16 @@ export default {
       try {
         const formData = new FormData();
         formData.append('file', importInscricoesFile.value);
-        const result = await stageService.importCandidates(firstSelectionStageId.value, formData);
+        const result = await stageService.importCandidates(activeUpdateStageId.value, formData);
         importInscricoesResult.value = result;
+        const rowErrorSummary = formatStageImportRowErrors(result?.rowErrors);
+        if (rowErrorSummary) {
+          importInscricoesError.value = rowErrorSummary;
+        }
         await loadStages();
+        if (updateStageContext.value === 'nivelamento') {
+          await loadNivelamentoData();
+        }
         await loadSelectionProcessContext();
       } catch (err) {
         importInscricoesError.value = err.response?.data?.message || err.message || 'Erro ao importar inscritos.';
@@ -3419,6 +3451,10 @@ export default {
         formData.append('file', importImersaoFile.value);
         const result = await stageService.importCandidates(imersaoStageId.value, formData);
         importImersaoSuccess.value = `Processadas: ${result.totalProcessed}. Inseridas: ${result.successfullyInserted}. Novas pessoas: ${result.newPeopleCreated}.`;
+        const rowErrorSummary = formatStageImportRowErrors(result?.rowErrors);
+        if (rowErrorSummary) {
+          importImersaoError.value = rowErrorSummary;
+        }
         await loadStages();
       } catch (err) {
         importImersaoError.value = err.response?.data?.message || err.message || 'Erro ao importar alunos da imersão.';
@@ -3431,7 +3467,10 @@ export default {
       try {
         stages.value = await stageService.getByClassId(classId.value);
         stageCandidatesCount.value = await stageService.getCandidatesCountByClassId(classId.value);
-        await loadSelectionStageCandidates();
+        await Promise.all([
+          loadSelectionStageCandidates(),
+          loadImersaoStageCandidates(),
+        ]);
       } catch (err) {
         console.error('Erro ao carregar etapas:', err);
       }
@@ -3466,6 +3505,22 @@ export default {
       }
     };
 
+    const loadProgramOverviewItem = async () => {
+      try {
+        const overviewData = await programService.getOverview();
+        const items = Array.isArray(overviewData?.items) ? overviewData.items : [];
+        const classIdValue = Number(classId.value);
+        const programIdValue = Number(classData.value?.program?.id ?? classData.value?.programId ?? programId.value);
+        overviewProgramItem.value =
+          items.find((item) => Number(item?.classId) === classIdValue) ||
+          (programIdValue ? items.find((item) => Number(item?.programId) === programIdValue) : null) ||
+          null;
+      } catch (err) {
+        console.error('Erro ao carregar executora do programa:', err);
+        overviewProgramItem.value = null;
+      }
+    };
+
     const loadClassDetails = async () => {
       loading.value = true;
       error.value = null;
@@ -3475,6 +3530,7 @@ export default {
           loadStages(),
           loadClassPeople(),
           loadSelectionProcessContext(),
+          loadProgramOverviewItem(),
           loadNivelamentoData(),
           loadExamInsights(),
         ]);
@@ -3655,6 +3711,7 @@ export default {
 
     const openIndividualRegistration = () => {
       registrationError.value = '';
+      newCandidateForm.value.status = defaultStatusForUpdateContext.value;
       selectedUpdateAction.value = 'individual';
     };
 
@@ -3673,11 +3730,17 @@ export default {
       || (stages.value || [])[0]
     );
 
+    const nivelamentoStage = computed(() =>
+      (stages.value || []).find((item) => normalizeText(item?.name).includes('nivel'))
+      || null
+    );
+
     const imersaoStage = computed(() =>
       (stages.value || []).find((item) => normalizeText(item?.name).includes('imers'))
       || null
     );
 
+    const nivelamentoStageId = computed(() => nivelamentoStage.value?.id || null);
     const imersaoStageId = computed(() => imersaoStage.value?.id || null);
 
     const selectionStatusMeta = (status, notes = '') => {
@@ -3697,6 +3760,23 @@ export default {
       };
     };
 
+    const imersaoStageStudents = computed(() =>
+      [...imersaoStageCandidates.value]
+        .map((candidate) => {
+          const meta = selectionStatusMeta(candidate.status, candidate.notes);
+          return {
+            id: candidate.id,
+            peopleId: candidate.peopleId,
+            name: candidate.peopleName || '-',
+            cpf: candidate.peopleCpf || '',
+            email: candidate.peopleEmail || '-',
+            status: meta.label,
+            statusClass: meta.className,
+          };
+        })
+        .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
+    );
+
     const firstSelectionStageId = computed(() => {
       const stage = (stages.value || []).find((item) => normalizeText(item?.name) === 'selecao')
         || (stages.value || []).find((item) => normalizeText(item?.name) === 'seleção')
@@ -3704,6 +3784,66 @@ export default {
 
       return stage?.id || null;
     });
+
+    const isSelectionUpdateContext = computed(() => updateStageContext.value === 'selecao');
+    const activeUpdateStageId = computed(() => {
+      if (updateStageContext.value === 'nivelamento') return nivelamentoStageId.value;
+      if (updateStageContext.value === 'imersao') return imersaoStageId.value;
+      return firstSelectionStageId.value;
+    });
+    const activeUpdateStageLabel = computed(() => {
+      if (updateStageContext.value === 'nivelamento') return 'etapa de nivelamento';
+      if (updateStageContext.value === 'imersao') return 'etapa de imersão';
+      return 'etapa de seleção';
+    });
+    const activeUpdateStageShortLabel = computed(() => {
+      if (updateStageContext.value === 'nivelamento') return 'do nivelamento';
+      if (updateStageContext.value === 'imersao') return 'da imersão';
+      return 'de inscritos';
+    });
+    const updateStageModalTitle = computed(() => {
+      if (updateStageContext.value === 'nivelamento') return 'Atualizar dados do nivelamento';
+      if (updateStageContext.value === 'imersao') return 'Atualizar dados da imersão';
+      return 'Atualizar dados do processo seletivo';
+    });
+    const updateStageModalSubtitle = computed(() => {
+      if (updateStageContext.value === 'nivelamento') {
+        return 'Escolha uma ação para atualizar os alunos da etapa de nivelamento desta turma:';
+      }
+      if (updateStageContext.value === 'imersao') {
+        return 'Escolha uma ação para atualizar os alunos da etapa de imersão desta turma:';
+      }
+      return 'Escolha uma das ações abaixo para atualizar os dados do processo seletivo:';
+    });
+    const importStudentsActionTitle = computed(() => (
+      isSelectionUpdateContext.value ? 'Importar planilha de inscritos' : `Importar alunos ${activeUpdateStageShortLabel.value}`
+    ));
+    const importStudentsActionDescription = computed(() => (
+      isSelectionUpdateContext.value
+        ? 'Envie uma planilha com a lista de candidatos inscritos'
+        : `Envie uma planilha com os alunos que devem entrar na ${activeUpdateStageLabel.value} desta turma`
+    ));
+    const individualRegistrationActionDescription = computed(() => (
+      isSelectionUpdateContext.value
+        ? 'Adicione um novo candidato manualmente ao processo seletivo'
+        : `Adicione um aluno manualmente à ${activeUpdateStageLabel.value} desta turma`
+    ));
+    const importStudentsModalTitle = computed(() => (
+      isSelectionUpdateContext.value ? 'Importar planilha de inscritos' : `Importar alunos ${activeUpdateStageShortLabel.value}`
+    ));
+    const importStudentsModalDescription = computed(() => (
+      isSelectionUpdateContext.value
+        ? 'Envie uma planilha Excel com os dados dos candidatos inscritos. A planilha deve conter as seguintes colunas:'
+        : `Envie uma planilha Excel com os dados dos alunos. Eles serão vinculados automaticamente à ${activeUpdateStageLabel.value} desta turma.`
+    ));
+    const updatePeopleTemplateFileName = computed(() => {
+      if (updateStageContext.value === 'nivelamento') return 'Modelo_Nivelamento_Alunos.xlsx';
+      if (updateStageContext.value === 'imersao') return 'Modelo_Imersao_Alunos.xlsx';
+      return 'Modelo_Inscritos.xlsx';
+    });
+    const defaultStatusForUpdateContext = computed(() => (
+      isSelectionUpdateContext.value ? 'Inscrito' : 'Aprovado'
+    ));
 
     const newCandidateCpfDigits = computed(() => (newCandidateForm.value.cpf || '').replace(/\D/g, ''));
 
@@ -3725,9 +3865,9 @@ export default {
           throw new Error('Informe uma data de nascimento válida no formato dd/mm/aaaa.');
         }
 
-        const stageId = firstSelectionStageId.value;
+        const stageId = activeUpdateStageId.value;
         if (!stageId) {
-          throw new Error('Nenhuma etapa disponível para vincular o candidato.');
+          throw new Error(`Nenhuma ${activeUpdateStageLabel.value} disponível para vincular o aluno.`);
         }
 
         await peopleService.createLink({
@@ -3861,6 +4001,18 @@ export default {
       classPeriodLabel,
       classWorkloadLabel,
       loading,
+      downloadPeopleTemplate,
+      peopleSpreadsheetColumns,
+      updateStageModalTitle,
+      updateStageModalSubtitle,
+      isSelectionUpdateContext,
+      activeUpdateStageLabel,
+      importStudentsActionTitle,
+      importStudentsActionDescription,
+      individualRegistrationActionDescription,
+      importStudentsModalTitle,
+      importStudentsModalDescription,
+      updatePeopleTemplateFileName,
       openUpdateSelectionModal,
       openIndividualRegistration,
       newCandidateForm,
@@ -3876,7 +4028,7 @@ export default {
       overviewTopCards,
       overviewUpdates,
       paginatedClassPeople,
-      partnerLabel,
+      executorLabel,
       peopleCityOptions,
       peopleError,
       peopleFilterCity,
@@ -3987,6 +4139,7 @@ export default {
       examInsightsLoading,
       examInsightsError,
       imersaoMetricsCards,
+      imersaoStageStudents,
       imersaoGroups,
       imersaoExpandedGroupId,
       toggleImersaoGroup,
@@ -7190,4 +7343,3 @@ export default {
 }
 
 </style>
-

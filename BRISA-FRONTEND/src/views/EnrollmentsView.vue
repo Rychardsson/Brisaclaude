@@ -356,7 +356,6 @@ export default {
       if (!role) return '-';
       const normalized = String(role).toUpperCase();
       if (normalized === 'ALUNO') return 'Aluno';
-      if (normalized === 'PROFESSOR') return 'Professor';
       if (normalized === 'ORIENTADOR') return 'Orientador';
       if (normalized === 'COORDENADOR') return 'Coordenador';
       return role;
@@ -365,7 +364,6 @@ export default {
     const getRoleClass = (role) => {
       const normalized = String(role || '').toUpperCase();
       if (normalized === 'ALUNO') return 'role-student';
-      if (normalized === 'PROFESSOR') return 'role-teacher';
       if (normalized === 'ORIENTADOR') return 'role-advisor';
       if (normalized === 'COORDENADOR') return 'role-coordinator';
       return 'role-default';

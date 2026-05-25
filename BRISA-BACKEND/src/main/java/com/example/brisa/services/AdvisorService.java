@@ -118,8 +118,14 @@ public class AdvisorService {
         if (rawRoleType == null || rawRoleType.trim().isEmpty()) {
             return null;
         }
+        String normalized = rawRoleType.trim().toUpperCase();
         try {
-            return AdvisorRoleType.valueOf(rawRoleType.trim().toUpperCase());
+            AdvisorRoleType resolved = AdvisorRoleType.valueOf(normalized);
+            // Only ORIENTADOR and GESTOR are accepted as explicit roles for creation/update
+            if (resolved != AdvisorRoleType.ORIENTADOR && resolved != AdvisorRoleType.GESTOR) {
+                throw new ValidationException(List.of("Tipo de perfil acadêmico inválido."));
+            }
+            return resolved;
         } catch (IllegalArgumentException ex) {
             throw new ValidationException(List.of("Tipo de perfil acadêmico inválido."));
         }

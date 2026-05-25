@@ -133,7 +133,7 @@
        </div>
 
        <div class="list-item-row toggle-row-simple" :style="imersaoForm.presenca.frequenciaSemanal ? 'border-bottom: none; padding-bottom: 0;' : ''">
-          <span class="list-item-title">Reunião Semanal com Professor Orientador</span>
+          <span class="list-item-title">Reunião Semanal com Orientador</span>
           <label class="toggle-switch"><input type="checkbox" v-model="imersaoForm.presenca.frequenciaSemanal" class="toggle-input"><span class="toggle-slider"></span></label>
        </div>
 

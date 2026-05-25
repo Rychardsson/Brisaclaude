@@ -4,9 +4,9 @@
       <section class="page-header-card">
         <div class="page-header-top">
           <div class="header-content">
-            <h1>Professores e Gestores</h1>
+            <h1>Orientadores e Gestores</h1>
             <p class="subtitle">
-              Centralize o cadastro da equipe acadêmica, acompanhe perfis ativos e mantenha professores, gestores e orientadores acessíveis para as operações do programa.
+              Centralize o cadastro da equipe acadêmica, acompanhe perfis ativos e mantenha gestores e orientadores acessíveis para as operações do programa.
             </p>
           </div>
 
@@ -33,11 +33,11 @@
 
           <article class="stat-card stat-card-success">
             <div class="stat-header">
-              <span class="stat-label">Professores</span>
+              <span class="stat-label">Orientadores</span>
               <GraduationCap :size="18" />
             </div>
-            <div class="stat-value">{{ formatNumber(professorsCount) }}</div>
-            <div class="stat-note">Docentes vinculados ou disponíveis</div>
+            <div class="stat-value">{{ formatNumber(advisorsCount) }}</div>
+            <div class="stat-note">Orientadores vinculados ou disponíveis</div>
           </article>
 
           <article class="stat-card stat-card-warning">
@@ -112,7 +112,7 @@
           <div v-else-if="filteredMembers.length === 0" class="state-row state-row-empty">
             <div>
               <strong>Nenhum membro encontrado</strong>
-              <p>Ajuste os filtros ou cadastre um novo professor, gestor ou orientador.</p>
+              <p>Ajuste os filtros ou cadastre um novo orientador ou gestor.</p>
             </div>
           </div>
 
@@ -201,15 +201,13 @@ const statusFilter = ref('all');
 
 const totalMembers = computed(() => members.value.length);
 const activeMembersCount = computed(() => members.value.filter((member) => member.active !== false).length);
-const professorsCount = computed(() => members.value.filter((member) => member.roleType === 'PROFESSOR').length);
 const managersCount = computed(() => members.value.filter((member) => member.roleType === 'GESTOR').length);
 const advisorsCount = computed(() => members.value.filter((member) => member.roleType === 'ORIENTADOR').length);
 
 const tabs = computed(() => [
   { id: 'all', label: 'Todos', count: totalMembers.value },
-  { id: 'PROFESSOR', label: 'Professores', count: professorsCount.value },
-  { id: 'GESTOR', label: 'Gestores', count: managersCount.value },
-  { id: 'ORIENTADOR', label: 'Orientadores', count: advisorsCount.value }
+  { id: 'ORIENTADOR', label: 'Orientadores', count: advisorsCount.value },
+  { id: 'GESTOR', label: 'Gestores', count: managersCount.value }
 ]);
 
 const filteredMembers = computed(() => {
@@ -311,26 +309,25 @@ function initials(name) {
 function roleLabel(roleType) {
   const labels = {
     ORIENTADOR: 'Orientador',
-    PROFESSOR: 'Professor',
     GESTOR: 'Gestor'
   };
-  return labels[roleType] || 'Orientador';
+  return labels[roleType] || 'Equipe acadêmica';
 }
 
 function roleDescription(roleType) {
   const descriptions = {
     ORIENTADOR: 'Acompanhamento de turma e projetos',
-    PROFESSOR: 'Condução de cursos e avaliações',
     GESTOR: 'Gestão operacional do programa'
   };
   return descriptions[roleType] || 'Equipe acadêmica';
 }
 
 function roleBadgeClass(roleType) {
+  // Consolidar classes: orientador
+  const isAdvisor = roleType === 'ORIENTADOR';
   return {
-    'role-professor': roleType === 'PROFESSOR',
-    'role-manager': roleType === 'GESTOR',
-    'role-advisor': roleType === 'ORIENTADOR'
+    'role-advisor': isAdvisor,
+    'role-manager': roleType === 'GESTOR'
   };
 }
 </script>
@@ -713,10 +710,6 @@ function roleBadgeClass(roleType) {
   font-weight: 700;
 }
 
-.role-professor {
-  background: #e0f2fe;
-  color: #0369a1;
-}
 
 .role-manager {
   background: #fef3c7;

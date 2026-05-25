@@ -15,7 +15,7 @@ public class AcademicRoleModel {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String name; // Ex: "ALUNO", "PROFESSOR"
+    private String name; // Ex: "ALUNO", "ORIENTADOR"
 
     private String description; 
 

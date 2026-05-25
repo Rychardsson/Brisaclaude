@@ -112,7 +112,6 @@ const emit = defineEmits(['close', 'created', 'updated']);
 
 const roleOptions = [
   { value: 'ORIENTADOR', label: 'Orientador' },
-  { value: 'PROFESSOR', label: 'Professor' },
   { value: 'GESTOR', label: 'Gestor' }
 ];
 
@@ -135,7 +134,7 @@ const resolvedTitle = computed(() => {
 const resolvedSubtitle = computed(() => {
   if (props.subtitle) return props.subtitle;
   if (showRoleSelector.value) {
-    return 'Cadastre professores, gestores e orientadores sem sair do fluxo atual.';
+    return 'Cadastre orientadores e gestores sem sair do fluxo atual.';
   }
   return `Preencha os dados do ${roleLabel(props.fixedRoleType).toLowerCase()}.`;
 });

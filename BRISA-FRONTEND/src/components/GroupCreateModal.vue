@@ -102,7 +102,7 @@
 
 <script>
 import { groupService } from '@/services/groupService';
-import { peopleService } from '@/services/peopleService';
+import { advisorService } from '@/services/advisorService';
 import { institutionService } from '@/services/institutionService';
 import { classService } from '@/services/classService';
 
@@ -167,9 +167,9 @@ export default {
           this.errorMessage = 'Classe não selecionada';
           return;
         }
-        // Carregar orientadores (qualquer pessoa)
-        const peopleResponse = await peopleService.getAll();
-        this.leaders = Array.isArray(peopleResponse) ? peopleResponse : [];
+        // Carregar orientadores (somente membros da equipe — orientadores/gestores)
+        const advisorsResponse = await advisorService.getAll();
+        this.leaders = Array.isArray(advisorsResponse) ? advisorsResponse.filter(a => ['ORIENTADOR', 'GESTOR'].includes(a.roleType)) : [];
         this.filteredLeaders = this.leaders;
 
         // Carregar alunos na etapa de imersão desta classe

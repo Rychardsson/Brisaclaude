@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -243,9 +244,9 @@ public class StageService {
             }
 
             Map<String, Integer> headers = excelImportHelper.mapHeaders(sheet.getRow(0));
-            Integer cpfIndex = excelImportHelper.findColumn(headers, List.of("cpf", "cpf_aluno"), 0);
-            Integer statusIndex = excelImportHelper.findColumn(headers, List.of("status", "situacao", "situacao final"), 1);
-            Integer nameIndex = excelImportHelper.findColumn(headers, List.of("nome", "nome completo", "name"), 2);
+            Integer cpfIndex = excelImportHelper.findColumn(headers, List.of("cpf", "cpf_aluno"), 4);
+            Integer statusIndex = excelImportHelper.findColumn(headers, List.of("status inicial", "status", "situacao", "situacao final"), 17);
+            Integer nameIndex = excelImportHelper.findColumn(headers, List.of("nome do aluno", "nome", "nome completo", "name"), 0);
             Integer notesIndex = excelImportHelper.findColumn(headers, List.of("observacoes", "observacoes internas", "notes"), null);
 
             List<StageCandidateModel> existingCandidates = stageCandidateRepository.findByStageId(stageId);
@@ -381,23 +382,54 @@ public class StageService {
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
+            if (sheet == null || sheet.getPhysicalNumberOfRows() == 0) {
+                return candidatesList;
+            }
+
+            Map<String, Integer> headers = excelImportHelper.mapHeaders(sheet.getRow(0));
+            Integer idxName = excelImportHelper.findColumn(headers, List.of("nome do aluno", "nome completo", "nome", "name"), 0);
+            Integer idxBirthDate = excelImportHelper.findColumn(headers, List.of("data de nascimento", "nascimento", "birth date", "birthdate"), 1);
+            Integer idxGender = excelImportHelper.findColumn(headers, List.of("genero", "gênero", "gender"), 2);
+            Integer idxQuota = excelImportHelper.findColumn(headers, List.of("cota", "quota"), 3);
+            Integer idxCpf = excelImportHelper.findColumn(headers, List.of("cpf", "cpf_aluno"), 4);
+            Integer idxEmail = excelImportHelper.findColumn(headers, List.of("e-mail", "email"), 5);
+            Integer idxPhone = excelImportHelper.findColumn(headers, List.of("telefone", "phone"), 6);
+            Integer idxState = excelImportHelper.findColumn(headers, List.of("estado de residencia", "estado de residência", "estado", "uf", "state"), 7);
+            Integer idxCity = excelImportHelper.findColumn(headers, List.of("cidade de residencia", "cidade de residência", "cidade", "city", "cidade/uf"), 8);
+            Integer idxEducationLevel = excelImportHelper.findColumn(headers, List.of("tipo de formacao", "tipo de formação", "formacao", "formação", "educationlevel"), 9);
+            Integer idxInstitution = excelImportHelper.findColumn(headers, List.of("instituicao", "instituição", "institution"), 10);
+            Integer idxCourse = excelImportHelper.findColumn(headers, List.of("curso", "course"), 11);
+            Integer idxEducationStatus = excelImportHelper.findColumn(headers, List.of("status da formacao", "status da formação", "educationstatus"), 12);
+            Integer idxCompletionDate = excelImportHelper.findColumn(headers, List.of("data de conclusao", "data de conclusão", "completiondate"), 13);
+            Integer idxStatus = excelImportHelper.findColumn(headers, List.of("status inicial", "status", "situacao", "situação"), 17);
+            Integer idxNotes = excelImportHelper.findColumn(headers, List.of("observacoes", "observações", "observacoes internas", "notes"), null);
 
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
-                if (row == null) {
+                if (excelImportHelper.isRowEmpty(row)) {
                     continue;
                 }
 
                 CandidateImportDTO candidate = new CandidateImportDTO();
                 candidate.setRow(i + 1);
-                candidate.setName(getCellValueAsString(row.getCell(0)));
-                candidate.setEmail(getCellValueAsString(row.getCell(1)));
-                candidate.setCpf(getCellValueAsString(row.getCell(2)));
-                candidate.setStatus(parseStatus(getCellValueAsString(row.getCell(3))));
-                candidate.setNotes(getCellValueAsString(row.getCell(4)));
+                candidate.setName(excelImportHelper.getString(row, idxName));
+                candidate.setBirthDate(excelImportHelper.getDate(row, idxBirthDate));
+                candidate.setGender(excelImportHelper.getString(row, idxGender));
+                candidate.setQuotaCategory(excelImportHelper.getString(row, idxQuota));
+                candidate.setCpf(normalizeDocument(excelImportHelper.getString(row, idxCpf)));
+                candidate.setEmail(normalizeEmail(excelImportHelper.getString(row, idxEmail)));
+                candidate.setPhone(excelImportHelper.getString(row, idxPhone));
+                candidate.setState(excelImportHelper.getString(row, idxState));
+                candidate.setCity(excelImportHelper.getString(row, idxCity));
+                candidate.setEducationLevel(excelImportHelper.getString(row, idxEducationLevel));
+                candidate.setInstitutionName(excelImportHelper.getString(row, idxInstitution));
+                candidate.setCourseName(excelImportHelper.getString(row, idxCourse));
+                candidate.setEducationStatus(excelImportHelper.getString(row, idxEducationStatus));
+                candidate.setEducationCompletionDate(excelImportHelper.getDate(row, idxCompletionDate));
+                candidate.setStatus(parseStatus(excelImportHelper.getString(row, idxStatus)));
+                candidate.setNotes(excelImportHelper.getString(row, idxNotes));
 
-                if (candidate.getName() != null && !candidate.getName().isEmpty()
-                        && candidate.getEmail() != null && !candidate.getEmail().isEmpty()) {
+                if (!isBlank(candidate.getName()) || !isBlank(candidate.getEmail()) || !isBlank(candidate.getCpf())) {
                     candidatesList.add(candidate);
                 }
             }
@@ -429,7 +461,7 @@ public class StageService {
         if (normalized.contains("espera")) {
             return StageStatus.LISTA_ESPERA;
         }
-        if (normalized.contains("analise")) {
+        if (normalized.contains("analise") || normalized.contains("inscrit") || normalized.contains("pendente")) {
             return StageStatus.EM_ANALISE;
         }
         if (normalized.contains("aprov")) {
@@ -454,15 +486,8 @@ public class StageService {
         int newPeopleCreated = 0;
         List<CandidateRowErrorDTO> rowErrors = new ArrayList<>();
 
-        List<String> allEmails = candidatesList.stream()
-                .map(CandidateImportDTO::getEmail)
-                .filter(email -> email != null && !email.isEmpty())
-                .distinct()
-                .toList();
-
-        List<PeopleModel> existingPeople = peopleRepository.findAllByEmailIn(allEmails);
-        Map<String, PeopleModel> peopleByEmail = existingPeople.stream()
-                .collect(Collectors.toMap(PeopleModel::getEmail, person -> person));
+        Map<String, PeopleModel> peopleByEmail = new LinkedHashMap<>();
+        Map<String, PeopleModel> peopleByCpf = new LinkedHashMap<>();
 
         List<StageCandidateModel> existingCandidates = stageCandidateRepository.findByStageId(stage.getId());
         Set<Long> existingPeopleIds = existingCandidates.stream()
@@ -472,18 +497,30 @@ public class StageService {
         List<StageCandidateModel> candidatesToInsert = new ArrayList<>();
 
         for (CandidateImportDTO candidateDTO : candidatesList) {
-            PeopleModel person = peopleByEmail.get(candidateDTO.getEmail());
+            PeopleModel person = resolveImportedPerson(candidateDTO, peopleByEmail, peopleByCpf);
+
+            List<String> stageProgressionErrors = peopleIntegrationService.validateStageProgression(person, stage);
+            if (!stageProgressionErrors.isEmpty()) {
+                rowErrors.add(new CandidateRowErrorDTO(candidateDTO.getRow(), stageProgressionErrors));
+                continue;
+            }
 
             if (person == null) {
+                if (isBlank(candidateDTO.getName()) || isBlank(candidateDTO.getEmail())) {
+                    rowErrors.add(new CandidateRowErrorDTO(candidateDTO.getRow(), List.of("Nome do aluno e e-mail são obrigatórios para criar nova pessoa.")));
+                    continue;
+                }
                 person = new PeopleModel();
-                person.setName(candidateDTO.getName());
-                person.setEmail(candidateDTO.getEmail());
-                person.setCpf(candidateDTO.getCpf());
+                applyImportedCandidateData(person, candidateDTO);
                 person = peopleRepository.save(person);
 
-                peopleByEmail.put(person.getEmail(), person);
+                cacheImportedPerson(person, peopleByEmail, peopleByCpf);
                 createdPeople.add(person.getName());
                 newPeopleCreated++;
+            } else {
+                applyImportedCandidateData(person, candidateDTO);
+                person = peopleRepository.save(person);
+                cacheImportedPerson(person, peopleByEmail, peopleByCpf);
             }
 
             if (existingPeopleIds.contains(person.getId())) {
@@ -627,6 +664,76 @@ public class StageService {
             emailService.sendEmailSync(recipient, "Convocacao da lista de espera - BRISA", html.toString());
         } catch (Exception ignored) {
         }
+    }
+
+    private PeopleModel resolveImportedPerson(
+            CandidateImportDTO candidateDTO,
+            Map<String, PeopleModel> peopleByEmail,
+            Map<String, PeopleModel> peopleByCpf
+    ) {
+        String cpf = normalizeDocument(candidateDTO.getCpf());
+        if (!cpf.isBlank()) {
+            PeopleModel cached = peopleByCpf.get(cpf);
+            if (cached != null) return cached;
+
+            var byCpf = peopleRepository.findByCpf(cpf);
+            if (byCpf.isPresent()) return byCpf.get();
+        }
+
+        String email = normalizeEmail(candidateDTO.getEmail());
+        if (!isBlank(email)) {
+            PeopleModel cached = peopleByEmail.get(email);
+            if (cached != null) return cached;
+
+            var byEmail = peopleRepository.findByEmail(email);
+            if (byEmail.isPresent()) return byEmail.get();
+        }
+
+        return null;
+    }
+
+    private void applyImportedCandidateData(PeopleModel person, CandidateImportDTO candidateDTO) {
+        person.setName(defaultIfBlank(candidateDTO.getName(), person.getName()));
+        person.setEmail(defaultIfBlank(normalizeEmail(candidateDTO.getEmail()), person.getEmail()));
+        person.setCpf(defaultIfBlank(normalizeDocument(candidateDTO.getCpf()), person.getCpf()));
+        person.setPhone(defaultIfBlank(candidateDTO.getPhone(), person.getPhone()));
+        person.setGender(defaultIfBlank(candidateDTO.getGender(), person.getGender()));
+        person.setQuotaCategory(defaultIfBlank(candidateDTO.getQuotaCategory(), person.getQuotaCategory()));
+        person.setState(defaultIfBlank(candidateDTO.getState(), person.getState()));
+        person.setCity(defaultIfBlank(candidateDTO.getCity(), person.getCity()));
+        person.setEducationLevel(defaultIfBlank(candidateDTO.getEducationLevel(), person.getEducationLevel()));
+        person.setInstitutionName(defaultIfBlank(candidateDTO.getInstitutionName(), person.getInstitutionName()));
+        person.setCourseName(defaultIfBlank(candidateDTO.getCourseName(), person.getCourseName()));
+        person.setEducationStatus(defaultIfBlank(candidateDTO.getEducationStatus(), person.getEducationStatus()));
+        if (candidateDTO.getBirthDate() != null) person.setBirthDate(candidateDTO.getBirthDate());
+        if (candidateDTO.getEducationCompletionDate() != null) {
+            person.setEducationCompletionDate(candidateDTO.getEducationCompletionDate());
+        }
+        if (Boolean.TRUE.equals(person.getSoftDeleted())) person.setSoftDeleted(false);
+    }
+
+    private void cacheImportedPerson(
+            PeopleModel person,
+            Map<String, PeopleModel> peopleByEmail,
+            Map<String, PeopleModel> peopleByCpf
+    ) {
+        String email = normalizeEmail(person.getEmail());
+        if (!isBlank(email)) peopleByEmail.put(email, person);
+
+        String cpf = normalizeDocument(person.getCpf());
+        if (!cpf.isBlank()) peopleByCpf.put(cpf, person);
+    }
+
+    private String normalizeEmail(String value) {
+        return isBlank(value) ? null : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String defaultIfBlank(String value, String fallback) {
+        return isBlank(value) ? fallback : value.trim();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private String normalizeDocument(String value) {

@@ -211,7 +211,7 @@
                   </div>
 
                   <div class="program-meta">
-                    <span><Building2 :size="14" />{{ program.parceiro }}</span>
+                    <span><Building2 :size="14" />{{ program.executor || program.executora || '-' }}</span>
                     <span><MapPin :size="14" />{{ program.localidade }}</span>
                     <span><Calendar :size="14" />{{ program.periodo }}</span>
                   </div>
@@ -761,7 +761,13 @@ function mapClassToProgramListItem(classItem, fallbackProgram) {
   const programId = resolveProgramId(classItem) ?? String(fallbackProgram?.programId ?? '');
   const catalogProgram = programCatalog.value.find((item) => item.programId === programId) || null;
   const programName = classItem?.program?.name ?? fallbackProgram?.nome ?? catalogProgram?.nome ?? 'Programa';
-  const executorName = fallbackProgram?.executor ?? catalogProgram?.executor ?? '-';
+  const executorValue = classItem?.program?.executor
+    ?? classItem?.program?.executorName
+    ?? fallbackProgram?.executor
+    ?? fallbackProgram?.executorName
+    ?? catalogProgram?.executor
+    ?? catalogProgram?.executorName
+    ?? '-';
   const localityName = classItem?.locality ?? classItem?.location?.name ?? fallbackProgram?.location ?? '-';
   
   // Format period/dates: "DD/MM/YYYY - DD/MM/YYYY"
@@ -787,7 +793,9 @@ function mapClassToProgramListItem(classItem, fallbackProgram) {
     classId: classItem?.id ?? classItem?.classId ?? null,
     nome: programName,
     turma: classItem?.code ?? classItem?.name ?? `Turma ${classItem?.id ?? '-'}`,
-    parceiro: executorName,
+    parceiro: executorValue,
+    executor: executorValue,
+    executora: executorValue,
     localidade: localityName,
     periodo: periodoText,
     status: classItem?.status || 'andamento',
@@ -826,6 +834,7 @@ const programCatalog = computed(() => {
       map.set(key, {
         programId: key,
         nome: item.nome ?? 'Programa sem nome',
+        executor: item.executor ?? item.executora ?? item.parceiro ?? '-',
         parceiro: item.parceiro ?? '-',
         totalTurmas: 0,
       });
@@ -853,7 +862,7 @@ const filteredProgramCatalog = computed(() => {
 
   const normalizedTerm = normalizeText(term);
   return programCatalog.value.filter((item) =>
-    [item.nome, item.parceiro].some((field) => normalizeText(field).includes(normalizedTerm))
+    [item.nome, item.executor, item.parceiro].some((field) => normalizeText(field).includes(normalizedTerm))
   );
 });
 
@@ -1052,14 +1061,18 @@ const pageNumbers = computed(() => {
 
 function stageCountFor(program, stageLabel) {
   const label = normalizeText(stageLabel);
+  const currentStageIndex = stageTrack.findIndex((stage) => normalizeText(stage) === normalizeText(formatStageName(program?.etapaAtual)));
+  const stageIndex = stageTrack.findIndex((stage) => normalizeText(stage) === normalizeText(stageLabel));
+  const stageReachedByCurrentStage = currentStageIndex >= 0 && stageIndex >= 0 && stageIndex <= currentStageIndex;
+
   if (label.includes('inscri')) {
     const count = numberValue(program?.inscricao ?? program?.inscritos);
-    return hasStartedInscricao(program) ? Math.max(count, 1) : count;
+    return (hasStartedInscricao(program) || stageReachedByCurrentStage) ? Math.max(count, 1) : count;
   }
-  if (label.includes('sele')) return numberValue(program?.selecao);
-  if (label.includes('nivel')) return numberValue(program?.nivelamento);
-  if (label.includes('imers')) return numberValue(program?.imersao);
-  if (label.includes('encer')) return normalizedStatus(program?.status) === 'encerrado' ? 1 : 0;
+  if (label.includes('sele')) return stageReachedByCurrentStage ? Math.max(numberValue(program?.selecao), 1) : numberValue(program?.selecao);
+  if (label.includes('nivel')) return stageReachedByCurrentStage ? Math.max(numberValue(program?.nivelamento), 1) : numberValue(program?.nivelamento);
+  if (label.includes('imers')) return stageReachedByCurrentStage ? Math.max(numberValue(program?.imersao), 1) : numberValue(program?.imersao);
+  if (label.includes('encer')) return normalizedStatus(program?.status) === 'encerrado' || stageReachedByCurrentStage ? 1 : 0;
   return 0;
 }
 
