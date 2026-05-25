@@ -3,7 +3,6 @@ package com.example.brisa.controllers;
 import com.example.brisa.dtos.course.CourseAlertRequestDTO;
 import com.example.brisa.dtos.course.CourseAlertResponseDTO;
 import com.example.brisa.dtos.course.CourseClassImportResponseDTO;
-import com.example.brisa.dtos.course.CourseDetailsDTO;
 import com.example.brisa.dtos.course.CourseProgressionImportResponseDTO;
 import com.example.brisa.models.course.CourseModel;
 import com.example.brisa.dtos.course.CourseImportDTO;
@@ -55,8 +54,9 @@ public class CourseController {
     public ResponseEntity<Void> assignCourseToClass(
             @PathVariable Long courseId,
             @PathVariable Long classId,
-            @RequestParam(name = "required", required = false) Boolean required) {
-        courseService.assignCourseToClass(courseId, classId, required == null ? true : required.booleanValue());
+            @RequestParam(name = "required", required = false) Boolean required,
+            @RequestParam(name = "advisorId", required = false) Long advisorId) {
+        courseService.assignCourseToClass(courseId, classId, required == null ? true : required.booleanValue(), advisorId);
         return ResponseEntity.ok().build();
     }
 
@@ -109,14 +109,6 @@ public class CourseController {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.ok(courseService.importProgressionsFromExcel(classId, file));
-    }
-
-    // GET /api/courses/{courseId}/details/class/{classId}
-    @GetMapping("/{courseId}/details/class/{classId}")
-    public ResponseEntity<CourseDetailsDTO> getCourseDetails(
-            @PathVariable Long courseId,
-            @PathVariable Long classId) {
-        return ResponseEntity.ok(courseService.getCourseDetails(courseId, classId));
     }
 
     // ✅ POST /api/courses/{courseId}/alert/class/{classId}

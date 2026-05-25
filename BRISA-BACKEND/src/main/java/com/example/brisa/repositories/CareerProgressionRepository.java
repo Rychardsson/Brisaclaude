@@ -27,4 +27,16 @@ public interface CareerProgressionRepository extends JpaRepository<CareerProgres
             @Param("classId") Long classId,
             @Param("programId") Long programId
     );
+
+    @Query("""
+        SELECT cp
+        FROM CareerProgressionModel cp
+        JOIN FETCH cp.people p
+        LEFT JOIN FETCH cp.enrollment e
+        LEFT JOIN FETCH cp.classModel c
+        LEFT JOIN FETCH cp.program pr
+        WHERE e.id = :enrollmentId
+        ORDER BY cp.surveyDate DESC, cp.id DESC
+    """)
+    List<CareerProgressionModel> findAllByEnrollmentIdWithRelations(@Param("enrollmentId") Long enrollmentId);
 }

@@ -2,7 +2,7 @@
   <nav class="navbar">
     <div class="nav-container">
       <div class="nav-brand">
-        <router-link to="/home" class="brand-link">
+        <router-link to="/dashboard" class="brand-link">
           <img src="https://inscricoesrestic.brisabr.com.br/_next/image?url=%2Flogo_no-txt.png&w=256&q=75" alt="logo" class="logo">
           <span class="brand-name">BRISA ONE</span>
         </router-link>
@@ -10,7 +10,7 @@
       
       <ul class="nav-menu">
         <li>
-          <router-link to="/dashboard" :class="{ active: $route.path === '/dashboard' }">
+          <router-link :to="dashboardLink" :class="{ active: $route.path === '/dashboard' }">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 21v-4"></path>
               <path d="M9 21v-10"></path>
@@ -39,6 +39,17 @@
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
             Pessoas
+          </router-link>
+        </li>
+        <li v-if="isAdmin">
+          <router-link to="/academic-staff" :class="{ active: $route.path === '/academic-staff' }">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3v18"></path>
+              <path d="M7 8h10"></path>
+              <path d="M7 16h10"></path>
+              <path d="M4 12h16"></path>
+            </svg>
+            Equipe
           </router-link>
         </li>
         <li>
@@ -85,21 +96,39 @@
 </template>
 
 <script>
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { computed } from 'vue';
 import { authService } from '@/services/authService';
 
 export default {
   name: 'NavBar',
   setup() {
     const router = useRouter();
+    const route = useRoute();
 
     const logout = () => {
       authService.logout();
       router.push('/');
     };
 
+    const dashboardLink = computed(() => {
+      const q = {};
+      if (route?.query?.programaId) q.programaId = String(route.query.programaId);
+      if (route?.query?.turmaId) q.turmaId = String(route.query.turmaId);
+      if (route?.params?.programId) q.programaId = String(route.params.programId);
+      if (route?.params?.classId) q.turmaId = String(route.params.classId);
+      return Object.keys(q).length ? { path: '/dashboard', query: q } : '/dashboard';
+    });
+
+    const isAdmin = computed(() => {
+      const currentUser = authService.getUser();
+      return String(currentUser?.role || '').toUpperCase() === 'ADMIN';
+    });
+
     return {
-      logout
+      logout,
+      dashboardLink,
+      isAdmin,
     };
   }
 };

@@ -133,7 +133,7 @@
        </div>
 
        <div class="list-item-row toggle-row-simple" :style="imersaoForm.presenca.frequenciaSemanal ? 'border-bottom: none; padding-bottom: 0;' : ''">
-          <span class="list-item-title">Reunião Semanal com Professor Orientador</span>
+          <span class="list-item-title">Reunião Semanal com Orientador</span>
           <label class="toggle-switch"><input type="checkbox" v-model="imersaoForm.presenca.frequenciaSemanal" class="toggle-input"><span class="toggle-slider"></span></label>
        </div>
 
@@ -207,22 +207,29 @@
          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
            <label style="margin: 0;">Peso da Avaliação Parcial</label>
            <div style="display: flex; align-items: center; gap: 6px;">
-             <input type="number" v-model="imersaoForm.avaliacoes.pesoParcial" @keydown.enter="$event.target.blur()" class="quota-input" style="color: #1a233a; font-weight: 500; padding: 4px 8px; width: 60px; text-align: center;" min="0" max="100"/>
+             <input type="number" v-model.number="imersaoForm.avaliacoes.pesoParcial" @keydown.enter="$event.target.blur()" @input="validateEvaluationWeights" class="quota-input" style="color: #1a233a; font-weight: 500; padding: 4px 8px; width: 60px; text-align: center;" min="0" max="100"/>
              <span style="font-size: 13px; color: #6b7280; font-weight: 500;">%</span>
            </div>
          </div>
-         <input type="range" class="form-range" v-model="imersaoForm.avaliacoes.pesoParcial" min="0" max="100" :style="{ background: `linear-gradient(to right, #1e1b4b ${imersaoForm.avaliacoes.pesoParcial}%, #e5e7eb ${imersaoForm.avaliacoes.pesoParcial}%)` }">
+         <input type="range" class="form-range" v-model.number="imersaoForm.avaliacoes.pesoParcial" @input="validateEvaluationWeights" min="0" max="100" :style="{ background: `linear-gradient(to right, #1e1b4b ${imersaoForm.avaliacoes.pesoParcial}%, #e5e7eb ${imersaoForm.avaliacoes.pesoParcial}%)` }">
        </div>
 
        <div class="form-group" style="margin-bottom: 24px;">
          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
            <label style="margin: 0;">Peso da Avaliação Final</label>
            <div style="display: flex; align-items: center; gap: 6px;">
-             <input type="number" v-model="imersaoForm.avaliacoes.pesoFinal" @keydown.enter="$event.target.blur()" class="quota-input" style="color: #1a233a; font-weight: 500; padding: 4px 8px; width: 60px; text-align: center;" min="0" max="100"/>
+             <input type="number" v-model.number="imersaoForm.avaliacoes.pesoFinal" @keydown.enter="$event.target.blur()" @input="validateEvaluationWeights" class="quota-input" style="color: #1a233a; font-weight: 500; padding: 4px 8px; width: 60px; text-align: center;" min="0" max="100"/>
              <span style="font-size: 13px; color: #6b7280; font-weight: 500;">%</span>
            </div>
          </div>
-         <input type="range" class="form-range" v-model="imersaoForm.avaliacoes.pesoFinal" min="0" max="100" :style="{ background: `linear-gradient(to right, #1e1b4b ${imersaoForm.avaliacoes.pesoFinal}%, #e5e7eb ${imersaoForm.avaliacoes.pesoFinal}%)` }">
+         <input type="range" class="form-range" v-model.number="imersaoForm.avaliacoes.pesoFinal" @input="validateEvaluationWeights" min="0" max="100" :style="{ background: `linear-gradient(to right, #1e1b4b ${imersaoForm.avaliacoes.pesoFinal}%, #e5e7eb ${imersaoForm.avaliacoes.pesoFinal}%)` }">
+       </div>
+
+       <div v-if="isEvaluationWeightExceeded" style="padding: 12px; background-color: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; margin-bottom: 24px;">
+         <p style="margin: 0; color: #991b1b; font-size: 13px; font-weight: 500;">
+           ⚠️ A soma da Avaliação Parcial + Avaliação Final não pode ultrapassar 100%<br/>
+           <span style="font-size: 12px;">Total atual: <strong>{{ totalEvaluationWeight }}%</strong></span>
+         </p>
        </div>
 
        <div class="form-group" style="margin-top: 24px;">
@@ -318,16 +325,36 @@ export default {
   },
   data() {
     return {
-      activeTab: 'visao-geral'
+      activeTab: 'visao-geral',
+      isEvaluationWeightExceeded: false
     };
+  },
+
+  computed: {
+    totalEvaluationWeight() {
+      const parcial = Number(this.imersaoForm.avaliacoes.pesoParcial) || 0;
+      const final = Number(this.imersaoForm.avaliacoes.pesoFinal) || 0;
+      return parcial + final;
+    }
+  },
+
+  methods: {
+    validateEvaluationWeights() {
+      this.isEvaluationWeightExceeded = this.totalEvaluationWeight > 100;
+      if (this.isEvaluationWeightExceeded) {
+        this.$emit('evaluation-weights-invalid');
+      } else {
+        this.$emit('evaluation-weights-valid');
+      }
+    }
   }
 }
 </script>
 
 <style scoped>
 .tabs-container { display: flex; background-color: #f3f4f6; border-radius: 8px; padding: 4px; gap: 4px; margin-bottom: 24px; }
-.tab-pill { flex: 1; text-align: center; padding: 8px 16px; font-size: 13px; font-weight: 500; color: #4b5563; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
-.tab-pill.active { background-color: white; color: #1a233a; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+.tab-pill { flex: 1; text-align: center; padding: 8px 16px; font-size: 14px; font-weight: 600; color: var(--slate-600); cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+.tab-pill.active { background-color: white; color: var(--teal-600); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
 .warning-alert-box { display: flex; align-items: center; gap: 12px; background-color: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; }
 .rule-card { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; }
 .rule-text strong { display: block; font-size: 13px; color: #1a233a; }

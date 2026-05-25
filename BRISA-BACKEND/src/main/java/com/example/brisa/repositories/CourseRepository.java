@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface CourseRepository extends JpaRepository<CourseModel, Long> {
 	Optional<CourseModel> findByNameIgnoreCase(String name);
+	Optional<CourseModel> findByCodeIgnoreCase(String code);
 }

@@ -1,45 +1,45 @@
 package com.example.brisa.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.example.brisa.dtos.log.LogStatsDTO;
 import com.example.brisa.dtos.log.SystemLogDTO;
 import com.example.brisa.dtos.log.SystemLogFilterDTO;
 import com.example.brisa.enums.LogAction;
 import com.example.brisa.models.SystemLogModel;
-import com.example.brisa.models.auth.UserModel;
 import com.example.brisa.repositories.SystemLogRepository;
 import com.example.brisa.repositories.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.servlet.http.HttpServletRequest;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SystemLogService {
 
     @Autowired
     private SystemLogRepository logRepository;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /**
-     * Registra um log no sistema
-     */
     @Transactional
     public SystemLogModel createLog(
             LogAction action,
@@ -55,16 +55,16 @@ public class SystemLogService {
         log.setDescription(description);
         log.setEntityType(entityType);
         log.setEntityId(entityId);
-        
+
         if (userId != null) {
             userRepository.findById(userId).ifPresent(log::setUser);
         }
-        
+
         if (request != null) {
             log.setIpAddress(getClientIp(request));
             log.setUserAgent(request.getHeader("User-Agent"));
         }
-        
+
         if (additionalDetails != null && !additionalDetails.isEmpty()) {
             try {
                 log.setDetails(objectMapper.writeValueAsString(additionalDetails));
@@ -72,22 +72,15 @@ public class SystemLogService {
                 log.setDetails("Error serializing details: " + e.getMessage());
             }
         }
-        
+
         return logRepository.save(log);
     }
 
-    /**
-     * Método simplificado para criar log
-     */
     @Transactional
     public SystemLogModel createLog(LogAction action, String description, UUID userId) {
         return createLog(action, description, null, null, userId, null, null);
     }
 
-    /**
-     * Registra um log com dados do request já extraídos (IP e User-Agent como strings)
-     * Evita problemas com request reciclado em operações assíncronas
-     */
     @Transactional
     public SystemLogModel createLogWithRequestData(
             LogAction action,
@@ -104,18 +97,19 @@ public class SystemLogService {
         log.setDescription(description);
         log.setEntityType(entityType);
         log.setEntityId(entityId);
-        
+
         if (userId != null) {
             userRepository.findById(userId).ifPresent(log::setUser);
         }
-        
+
         if (ipAddress != null && !ipAddress.isEmpty()) {
             log.setIpAddress(ipAddress);
         }
+
         if (userAgent != null && !userAgent.isEmpty()) {
             log.setUserAgent(userAgent);
         }
-        
+
         if (additionalDetails != null && !additionalDetails.isEmpty()) {
             try {
                 log.setDetails(objectMapper.writeValueAsString(additionalDetails));
@@ -123,61 +117,40 @@ public class SystemLogService {
                 log.setDetails("Error serializing details: " + e.getMessage());
             }
         }
-        
+
         return logRepository.save(log);
     }
 
-    /**
-     * Buscar logs com filtros
-     */
     public Page<SystemLogDTO> findLogs(SystemLogFilterDTO filter) {
+        String sortBy = resolveSortBy(filter.getSortBy());
         Sort sort = Sort.by(
-            filter.getSortDirection().equalsIgnoreCase("ASC") 
-                ? Sort.Direction.ASC 
-                : Sort.Direction.DESC,
-            filter.getSortBy()
+                filter.getSortDirection().equalsIgnoreCase("ASC")
+                        ? Sort.Direction.ASC
+                        : Sort.Direction.DESC,
+                sortBy
         );
-        
+
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
-        
-        Page<SystemLogModel> logs;
-        
-        // Se não há filtros, busca todos
-        if (filter.getAction() == null && filter.getUserId() == null && 
-            filter.getEntityType() == null && filter.getStartDate() == null && 
-            filter.getEndDate() == null) {
-            logs = logRepository.findAll(pageable);
-        }
-        // Se tem filtro de data
-        else if (filter.getStartDate() != null && filter.getEndDate() != null) {
-            logs = logRepository.findByCreatedAtBetween(filter.getStartDate(), filter.getEndDate(), pageable);
-        }
-        // Se tem filtro de ação
-        else if (filter.getAction() != null) {
-            logs = logRepository.findByAction(filter.getAction(), pageable);
-        }
-        // Se tem filtro de tipo de entidade
-        else if (filter.getEntityType() != null && !filter.getEntityType().isEmpty()) {
-            logs = logRepository.findByEntityType(filter.getEntityType(), pageable);
-        }
-        // Caso contrário, busca todos
-        else {
-            logs = logRepository.findAll(pageable);
-        }
-        
+        String entityType = normalizeEntityType(filter.getEntityType());
+        String entityId = normalizeEntityId(filter.getEntityId());
+        Specification<SystemLogModel> specification = buildSpecification(
+                filter.getAction(),
+                filter.getUserId(),
+                entityType,
+                entityId,
+                filter.getStartDate(),
+                filter.getEndDate()
+        );
+
+        Page<SystemLogModel> logs = logRepository.findAll(specification, pageable);
+
         return logs.map(this::convertToDTO);
     }
 
-    /**
-     * Buscar log por ID
-     */
     public Optional<SystemLogDTO> findById(Long id) {
         return logRepository.findById(id).map(this::convertToDTO);
     }
 
-    /**
-     * Buscar últimos logs
-     */
     public List<SystemLogDTO> findRecentLogs(int limit) {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
         return logRepository.findAll(pageable).stream()
@@ -185,61 +158,47 @@ public class SystemLogService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Obter estatísticas de logs
-     */
     public LogStatsDTO getLogStats() {
         LogStatsDTO stats = new LogStatsDTO();
-        
-        // Total de logs
+
         stats.setTotalLogs(logRepository.count());
-        
-        // Logs por ação
+
         List<Object[]> actionStats = logRepository.countByActionGrouped();
         Map<LogAction, Long> logsByAction = new HashMap<>();
         for (Object[] stat : actionStats) {
             logsByAction.put((LogAction) stat[0], (Long) stat[1]);
         }
         stats.setLogsByAction(logsByAction);
-        
-        // Logs de hoje
+
         LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
         LocalDateTime endOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
         Pageable pageable = PageRequest.of(0, 1);
         stats.setLogsToday(logRepository.findByCreatedAtBetween(startOfDay, endOfDay, pageable).getTotalElements());
-        
-        // Logs desta semana
+
         LocalDateTime startOfWeek = LocalDateTime.now().minusDays(7);
         stats.setLogsThisWeek(logRepository.findByCreatedAtBetween(startOfWeek, LocalDateTime.now(), pageable).getTotalElements());
-        
-        // Logs deste mês
+
         LocalDateTime startOfMonth = LocalDateTime.now().minusDays(30);
         stats.setLogsThisMonth(logRepository.findByCreatedAtBetween(startOfMonth, LocalDateTime.now(), pageable).getTotalElements());
-        
+
         return stats;
     }
 
-    /**
-     * Deletar logs antigos (manutenção)
-     */
     @Transactional
     public long deleteOldLogs(int daysToKeep) {
         LocalDateTime cutoffDate = LocalDateTime.now().minusDays(daysToKeep);
         Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
         Page<SystemLogModel> oldLogs = logRepository.findByCreatedAtBetween(
-            LocalDateTime.of(2000, 1, 1, 0, 0),
-            cutoffDate,
-            pageable
+                LocalDateTime.of(2000, 1, 1, 0, 0),
+                cutoffDate,
+                pageable
         );
-        
+
         long count = oldLogs.getTotalElements();
         logRepository.deleteAll(oldLogs.getContent());
         return count;
     }
 
-    /**
-     * Converter modelo para DTO
-     */
     private SystemLogDTO convertToDTO(SystemLogModel log) {
         SystemLogDTO dto = new SystemLogDTO();
         dto.setId(log.getId());
@@ -251,19 +210,16 @@ public class SystemLogService {
         dto.setUserAgent(log.getUserAgent());
         dto.setDetails(log.getDetails());
         dto.setCreatedAt(log.getCreatedAt());
-        
+
         if (log.getUser() != null) {
             dto.setUserId(log.getUser().getId());
             dto.setUserName(log.getUser().getLogin());
             dto.setUserEmail(log.getUser().getEmail());
         }
-        
+
         return dto;
     }
 
-    /**
-     * Obter IP real do cliente
-     */
     private String getClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
@@ -275,17 +231,77 @@ public class SystemLogService {
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
         }
-        
-        // Se houver múltiplos IPs, pega o primeiro
+
         if (ip != null && ip.contains(",")) {
             ip = ip.split(",")[0].trim();
         }
-        
-        // Normalizar IPv6 localhost para IPv4
+
         if (ip != null && (ip.equals("0:0:0:0:0:0:0:1") || ip.equals("::1"))) {
             ip = "127.0.0.1";
         }
-        
+
         return ip;
+    }
+
+    private String normalizeEntityType(String entityType) {
+        if (entityType == null) {
+            return null;
+        }
+
+        String normalized = entityType.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private String normalizeEntityId(String entityId) {
+        if (entityId == null) {
+            return null;
+        }
+
+        String normalized = entityId.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private String resolveSortBy(String sortBy) {
+        Set<String> allowedSortFields = Set.of("id", "action", "entityType", "entityId", "createdAt");
+        return allowedSortFields.contains(sortBy) ? sortBy : "createdAt";
+    }
+
+    private Specification<SystemLogModel> buildSpecification(
+            LogAction action,
+            UUID userId,
+            String entityType,
+            String entityId,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    ) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new java.util.ArrayList<>();
+
+            if (action != null) {
+                predicates.add(criteriaBuilder.equal(root.get("action"), action));
+            }
+
+            if (userId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("user").get("id"), userId));
+            }
+
+            if (entityType != null) {
+                predicates.add(criteriaBuilder.equal(root.get("entityType"), entityType));
+            }
+
+            if (entityId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("entityId"), entityId));
+            }
+
+            if (startDate != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), startDate));
+            }
+
+            if (endDate != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), endDate));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+        };
     }
 }

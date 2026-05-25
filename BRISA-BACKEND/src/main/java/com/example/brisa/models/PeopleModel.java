@@ -74,6 +74,9 @@ public class PeopleModel {
     @Column(name = "education_completion_date")
     private LocalDate educationCompletionDate;
 
+    @Column(name = "soft_deleted")
+    private Boolean softDeleted = false;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;

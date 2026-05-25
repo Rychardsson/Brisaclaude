@@ -57,6 +57,66 @@
             </div>
           </div>
 
+          <div class="detail-card" v-if="program.executorName">
+            <div class="detail-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <div>
+              <div class="detail-label">Executora</div>
+              <div class="detail-value">{{ program.executorName }}</div>
+            </div>
+          </div>
+
+          <div class="detail-card" v-if="program.fundingEntity">
+            <div class="detail-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M3 10.5 12 4l9 6.5"></path>
+                <path d="M5 10v8h14v-8"></path>
+                <path d="M9 22V12h6v10"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="detail-label">Entidade de Fomento</div>
+              <div class="detail-value">{{ program.fundingEntity }}</div>
+            </div>
+          </div>
+
+          <div class="detail-card" v-if="program.generalCoordinator">
+            <div class="detail-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="detail-label">Coordenador Geral</div>
+              <div class="detail-value">{{ program.generalCoordinator }}</div>
+            </div>
+          </div>
+
+          <div class="detail-card" v-if="program.programValue !== null && program.programValue !== undefined && program.programValue !== ''">
+            <div class="detail-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v12"></path>
+                <path d="M16 10c0-1.657-1.79-3-4-3s-4 1.343-4 3 1.79 3 4 3 4 1.343 4 3-1.79 3-4 3-4-1.343-4-3"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="detail-label">Valor do Programa</div>
+              <div class="detail-value">{{ formatCurrency(program.programValue) }}</div>
+            </div>
+          </div>
+
           <div class="detail-card">
             <div class="detail-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -87,6 +147,65 @@
               <div class="detail-label">Total de Turmas</div>
               <div class="detail-value">{{ classes.length }}</div>
             </div>
+          </div>
+        </div>
+
+        <div class="addendum-section">
+          <div class="section-header section-header-compact">
+            <div>
+              <h2>Aditivos do Programa</h2>
+              <p class="section-subtitle-small">Controle prazos adicionais e valores complementares do programa.</p>
+            </div>
+            <button @click="openAddendumModal()" class="btn-create btn-create-small">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Novo aditivo
+            </button>
+          </div>
+
+          <div v-if="addendums.length === 0" class="empty-inline-state">
+            Nenhum aditivo cadastrado para este programa.
+          </div>
+
+          <div v-else class="addendum-grid">
+            <article v-for="addendum in addendums" :key="addendum.id" class="addendum-card">
+              <div class="addendum-top">
+                <div class="addendum-badge">Aditivo {{ addendum.addendumNumber }}</div>
+                <div class="addendum-actions">
+                  <button type="button" class="btn-icon-small" title="Editar aditivo" @click="openAddendumModal(addendum)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <path d="M12 20h9"></path>
+                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                    </svg>
+                  </button>
+                  <button type="button" class="btn-icon-small btn-icon-danger" title="Excluir aditivo" @click="removeAddendum(addendum)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6l-1 14H6L5 6"></path>
+                      <path d="M10 11v6"></path>
+                      <path d="M14 11v6"></path>
+                      <path d="M9 6V4h6v2"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="addendum-meta">
+                <div>
+                  <span>Vigência</span>
+                  <strong>{{ formatDate(addendum.startDate) }} - {{ formatDate(addendum.endDate) }}</strong>
+                </div>
+                <div>
+                  <span>Valor</span>
+                  <strong>{{ formatCurrency(addendum.value) }}</strong>
+                </div>
+              </div>
+            </article>
           </div>
         </div>
       </div>
@@ -233,6 +352,48 @@
       </div>
     </div>
 
+    <div v-if="showAddendumModal" class="modal-overlay" @click="closeAddendumModal">
+      <div class="modal-content modal-form modal-addendum" @click.stop>
+        <h2>{{ editingAddendum ? 'Editar Aditivo' : 'Novo Aditivo' }}</h2>
+        <p class="modal-subtitle">Programa: <strong>{{ program.name }}</strong></p>
+
+        <form @submit.prevent="saveAddendum">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addendumNumber">Número do aditivo</label>
+              <input id="addendumNumber" v-model="addendumForm.addendumNumber" type="number" min="1" placeholder="Ex: 1" />
+            </div>
+
+            <div class="form-group">
+              <label for="addendumValue">Valor do aditivo</label>
+              <input id="addendumValue" v-model="addendumForm.value" type="number" min="0" step="0.01" placeholder="Ex: 15000.00" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addendumStartDate">Data inicial *</label>
+              <input id="addendumStartDate" v-model="addendumForm.startDate" type="date" required />
+            </div>
+
+            <div class="form-group">
+              <label for="addendumEndDate">Data final *</label>
+              <input id="addendumEndDate" v-model="addendumForm.endDate" type="date" required />
+            </div>
+          </div>
+
+          <div v-if="addendumError" class="error-box form-error-box">{{ addendumError }}</div>
+
+          <div class="modal-actions">
+            <button type="button" @click="closeAddendumModal" class="btn-secondary">Cancelar</button>
+            <button type="submit" :disabled="savingAddendum" class="btn-primary">
+              {{ savingAddendum ? 'Salvando...' : 'Salvar aditivo' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -240,6 +401,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { programService } from '@/services/programService';
+import { programAddendumService } from '@/services/programAddendumService';
 import { classService } from '@/services/classService';
 import { institutionService } from '@/services/institutionService';
 
@@ -251,6 +413,7 @@ export default {
     const program = ref({});
     const classes = ref([]);
     const institutions = ref([]);
+    const addendums = ref([]);
     const loading = ref(false);
     const error = ref(null);
     const searchTerm = ref('');
@@ -265,11 +428,21 @@ export default {
     const editingClass = ref(null);
     const saving = ref(false);
     const formError = ref(null);
+    const showAddendumModal = ref(false);
+    const editingAddendum = ref(null);
+    const savingAddendum = ref(false);
+    const addendumError = ref(null);
     const classForm = ref({
       code: '',
       startDate: '',
       endDate: '',
       locationId: ''
+    });
+    const addendumForm = ref({
+      addendumNumber: '',
+      startDate: '',
+      endDate: '',
+      value: ''
     });
 
     watch(
@@ -301,18 +474,30 @@ export default {
       loading.value = true;
       error.value = null;
       try {
-        program.value = await programService.getById(programId.value);
+        const [programData, classesData, institutionsData, addendumsData] = await Promise.all([
+          programService.getById(programId.value),
+          classService.getByProgramId(programId.value),
+          institutionService.getAll(),
+          programAddendumService.listByProgram(programId.value).catch(() => [])
+        ]);
 
-        // ✅ Busca diretamente as turmas do programa via endpoint dedicado
-        classes.value = await classService.getByProgramId(programId.value);
-
-        // Carregar instituições
-        institutions.value = await institutionService.getAll();
+        program.value = programData;
+        classes.value = classesData;
+        institutions.value = institutionsData;
+        addendums.value = Array.isArray(addendumsData) ? addendumsData : [];
       } catch (err) {
         error.value = 'Erro ao carregar detalhes do programa: ' + (err.response?.data?.message || err.message);
       } finally {
         loading.value = false;
       }
+    };
+
+    const formatCurrency = (value) => {
+      const numericValue = Number(value || 0);
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(Number.isFinite(numericValue) ? numericValue : 0);
     };
 
     const formatDate = (date) => {
@@ -411,6 +596,72 @@ export default {
       formError.value = null;
     };
 
+    const openAddendumModal = (addendum = null) => {
+      editingAddendum.value = addendum;
+      addendumError.value = null;
+      addendumForm.value = {
+        addendumNumber: addendum?.addendumNumber ?? '',
+        startDate: addendum?.startDate ?? '',
+        endDate: addendum?.endDate ?? '',
+        value: addendum?.value ?? ''
+      };
+      showAddendumModal.value = true;
+    };
+
+    const closeAddendumModal = () => {
+      showAddendumModal.value = false;
+      editingAddendum.value = null;
+      savingAddendum.value = false;
+      addendumError.value = null;
+      addendumForm.value = {
+        addendumNumber: '',
+        startDate: '',
+        endDate: '',
+        value: ''
+      };
+    };
+
+    const saveAddendum = async () => {
+      savingAddendum.value = true;
+      addendumError.value = null;
+
+      try {
+        const payload = {
+          addendumNumber: addendumForm.value.addendumNumber ? Number(addendumForm.value.addendumNumber) : null,
+          startDate: addendumForm.value.startDate,
+          endDate: addendumForm.value.endDate,
+          value: addendumForm.value.value === '' ? null : Number(addendumForm.value.value)
+        };
+
+        if (editingAddendum.value?.id) {
+          await programAddendumService.update(programId.value, editingAddendum.value.id, payload);
+        } else {
+          await programAddendumService.create(programId.value, payload);
+        }
+
+        closeAddendumModal();
+        await loadProgramDetails();
+      } catch (err) {
+        addendumError.value = err.response?.data?.message
+          || err.response?.data?.errors?.join?.(' ')
+          || 'Erro ao salvar aditivo.';
+      } finally {
+        savingAddendum.value = false;
+      }
+    };
+
+    const removeAddendum = async (addendum) => {
+      const confirmed = window.confirm(`Deseja excluir o aditivo ${addendum.addendumNumber}?`);
+      if (!confirmed) return;
+
+      try {
+        await programAddendumService.delete(programId.value, addendum.id);
+        await loadProgramDetails();
+      } catch (err) {
+        window.alert(err.response?.data?.message || 'Erro ao excluir aditivo.');
+      }
+    };
+
     const saveClass = async () => {
       try {
         formError.value = null;
@@ -462,6 +713,7 @@ export default {
       program,
       institutions,
       classes,
+      addendums,
       loading,
       error,
       searchTerm,
@@ -477,8 +729,14 @@ export default {
       editingClass,
       saving,
       formError,
+      showAddendumModal,
+      editingAddendum,
+      savingAddendum,
+      addendumError,
       classForm,
+      addendumForm,
       formatDate,
+      formatCurrency,
       goBack,
       viewClass,
       editClass,
@@ -487,7 +745,11 @@ export default {
       closeUploadModal,
       openCreateModal,
       closeCreateModal,
-      saveClass
+      saveClass,
+      openAddendumModal,
+      closeAddendumModal,
+      saveAddendum,
+      removeAddendum
     };
   }
 };
@@ -619,6 +881,104 @@ export default {
   font-size: 15px;
   color: #1F285F;
   font-weight: 600;
+}
+
+.addendum-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #eef2f7;
+}
+
+.section-header-compact {
+  margin-bottom: 16px;
+}
+
+.section-subtitle-small {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.btn-create-small {
+  padding: 10px 18px;
+  font-size: 14px;
+}
+
+.empty-inline-state {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+}
+
+.addendum-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.addendum-card {
+  background: #f8fbff;
+  border: 1px solid #dbe5f1;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.addendum-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.addendum-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #e3f2fd;
+  color: #0277bd;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.addendum-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-icon-danger:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+.addendum-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.addendum-meta span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.addendum-meta strong {
+  color: #1F285F;
+  font-size: 15px;
+}
+
+.form-error-box {
+  margin-top: 0;
 }
 
 /* Classes Section */
@@ -890,7 +1250,7 @@ export default {
 }
 
 .error-box::before {
-  content: '⚠️';
+  content: '\26A0\FE0F';
   font-size: 20px;
 }
 
@@ -944,7 +1304,7 @@ export default {
 }
 
 .success::before {
-  content: '✓';
+  content: '\2713';
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1053,7 +1413,7 @@ export default {
 }
 
 .upload-area::before {
-  content: '📁';
+  content: 'ðŸ“';
   display: block;
   font-size: 48px;
   margin-bottom: 16px;
@@ -1247,3 +1607,4 @@ export default {
   }
 }
 </style>
+

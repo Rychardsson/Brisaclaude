@@ -88,21 +88,6 @@
           </button>
         </div>
 
-        <div v-if="!loading && usingSampleData" class="sample-banner">
-          <div>
-            <strong>Dados de exemplo</strong>
-            <p>{{ sampleBannerMessage }}</p>
-          </div>
-          <button
-            v-if="hasRealDashboardData"
-            type="button"
-            class="ghost-inline-btn"
-            @click="toggleSampleData"
-          >
-            Ver dados reais
-          </button>
-        </div>
-
         <div v-if="loading" class="state-row">
           <div class="spinner"></div>
           <span>Carregando dados do dashboard...</span>
@@ -462,224 +447,6 @@ import { enrollmentService } from '@/services/enrollmentService';
 import { programService } from '@/services/programService';
 
 const route = useRoute();
-const SAMPLE_DASHBOARD_OVERVIEW_ITEMS = [
-  {
-    programId: 11,
-    classId: 101,
-    nome: 'Programa Jovem Tech',
-    turma: 'JT-2026-A',
-    parceiro: 'Porto Digital',
-    localidade: 'Recife',
-    periodo: '2026.1',
-    status: 'Em andamento',
-    etapaAtual: 'Nivelamento',
-    inscritos: 180,
-    ativos: 124,
-    nivelamento: 68,
-    imersao: 24,
-    projetos: 2,
-    orientadores: 4,
-    proximoMarco: '29/05/2026',
-    progresso: 41,
-  },
-  {
-    programId: 11,
-    classId: 102,
-    nome: 'Programa Jovem Tech',
-    turma: 'JT-2026-B',
-    parceiro: 'Porto Digital',
-    localidade: 'Recife',
-    periodo: '2026.1',
-    status: 'Em andamento',
-    etapaAtual: 'Imersão',
-    inscritos: 160,
-    ativos: 118,
-    nivelamento: 18,
-    imersao: 72,
-    projetos: 6,
-    orientadores: 5,
-    proximoMarco: '30/06/2026',
-    progresso: 67,
-  },
-  {
-    programId: 22,
-    classId: 201,
-    nome: 'Programa Dados para Futuro',
-    turma: 'DF-2026-A',
-    parceiro: 'Softex',
-    localidade: 'Olinda',
-    periodo: '2026.1',
-    status: 'Em andamento',
-    etapaAtual: 'Imersão',
-    inscritos: 132,
-    ativos: 94,
-    nivelamento: 12,
-    imersao: 61,
-    projetos: 0,
-    orientadores: 0,
-    proximoMarco: '15/05/2026',
-    progresso: 58,
-  },
-  {
-    programId: 44,
-    classId: 401,
-    nome: 'Programa Start Cloud',
-    turma: 'SC-2026-A',
-    parceiro: 'Accenture',
-    localidade: 'Paulista',
-    periodo: '2026.2',
-    status: 'Em andamento',
-    etapaAtual: 'Nivelamento',
-    inscritos: 144,
-    ativos: 76,
-    nivelamento: 49,
-    imersao: 8,
-    projetos: 0,
-    orientadores: 1,
-    proximoMarco: '18/06/2026',
-    progresso: 29,
-  },
-  {
-    programId: 33,
-    classId: 301,
-    nome: 'Programa Criativa Digital',
-    turma: 'CD-2025-B',
-    parceiro: 'SECTI PE',
-    localidade: 'Jaboatao',
-    periodo: '2025.2',
-    status: 'Encerrado',
-    etapaAtual: 'Concluído',
-    inscritos: 98,
-    ativos: 0,
-    nivelamento: 0,
-    imersao: 0,
-    projetos: 4,
-    orientadores: 3,
-    proximoMarco: '20/12/2025',
-    progresso: 100,
-  },
-];
-
-const SAMPLE_DASHBOARD_CLASSES = [
-  {
-    id: 101,
-    code: 'JT-2026-A',
-    startDate: '2026-06-03',
-    publicationDate: '2026-04-01',
-    applicationEndDate: '2026-05-24',
-    levelingSelectionAnnouncementDate: '2026-05-29',
-    levelingStartDate: '2026-06-03',
-    levelingFinalExamDate: '2026-07-05',
-    immersionSelectionAnnouncementDate: '2026-07-12',
-    immersionStartDate: '2026-07-20',
-    partialEvaluationDate: '2026-09-05',
-    finalEvaluationDate: '2026-10-28',
-    certificateIssueDate: '2026-11-15',
-    program: { id: 11, name: 'Programa Jovem Tech' },
-  },
-  {
-    id: 102,
-    code: 'JT-2026-B',
-    startDate: '2026-03-10',
-    publicationDate: '2026-01-08',
-    applicationEndDate: '2026-02-20',
-    levelingSelectionAnnouncementDate: '2026-02-27',
-    levelingStartDate: '2026-03-10',
-    levelingFinalExamDate: '2026-04-15',
-    immersionSelectionAnnouncementDate: '2026-05-20',
-    immersionStartDate: '2026-06-12',
-    partialEvaluationDate: '2026-06-30',
-    finalEvaluationDate: '2026-08-25',
-    certificateIssueDate: '2026-09-12',
-    program: { id: 11, name: 'Programa Jovem Tech' },
-  },
-  {
-    id: 201,
-    code: 'DF-2026-A',
-    startDate: '2026-02-17',
-    publicationDate: '2025-12-05',
-    applicationEndDate: '2026-01-18',
-    levelingSelectionAnnouncementDate: '2026-01-24',
-    levelingStartDate: '2026-02-01',
-    levelingFinalExamDate: '2026-03-02',
-    immersionSelectionAnnouncementDate: '2026-03-20',
-    immersionStartDate: '2026-04-02',
-    partialEvaluationDate: '2026-05-03',
-    finalEvaluationDate: '2026-05-10',
-    certificateIssueDate: '2026-05-12',
-    program: { id: 22, name: 'Programa Dados para Futuro' },
-  },
-  {
-    id: 401,
-    code: 'SC-2026-A',
-    startDate: '2026-07-01',
-    publicationDate: '2026-05-05',
-    applicationEndDate: '2026-06-12',
-    levelingSelectionAnnouncementDate: '2026-06-18',
-    levelingStartDate: '2026-07-01',
-    levelingFinalExamDate: '2026-08-08',
-    immersionSelectionAnnouncementDate: '2026-08-21',
-    immersionStartDate: '2026-09-02',
-    partialEvaluationDate: '2026-10-10',
-    finalEvaluationDate: '2026-11-27',
-    certificateIssueDate: '2026-12-14',
-    program: { id: 44, name: 'Programa Start Cloud' },
-  },
-  {
-    id: 301,
-    code: 'CD-2025-B',
-    startDate: '2025-08-04',
-    publicationDate: '2025-05-05',
-    applicationEndDate: '2025-06-15',
-    levelingSelectionAnnouncementDate: '2025-06-21',
-    levelingStartDate: '2025-07-01',
-    levelingFinalExamDate: '2025-08-05',
-    immersionSelectionAnnouncementDate: '2025-08-19',
-    immersionStartDate: '2025-09-02',
-    partialEvaluationDate: '2025-10-11',
-    finalEvaluationDate: '2025-11-26',
-    certificateIssueDate: '2025-12-20',
-    program: { id: 33, name: 'Programa Criativa Digital' },
-  },
-];
-
-const SAMPLE_DASHBOARD_PEOPLE = [
-  { id: 1, name: 'Ana Beatriz Silva', gender: 'Feminino', birthDate: '2004-09-12', educationLevel: 'Graduação em andamento', institutionName: 'UFRPE', quotaCategory: 'Escola pública', educationStatus: 'Cursando' },
-  { id: 2, name: 'Carlos Henrique Souza', gender: 'Masculino', birthDate: '1999-03-08', educationLevel: 'Graduação completa', institutionName: 'UFPE', quotaCategory: 'Ampla concorrência', educationStatus: 'Concluído' },
-  { id: 3, name: 'Juliana Santos', gender: 'Feminino', birthDate: '2001-12-17', educationLevel: 'Tecnologo em andamento', institutionName: 'IFPE', quotaCategory: 'PPI', educationStatus: 'Cursando' },
-  { id: 4, name: 'Mateus Oliveira', gender: 'Masculino', birthDate: '2003-01-24', educationLevel: 'Graduação em andamento', institutionName: 'UNICAP', quotaCategory: 'Escola pública', educationStatus: 'Ativo' },
-  { id: 5, name: 'Rafaela Costa', gender: 'Feminino', birthDate: '1997-07-02', educationLevel: 'Pós-graduação', institutionName: 'UPE', quotaCategory: 'PCD', educationStatus: 'Concluído' },
-  { id: 6, name: 'Joao Pedro Lima', gender: 'Masculino', birthDate: '2005-02-14', educationLevel: 'Ensino medio', institutionName: 'ETE Recife', quotaCategory: 'Escola publica', educationStatus: 'Cursando' },
-  { id: 7, name: 'Larissa Moura', gender: 'Feminino', birthDate: '2000-11-29', educationLevel: 'Graduação em andamento', institutionName: 'UFPE', quotaCategory: 'PPI', educationStatus: 'Ativo' },
-  { id: 8, name: 'Bruno Ferreira', gender: 'Masculino', birthDate: '1998-06-06', educationLevel: 'Graduação completa', institutionName: 'UFRPE', quotaCategory: 'Ampla concorrência', educationStatus: 'Concluído' },
-  { id: 9, name: 'Camila Rocha', gender: 'Feminino', birthDate: '2002-05-18', educationLevel: 'Tecnólogo completo', institutionName: 'SENAC', quotaCategory: 'Escola pública', educationStatus: 'Concluído' },
-  { id: 10, name: 'Diego Alves', gender: 'Masculino', birthDate: '1996-10-10', educationLevel: 'Graduação completa', institutionName: 'CESAR School', quotaCategory: 'Ampla concorrência', educationStatus: 'Concluído' },
-  { id: 11, name: 'Patricia Gomes', gender: 'Feminino', birthDate: '2004-04-03', educationLevel: 'Graduação em andamento', institutionName: 'UNINASSAU', quotaCategory: 'PPI', educationStatus: 'Cursando' },
-  { id: 12, name: 'Alex Nascimento', gender: 'Não-binário', birthDate: '2001-08-21', educationLevel: 'Tecnólogo em andamento', institutionName: 'IFPE', quotaCategory: 'Ampla concorrência', educationStatus: 'Ativo' },
-];
-
-const SAMPLE_DASHBOARD_ENROLLMENTS = [
-  createSampleEnrollment(1001, 101, SAMPLE_DASHBOARD_PEOPLE[0], 'Ativo'),
-  createSampleEnrollment(1002, 101, SAMPLE_DASHBOARD_PEOPLE[1], 'Ativo'),
-  createSampleEnrollment(1003, 101, SAMPLE_DASHBOARD_PEOPLE[2], 'Ativo'),
-  createSampleEnrollment(1004, 102, SAMPLE_DASHBOARD_PEOPLE[3], 'Ativo'),
-  createSampleEnrollment(1005, 102, SAMPLE_DASHBOARD_PEOPLE[4], 'Concluído', '2026-04-14'),
-  createSampleEnrollment(1006, 102, SAMPLE_DASHBOARD_PEOPLE[5], 'Ativo'),
-  createSampleEnrollment(1007, 201, SAMPLE_DASHBOARD_PEOPLE[6], 'Ativo'),
-  createSampleEnrollment(1008, 201, SAMPLE_DASHBOARD_PEOPLE[7], 'Concluído', '2026-05-06'),
-  createSampleEnrollment(1009, 201, SAMPLE_DASHBOARD_PEOPLE[8], 'Ativo'),
-  createSampleEnrollment(1010, 301, SAMPLE_DASHBOARD_PEOPLE[9], 'Concluído', '2025-11-26'),
-  createSampleEnrollment(1011, 401, SAMPLE_DASHBOARD_PEOPLE[10], 'Ativo'),
-  createSampleEnrollment(1012, 401, SAMPLE_DASHBOARD_PEOPLE[11], 'Ativo'),
-];
-
-const SAMPLE_DASHBOARD_FOLLOWUPS = [
-  { key: 'career-1005', peopleId: 5, classId: '102', surveyDate: '2026-05-03', status: 'empregado', company: 'Accenture', position: 'Analista de dados' },
-  { key: 'career-1008', peopleId: 8, classId: '201', surveyDate: '2026-05-06', status: 'desempregado', company: '', position: '' },
-  { key: 'career-1010', peopleId: 10, classId: '301', surveyDate: '2026-03-12', status: 'empregado', company: 'NeuroData', position: 'Desenvolvedor full stack' },
-  { key: 'career-1009', peopleId: 9, classId: '201', surveyDate: '2026-05-08', status: 'sem resposta', company: '', position: '' },
-  { key: 'career-1002', peopleId: 2, classId: '101', surveyDate: '2026-05-10', status: 'empregado', company: 'Inovar Tech', position: 'Estagiario de suporte' },
-];
 
 const loading = ref(false);
 const errorMessage = ref('');
@@ -689,7 +456,6 @@ const overview = ref(null);
 const classes = ref([]);
 const enrollments = ref([]);
 const careerFollowUps = ref([]);
-const forceSampleData = ref(false);
 
 const selectedProgramId = ref('');
 const selectedClassId = ref('');
@@ -722,19 +488,6 @@ function applyQueryFilters() {
   onlyActive.value = String(route.query.ativos || '').toLowerCase() === 'true';
 }
 
-function toggleSampleData() {
-  if (!hasRealDashboardData.value) {
-    forceSampleData.value = true;
-    actionMessage.value = 'Sem base real suficiente no momento. O dashboard segue em modo demonstração.';
-    return;
-  }
-
-  forceSampleData.value = !forceSampleData.value;
-  actionMessage.value = forceSampleData.value
-    ? 'O dashboard agora está exibindo dados de exemplo para apresentação.'
-    : 'O dashboard voltou a usar os dados reais disponíveis.';
-}
-
 async function loadData() {
   loading.value = true;
   errorMessage.value = '';
@@ -760,35 +513,10 @@ async function loadData() {
 }
 
 const rawOverviewItems = computed(() => Array.isArray(overview.value?.items) ? overview.value.items : []);
-const hasRealDashboardData = computed(() => rawOverviewItems.value.length > 0);
-const usingSampleData = computed(() => forceSampleData.value || !hasRealDashboardData.value);
-const displayErrorMessage = computed(() => (usingSampleData.value ? '' : errorMessage.value));
-const sampleBannerMessage = computed(() => (
-  hasRealDashboardData.value
-    ? 'O painel está em modo demonstração para facilitar a apresentação visual. Você pode voltar para os dados reais a qualquer momento.'
-    : 'Ainda não há base consolidada suficiente para esta leitura, então o dashboard está exibindo um cenário ilustrativo.'
-));
-const overviewItems = computed(() => (usingSampleData.value ? SAMPLE_DASHBOARD_OVERVIEW_ITEMS : rawOverviewItems.value));
-const availableClasses = computed(() => (usingSampleData.value ? SAMPLE_DASHBOARD_CLASSES : classes.value));
-const availableEnrollments = computed(() => (usingSampleData.value ? SAMPLE_DASHBOARD_ENROLLMENTS : enrollments.value));
-
-watch(usingSampleData, () => {
-  if (selectedProgramId.value && !programOptions.value.some((item) => item.id === selectedProgramId.value)) {
-    selectedProgramId.value = '';
-  }
-
-  if (selectedClassId.value && !classOptions.value.some((item) => item.id === selectedClassId.value)) {
-    selectedClassId.value = '';
-  }
-
-  if (selectedPeriod.value && !periodOptions.value.includes(selectedPeriod.value)) {
-    selectedPeriod.value = '';
-  }
-
-  if (selectedStage.value && !stageOptions.value.includes(selectedStage.value)) {
-    selectedStage.value = '';
-  }
-});
+const displayErrorMessage = computed(() => errorMessage.value);
+const overviewItems = computed(() => rawOverviewItems.value);
+const availableClasses = computed(() => classes.value);
+const availableEnrollments = computed(() => enrollments.value);
 
 const classMap = computed(() => {
   const map = new Map();
@@ -920,7 +648,7 @@ const completedStudentEnrollments = computed(() =>
 const participantPeople = computed(() => uniquePeopleFromEnrollments(studentEnrollments.value));
 const activeParticipantPeople = computed(() => uniquePeopleFromEnrollments(activeStudentEnrollments.value));
 
-const storedCareerFollowUps = computed(() => (usingSampleData.value ? SAMPLE_DASHBOARD_FOLLOWUPS : careerFollowUps.value));
+const storedCareerFollowUps = computed(() => careerFollowUps.value);
 
 const scopedFollowUps = computed(() => {
   if (!storedCareerFollowUps.value.length) return [];
@@ -969,17 +697,6 @@ const funnelMetrics = computed(() => {
 });
 
 const funnelSteps = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      { label: 'Inscritos', value: 612, tone: 'tone-blue', note: '100%', percentage: 100 },
-      { label: 'Inscrições Válidas', value: 540, tone: 'tone-teal', note: '88%', percentage: 88 },
-      { label: 'Em Nivelamento', value: 229, tone: 'tone-purple', note: '42%', percentage: 42 },
-      { label: 'Aprovados p/ Imersão', value: 50, tone: 'tone-orange', note: '22%', percentage: 22 },
-      { label: 'Em Imersão', value: 44, tone: 'tone-green', note: '88%', percentage: 88 },
-      { label: 'Aprovados Finais', value: 36, tone: 'tone-indigo', note: '82%', percentage: 82 },
-    ];
-  }
-
   const max = Math.max(funnelMetrics.value.inscritos, 1);
   const validSubscriptions = Math.round(funnelMetrics.value.inscritos * 0.88);
   const approvedForImmersion = Math.max(funnelMetrics.value.imersao, completedStudentEnrollments.value.length);
@@ -1003,25 +720,10 @@ const summaryCards = computed(() => {
   const activeClasses = scopedOverviewItems.value.filter((item) => normalizedStatus(item.status) === 'andamento');
   const activePrograms = new Set(activeClasses.map((item) => String(item.programId)));
   const progressAverage = averageBy(scopedOverviewItems.value, (item) => item.progresso);
-  const approvalRate = usingSampleData.value
-    ? '78%'
-    : formatPercent(
-        completedStudentEnrollments.value.length /
-          Math.max(immersionSummary.value.students || participantPeople.value.length || 1, 1)
-      );
-
-  if (usingSampleData.value) {
-    return [
-      { label: 'Programas ativos', value: '3', note: '+1 desde ultimo mes', tone: 'tone-surface', icon: Award, iconClass: 'icon-teal', noteClass: 'note-teal' },
-      { label: 'Turmas ativas', value: '5', note: 'Em andamento', tone: 'tone-surface', icon: Building2, iconClass: 'icon-teal', noteClass: 'note-muted' },
-      { label: 'Pessoas ativas', value: '428', note: '+12% desde inicio', tone: 'tone-surface', icon: Users, iconClass: 'icon-teal', noteClass: 'note-teal' },
-      { label: 'Taxa de aprovação', value: '78%', note: 'Acima da meta', tone: 'tone-surface', icon: TrendingUp, iconClass: 'icon-green', noteClass: 'note-green' },
-      { label: 'Em nivelamento', value: '229', note: 'Progresso medio: 71%', tone: 'tone-surface', icon: GraduationCap, iconClass: 'icon-blue', noteClass: 'note-blue' },
-      { label: 'Em imersão', value: '44', note: '10 projetos ativos', tone: 'tone-surface', icon: Target, iconClass: 'icon-purple', noteClass: 'note-purple' },
-      { label: 'Projetos ativos', value: '10', note: 'Grupos formados', tone: 'tone-surface', icon: Briefcase, iconClass: 'icon-teal', noteClass: 'note-muted' },
-      { label: 'Alertas críticos', value: '14', note: 'Requer atenção', tone: 'tone-surface', icon: AlertTriangle, iconClass: 'icon-orange', noteClass: 'note-orange' },
-    ];
-  }
+  const approvalRate = formatPercent(
+    completedStudentEnrollments.value.length /
+      Math.max(immersionSummary.value.students || participantPeople.value.length || 1, 1)
+  );
 
   return [
     {
@@ -1105,15 +807,6 @@ const uniquePartners = computed(() => {
 });
 
 const criticalAlerts = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      { id: 'a-1', tone: 'alert-error', iconClass: 'icon-red', title: '8 alunos com cursos obrigatórios não concluídos', description: '' },
-      { id: 'a-2', tone: 'alert-warning', iconClass: 'icon-orange', title: '3 alunos com 2 faltas não justificadas', description: '' },
-      { id: 'a-3', tone: 'alert-warning', iconClass: 'icon-orange', title: '5 contratos pendentes de assinatura', description: '' },
-      { id: 'a-4', tone: 'alert-info', iconClass: 'icon-blue', title: '2 grupos com avaliação parcial em 7 dias', description: '' },
-    ];
-  }
-
   const alerts = [];
 
   const lowProgress = scopedOverviewItems.value.filter((item) => normalizedStatus(item.status) === 'andamento' && numberValue(item.progresso) < 35);
@@ -1206,14 +899,6 @@ const immersionSummary = computed(() => ({
 }));
 
 const levelingBands = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      { label: '0-33%', count: 18, tone: 'tone-red', percentage: 8, textClass: 'text-red' },
-      { label: '34-66%', count: 67, tone: 'tone-orange', percentage: 29, textClass: 'text-orange' },
-      { label: '67-100%', count: 144, tone: 'tone-green', percentage: 63, textClass: 'text-green' },
-    ];
-  }
-
   const items = levelingItems.value.length ? levelingItems.value : scopedOverviewItems.value;
   const total = Math.max(sumBy(items, (item) => item.nivelamento || 0), 1);
   const bands = [
@@ -1229,13 +914,6 @@ const levelingBands = computed(() => {
 });
 
 const levelingAttention = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      '8 alunos sem cursos obrigatorios completos',
-      '12 alunos ainda não aptos para prova',
-    ];
-  }
-
   const notes = [];
   if (levelingSummary.value.students === 0) notes.push('Nenhum aluno em nivelamento no recorte atual.');
   if (levelingSummary.value.averageProgress < 45) notes.push('Progresso medio abaixo da faixa ideal para o ciclo.');
@@ -1245,15 +923,6 @@ const levelingAttention = computed(() => {
 });
 
 const immersionScoreRows = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      { label: 'Desempenho do Grupo', valueLabel: '8.2', percentage: 82 },
-      { label: 'Participacao Individual', valueLabel: '7.8', percentage: 78 },
-      { label: 'Avaliação do Orientador', valueLabel: '8.5', percentage: 85 },
-      { label: 'Qualidade Técnica', valueLabel: '7.5', percentage: 75 },
-    ];
-  }
-
   const classesCount = Math.max(immersionItems.value.length, 1);
   const projectsPerClass = immersionSummary.value.projects / classesCount;
   const mentorCoverage = immersionItems.value.length
@@ -1289,13 +958,6 @@ const immersionScoreRows = computed(() => {
 });
 
 const immersionAttention = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      '4 advertências ativas',
-      '2 alunos em risco de desligamento',
-    ];
-  }
-
   const notes = [];
   if (immersionSummary.value.students === 0) notes.push('Nenhum aluno em imersão no recorte atual.');
   if (immersionSummary.value.projects === 0) notes.push('Não há projetos ativos vinculados à imersão filtrada.');
@@ -1305,46 +967,24 @@ const immersionAttention = computed(() => {
 });
 
 const genderDistribution = computed(() =>
-  usingSampleData.value
-    ? [
-        { label: 'Feminino', count: 223, ratio: 0.52, tone: 'tone-purple' },
-        { label: 'Masculino', count: 197, ratio: 0.46, tone: 'tone-blue' },
-        { label: 'Não-binário', count: 8, ratio: 0.02, tone: 'tone-teal' },
-      ]
-    : distributionFromPeople(participantPeople.value, (person) => formatGender(person.gender), ['Feminino', 'Masculino', 'Não-binário', 'Não informado'], ['tone-purple', 'tone-blue', 'tone-teal', 'tone-slate'])
+  distributionFromPeople(
+    participantPeople.value,
+    (person) => formatGender(person.gender),
+    ['Feminino', 'Masculino', 'Não-binário', 'Não informado'],
+    ['tone-purple', 'tone-blue', 'tone-teal', 'tone-slate']
+  )
 );
 
 const ethnicityDistribution = computed(() => (
-  usingSampleData.value
-    ? [
-        { label: 'Pardo', count: 206, ratio: 0.48, tone: 'tone-orange' },
-        { label: 'Branco', count: 120, ratio: 0.28, tone: 'tone-slate' },
-        { label: 'Negro', count: 77, ratio: 0.18, tone: 'tone-navy' },
-        { label: 'Indígena', count: 17, ratio: 0.04, tone: 'tone-green-dark' },
-        { label: 'Amarelo', count: 8, ratio: 0.02, tone: 'tone-yellow' },
-      ]
-    : distributionFromPeople(
-        participantPeople.value,
-        (person) => person.ethnicity || person.race || person.color || 'Não informado',
-        [],
-        ['tone-orange', 'tone-slate', 'tone-navy', 'tone-green-dark', 'tone-yellow']
-      ).slice(0, 5)
+  distributionFromPeople(
+    participantPeople.value,
+    (person) => person.ethnicity || person.race || person.color || 'Não informado',
+    [],
+    ['tone-orange', 'tone-slate', 'tone-navy', 'tone-green-dark', 'tone-yellow']
+  ).slice(0, 5)
 ));
 
 const ageDistribution = computed(() => {
-  if (usingSampleData.value) {
-    const counts = [
-      { label: '18-20', count: 64 },
-      { label: '21-23', count: 120 },
-      { label: '24-26', count: 137 },
-      { label: '27-30', count: 77 },
-      { label: '31-40', count: 21 },
-      { label: '41+', count: 9 },
-    ];
-    const max = Math.max(...counts.map((item) => item.count), 1);
-    return counts.map((item) => ({ ...item, height: (item.count / max) * 100 }));
-  }
-
   const bands = [
     { label: '18-20', min: 18, max: 20 },
     { label: '21-23', min: 21, max: 23 },
@@ -1370,42 +1010,17 @@ const ageDistribution = computed(() => {
 });
 
 const educationDistribution = computed(() =>
-  usingSampleData.value
-    ? [
-        { label: 'Graduação em andamento', count: 291, ratio: 0.68, tone: 'tone-blue' },
-        { label: 'Graduado', count: 77, ratio: 0.18, tone: 'tone-green' },
-        { label: 'Técnico', count: 34, ratio: 0.08, tone: 'tone-purple' },
-        { label: 'Pós-graduação', count: 26, ratio: 0.06, tone: 'tone-indigo' },
-      ]
-    : distributionFromPeople(participantPeople.value, (person) => person.educationLevel || 'Não informado')
+  distributionFromPeople(participantPeople.value, (person) => person.educationLevel || 'Não informado')
 );
 
 const institutionDistribution = computed(() =>
-  usingSampleData.value
-    ? [
-        { label: 'UFAL', count: 142, ratio: 0.33 },
-        { label: 'IFAL', count: 98, ratio: 0.23 },
-        { label: 'UNEAL', count: 76, ratio: 0.18 },
-        { label: 'UFPE', count: 52, ratio: 0.12 },
-        { label: 'Outras', count: 60, ratio: 0.14 },
-      ]
-    : distributionFromPeople(
-        participantPeople.value,
-        (person) => person.institutionName || 'Não informado'
-      ).slice(0, 5)
+  distributionFromPeople(
+    participantPeople.value,
+    (person) => person.institutionName || 'Não informado'
+  ).slice(0, 5)
 );
 
 const quotaCapacityRows = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      { label: 'Ampla Concorrência', capacity: 100, filled: 87, percentage: 87, tone: 'tone-orange' },
-      { label: 'Mulheres', capacity: 60, filled: 58, percentage: 97, tone: 'tone-green' },
-      { label: 'Negros/Pardos', capacity: 50, filled: 48, percentage: 96, tone: 'tone-green' },
-      { label: 'PcD', capacity: 20, filled: 14, percentage: 70, tone: 'tone-orange' },
-      { label: '45+', capacity: 20, filled: 19, percentage: 95, tone: 'tone-green' },
-    ];
-  }
-
   const rows = distributionFromPeople(
     participantPeople.value,
     (person) => person.quotaCategory || 'Ampla concorrência'
@@ -1425,18 +1040,6 @@ const quotaCapacityRows = computed(() => {
 });
 
 const competencyScores = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      { label: 'Proatividade', score: '7.8', percentage: 78 },
-      { label: 'Comunicação', score: '8.2', percentage: 82 },
-      { label: 'Responsabilidade', score: '8.5', percentage: 85 },
-      { label: 'Autoestudo', score: '7.4', percentage: 74 },
-      { label: 'Trabalho em Equipe', score: '8.7', percentage: 87 },
-      { label: 'Produção Técnica', score: '7.6', percentage: 76 },
-      { label: 'Qualidade Técnica', score: '7.9', percentage: 79 },
-    ];
-  }
-
   const base = clamp(6.2 + averageBy(scopedOverviewItems.value, (item) => item.progresso) / 35, 5.8, 9.4);
   const mentorFactor = scopedOverviewItems.value.length
     ? scopedOverviewItems.value.filter((item) => numberValue(item.orientadores) > 0).length / scopedOverviewItems.value.length
@@ -1466,17 +1069,6 @@ const competencyScores = computed(() => {
 });
 
 const impactCards = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      { label: 'Matrícula Ativa', value: '88%', note: 'Permanência no curso', tone: 'impact-green' },
-      { label: 'Em Estágio', value: '32%', note: 'Primeiras experiências', tone: 'impact-blue' },
-      { label: 'Empregados', value: '24%', note: 'CLT ou PJ', tone: 'impact-teal' },
-      { label: 'Atuando em Tech', value: '41%', note: 'Na área de tecnologia', tone: 'impact-purple' },
-      { label: 'Concluintes', value: '18%', note: 'Graduação concluída', tone: 'impact-yellow' },
-      { label: 'Por Parceiros', value: '9%', note: 'Contratados', tone: 'impact-indigo' },
-    ];
-  }
-
   const totalParticipants = Math.max(participantPeople.value.length, 1);
   const tracked = latestScopedFollowUps.value.length;
   const employed = latestScopedFollowUps.value.filter((item) => normalizeText(item.status) === 'empregado').length;
@@ -1528,15 +1120,6 @@ const impactCards = computed(() => {
 });
 
 const upcomingEvents = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      { id: 'e-1', day: '24', month: 'ABR', title: 'Divulgação da lista preliminar da Imersão', subtitle: '', badge: 'Informativo', tone: 'badge-info' },
-      { id: 'e-2', day: '27', month: 'ABR', title: 'Encerramento de recursos', subtitle: '', badge: 'Atenção', tone: 'badge-warning' },
-      { id: 'e-3', day: '03', month: 'MAI', title: 'Avaliação parcial dos projetos', subtitle: '', badge: 'Crítico', tone: 'badge-critical' },
-      { id: 'e-4', day: '26', month: 'MAI', title: 'Avaliação final dos projetos', subtitle: '', badge: 'Crítico', tone: 'badge-critical' },
-    ];
-  }
-
   const events = [];
 
   scopedClasses.value.forEach((classItem) => {
@@ -1592,30 +1175,13 @@ const filterSummary = computed(() => {
   return parts.length ? parts.join(' | ') : 'Sem filtros adicionais. Exibindo o panorama geral do dashboard.';
 });
 
-const funnelSummaryItems = computed(() => (
-  usingSampleData.value
-    ? [
-        { label: 'Taxa de Aproveitamento Nivelamento', value: '22%', valueClass: 'funnel-value-purple' },
-        { label: 'Conversão até Imersão', value: '7%', valueClass: 'funnel-value-green' },
-        { label: 'Taxa de Conclusão Final', value: '6%', valueClass: 'funnel-value-indigo' },
-      ]
-    : [
-        { label: 'Taxa de ativação', value: formatPercent(funnelMetrics.value.activationRate), valueClass: 'funnel-value-blue' },
-        { label: 'Conversão até Imersão', value: formatPercent(funnelMetrics.value.immersionRate), valueClass: 'funnel-value-green' },
-        { label: 'Taxa de Conclusão Final', value: formatPercent(funnelMetrics.value.completionRate), valueClass: 'funnel-value-indigo' },
-      ]
-));
+const funnelSummaryItems = computed(() => ([
+  { label: 'Taxa de ativação', value: formatPercent(funnelMetrics.value.activationRate), valueClass: 'funnel-value-blue' },
+  { label: 'Conversão até Imersão', value: formatPercent(funnelMetrics.value.immersionRate), valueClass: 'funnel-value-green' },
+  { label: 'Taxa de Conclusão Final', value: formatPercent(funnelMetrics.value.completionRate), valueClass: 'funnel-value-indigo' },
+]));
 
 const levelingMetricCards = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      { label: 'Progresso Médio', value: '71%', valueClass: '' },
-      { label: 'Cursos Obrigatórios', value: '84%', valueClass: 'value-teal' },
-      { label: 'Média da Prova', value: '63.4', valueClass: '' },
-      { label: 'Nota de Corte', value: '58.0', valueClass: 'value-orange' },
-    ];
-  }
-
   const requiredRate = clamp(levelingSummary.value.averageProgress + 13, 0, 100);
   const examAverage = clamp(levelingSummary.value.averageProgress * 0.89, 0, 100);
   return [
@@ -1627,15 +1193,6 @@ const levelingMetricCards = computed(() => {
 });
 
 const immersionMetricCards = computed(() => {
-  if (usingSampleData.value) {
-    return [
-      { label: 'Projetos Ativos', value: '10', valueClass: '' },
-      { label: 'Presença Média', value: '91%', valueClass: 'value-teal' },
-      { label: 'Média Parcial', value: '72.8', valueClass: '' },
-      { label: 'Projeção Final', value: '79.4', valueClass: 'value-teal' },
-    ];
-  }
-
   const mentorCoverage = immersionItems.value.length
     ? immersionItems.value.filter((item) => numberValue(item.orientadores) > 0).length / immersionItems.value.length
     : 0;
@@ -1714,17 +1271,6 @@ function buildSharableUrl() {
   const base = `${window.location.origin}${window.location.pathname}#/dashboard`;
   const query = params.toString();
   return query ? `${base}?${query}` : base;
-}
-
-function createSampleEnrollment(id, classId, person, status = 'Ativo', completionDate = null) {
-  return {
-    id,
-    classModel: { id: classId },
-    people: person,
-    academicRole: { name: 'Aluno' },
-    status,
-    completionDate,
-  };
 }
 
 function uniquePeopleFromEnrollments(items) {
@@ -1911,12 +1457,12 @@ function milestoneEntries(classItem) {
     { key: 'publication', label: 'Publicação do edital', date: classItem.publicationDate },
     { key: 'applications-end', label: 'Encerramento das inscrições', date: classItem.applicationEndDate },
     { key: 'leveling-announcement', label: 'Resultado do nivelamento', date: classItem.levelingSelectionAnnouncementDate },
-    { key: 'leveling-start', label: 'Inicio do nivelamento', date: classItem.levelingStartDate },
+    { key: 'leveling-start', label: 'Início do nivelamento', date: classItem.levelingStartDate },
     { key: 'immersion-announcement', label: 'Resultado da imersão', date: classItem.immersionSelectionAnnouncementDate },
     { key: 'immersion-start', label: 'Início da imersão', date: classItem.immersionStartDate },
     { key: 'partial-eval', label: 'Avaliação parcial', date: classItem.partialEvaluationDate },
     { key: 'final-eval', label: 'Avaliação final', date: classItem.finalEvaluationDate },
-    { key: 'certificate', label: 'Emissao de certificados', date: classItem.certificateIssueDate },
+    { key: 'certificate', label: 'Emissão de certificados', date: classItem.certificateIssueDate },
   ].filter((item) => item.date);
 }
 
@@ -2006,7 +1552,8 @@ function isTechPosition(position, company) {
 }
 
 .page-header-card {
-  padding: 26px 30px;
+  padding: 18px 18px 16px;
+  border-radius: 20px;
 }
 
 .page-header-top {
@@ -2023,15 +1570,15 @@ function isTechPosition(position, company) {
 
 .header-content h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 34px;
   line-height: 1.1;
-  color: #0f2344;
-  font-weight: 700;
+  color: #13233f;
+  font-weight: 800;
 }
 
 .subtitle {
-  margin: 10px 0 0;
-  color: #425977;
+  margin: 6px 0 0;
+  color: #6a7a90;
   font-size: 14px;
   line-height: 1.5;
 }
@@ -2124,32 +1671,20 @@ function isTechPosition(position, company) {
   line-height: 1.5;
 }
 
-.sample-banner {
-  margin: 16px 18px 0;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border: 1px solid #b7ebcd;
-  background: #f0fdf4;
-  color: #166534;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.sample-banner strong,
-.sample-banner p {
-  display: block;
-}
-
-.sample-banner p {
-  margin: 6px 0 0;
-  font-size: 13px;
-  line-height: 1.55;
-}
-
 .table-card {
-  overflow: hidden;
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.table-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-card::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .filters-row {
@@ -2351,6 +1886,27 @@ function isTechPosition(position, company) {
 .section-card,
 .profile-section-card {
   padding: 24px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stat-card,
+.insight-card,
+.phase-card,
+.section-card,
+.profile-card,
+.impact-card {
+  min-width: 0;
+}
+
+.stat-card,
+.mini-stat-card,
+.alert-item,
+.profile-card,
+.event-item,
+.impact-card,
+.funnel-step {
+  overflow-wrap: anywhere;
 }
 
 .insight-header,
@@ -2556,6 +2112,9 @@ function isTechPosition(position, company) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 315px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .alert-item {
@@ -2662,6 +2221,9 @@ function isTechPosition(position, company) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .distribution-row,
@@ -2712,6 +2274,9 @@ function isTechPosition(position, company) {
   color: #334155;
   font-size: 13px;
   line-height: 1.6;
+  max-height: 140px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .profile-grid {
@@ -2736,6 +2301,9 @@ function isTechPosition(position, company) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .histogram {
@@ -2783,6 +2351,9 @@ function isTechPosition(position, company) {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .institution-row {
@@ -2939,6 +2510,41 @@ function isTechPosition(position, company) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.alerts-list,
+.progress-distribution,
+.score-list,
+.phase-attention ul,
+.stack-bars,
+.institution-bars,
+.events-list {
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.alerts-list::-webkit-scrollbar,
+.progress-distribution::-webkit-scrollbar,
+.score-list::-webkit-scrollbar,
+.phase-attention ul::-webkit-scrollbar,
+.stack-bars::-webkit-scrollbar,
+.institution-bars::-webkit-scrollbar,
+.events-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.alerts-list::-webkit-scrollbar-thumb,
+.progress-distribution::-webkit-scrollbar-thumb,
+.score-list::-webkit-scrollbar-thumb,
+.phase-attention ul::-webkit-scrollbar-thumb,
+.stack-bars::-webkit-scrollbar-thumb,
+.institution-bars::-webkit-scrollbar-thumb,
+.events-list::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .event-item {
@@ -3096,6 +2702,10 @@ function isTechPosition(position, company) {
     padding: 12px;
   }
 
+  .header-content h1 {
+    font-size: 28px;
+  }
+
   .page-header-card,
   .insight-card,
   .phase-card,
@@ -3116,7 +2726,6 @@ function isTechPosition(position, company) {
 
   .filters-row,
   .toolbar-row,
-  .sample-banner,
   .page-header-top,
   .top-actions,
   .insight-header,

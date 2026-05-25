@@ -211,6 +211,7 @@ public class LogHelper {
     private LogAction getCreateAction(String entityType) {
         return switch (entityType.toLowerCase()) {
             case "people" -> LogAction.PEOPLE_CREATE;
+            case "advisor" -> LogAction.ADVISOR_CREATE;
             case "program" -> LogAction.PROGRAM_CREATE;
             case "class" -> LogAction.CLASS_CREATE;
             case "stage" -> LogAction.STAGE_CREATE;
@@ -224,6 +225,7 @@ public class LogHelper {
     private LogAction getUpdateAction(String entityType) {
         return switch (entityType.toLowerCase()) {
             case "people" -> LogAction.PEOPLE_UPDATE;
+            case "advisor" -> LogAction.ADVISOR_UPDATE;
             case "program" -> LogAction.PROGRAM_UPDATE;
             case "class" -> LogAction.CLASS_UPDATE;
             case "stage" -> LogAction.STAGE_UPDATE;
@@ -237,6 +239,7 @@ public class LogHelper {
     private LogAction getDeleteAction(String entityType) {
         return switch (entityType.toLowerCase()) {
             case "people" -> LogAction.PEOPLE_DELETE;
+            case "advisor" -> LogAction.ADVISOR_DELETE;
             case "program" -> LogAction.PROGRAM_DELETE;
             case "class" -> LogAction.CLASS_DELETE;
             case "stage" -> LogAction.STAGE_DELETE;

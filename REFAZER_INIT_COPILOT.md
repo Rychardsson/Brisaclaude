@@ -1,17 +1,17 @@
-# Recuperação do Copilot Chat e novo `/init`
+# Recuperação do histórico do Copilot Chat e novo `/init`
 
 ## Contexto para colar após o `/init` (continuidade do trabalho)
 
 Trabalhamos principalmente no **BRISA-FRONTEND**:
 
-- Migração e refino da tela de Programas e Turma para alinhar com Figma/Brisa ONE.
+- Migração e refinamento da tela de Programas e Turma para alinhar com o Figma/Brisa ONE.
 - Ajustes de ações e navegação (editar programa, editar turma, cursos, menus).
 - Reestruturação da `ClassDetailsView.vue` com abas **Visão Geral** e **Pessoas**.
 - Integração de dados reais com services (`classService`, `stageService`, `enrollmentService`).
 - Correções de estilo global:
   - import de `src/assets/main.css` no `src/main.js`;
-  - remoção de regras globais do starter que quebravam layout desktop;
-  - ajuste de fundo global para padrão visual esperado.
+  - remoção de regras globais do starter que quebravam o layout no desktop;
+  - ajuste do fundo global para o padrão visual esperado.
 
 Arquivos-chave já alterados nas sessões anteriores:
 

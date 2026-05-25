@@ -13,7 +13,7 @@
           </div>
 
           <div class="top-actions">
-            <button type="button" class="primary-btn" :disabled="!quickFollowUpTarget || displayingDemoData" @click="openQuickFollowUp">
+            <button type="button" class="primary-btn" :disabled="!quickFollowUpTarget" @click="openQuickFollowUp">
               Registrar acompanhamento
             </button>
           </div>
@@ -131,12 +131,7 @@
         </div>
 
         <template v-else>
-          <div v-if="displayingDemoData" class="feedback-banner feedback-demo">
-            <strong>Dados de exemplo</strong>
-            <span>{{ demoBannerMessage }}</span>
-          </div>
-
-          <div v-else-if="errorMessage" class="feedback-banner feedback-error">
+          <div v-if="errorMessage" class="feedback-banner feedback-error">
             {{ errorMessage }}
           </div>
 
@@ -167,7 +162,7 @@
             </div>
 
             <div class="automation-grid">
-              <article class="automation-panel">
+              <article class="automation-panel automation-panel-config">
                 <div class="automation-panel-header">
                   <div>
                     <h3>Configuração</h3>
@@ -176,7 +171,8 @@
                   <span>{{ automationScopeLabel }}</span>
                 </div>
 
-                <div class="form-grid automation-form-grid">
+                <div class="automation-panel-body">
+                <div class="form-grid automation-form-grid automation-form-grid-fill">
                   <label class="field">
                     <span>Programa</span>
                     <select v-model="automationScopeProgramId">
@@ -236,14 +232,19 @@
                     />
                   </label>
 
-                  <label class="field field-full">
+                  <label class="field field-full field-message-grow">
                     <span>Mensagem-base</span>
                     <textarea
+                      class="automation-message-input"
                       v-model="automationMessage"
-                      rows="5"
+                      rows="6"
                       placeholder="Digite aqui a mensagem inicial do acompanhamento."
                     ></textarea>
+                    <small class="field-hint">
+                      A mensagem é enviada junto com o template institucional do e-mail de carreira.
+                    </small>
                   </label>
+                </div>
                 </div>
 
                 <div class="automation-actions">
@@ -774,16 +775,6 @@ const programOptions = computed(() => {
     });
   });
 
-  if (!realCareerRows.value.length) {
-    demoCareerRows.value.forEach((row) => {
-      if (!row.programId || known.has(String(row.programId))) return;
-      known.set(String(row.programId), {
-        id: String(row.programId),
-        label: row.programName || `Programa ${row.programId}`
-      });
-    });
-  }
-
   return Array.from(known.values()).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 });
 
@@ -798,17 +789,6 @@ const classOptions = computed(() => {
       label: `${classItem.code || `Turma ${classItem.id}`} | ${classItem.program?.name || 'Programa'}`
     }));
 
-  if (!realCareerRows.value.length) {
-    demoCareerRows.value.forEach((row) => {
-      if (selectedProgramId.value && row.programId !== selectedProgramId.value) return;
-      if (items.some((item) => item.id === row.classId)) return;
-      items.push({
-        id: row.classId,
-        label: `${row.classCode} | ${row.programName}`
-      });
-    });
-  }
-
   return items.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 });
 
@@ -822,17 +802,6 @@ const automationClassOptions = computed(() => {
       id: String(classItem.id),
       label: `${classItem.code || `Turma ${classItem.id}`} | ${classItem.program?.name || 'Programa'}`
     }));
-
-  if (!realCareerRows.value.length) {
-    demoCareerRows.value.forEach((row) => {
-      if (automationScopeProgramId.value && row.programId !== automationScopeProgramId.value) return;
-      if (items.some((item) => item.id === row.classId)) return;
-      items.push({
-        id: row.classId,
-        label: `${row.classCode} | ${row.programName}`
-      });
-    });
-  }
 
   return items.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 });
@@ -868,29 +837,7 @@ const realCareerRows = computed(() => {
     });
 });
 
-const demoCareerRows = computed(() => {
-  const today = new Date();
-
-  return DEMO_CAREER_SEED.map((item) => buildDemoCareerRow(item, followUpsByKey.value, today)).sort((left, right) => {
-    if (left.isDue !== right.isDue) return left.isDue ? -1 : 1;
-    return compareDateValues(right.completionDate, left.completionDate);
-  });
-});
-
-const displayingDemoData = computed(() => !realCareerRows.value.length && demoCareerRows.value.length > 0);
-
-const demoBannerMessage = computed(() => {
-  if (errorMessage.value) {
-    return 'Os dados reais não puderam ser carregados agora. A tela está exibindo exemplos apenas para visualização.';
-  }
-
-  return 'Ainda não há egressos concluídos disponíveis nesta tela. Por isso, ela está exibindo exemplos apenas para visualização.';
-});
-
-const careerRows = computed(() => {
-  if (realCareerRows.value.length) return realCareerRows.value;
-  return demoCareerRows.value;
-});
+const careerRows = computed(() => realCareerRows.value);
 
 const filteredCareerRows = computed(() => {
   let rows = careerRows.value;
@@ -1185,7 +1132,7 @@ function openPersonProfile(row) {
 }
 
 function openQuickFollowUp() {
-  if (!quickFollowUpTarget.value || displayingDemoData.value) return;
+  if (!quickFollowUpTarget.value) return;
   openFollowUpModal(quickFollowUpTarget.value);
 }
 
@@ -1980,7 +1927,19 @@ function formatDateTime(value) {
 }
 
 .table-card {
-  overflow: hidden;
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.table-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-card::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .filters-row {
@@ -2196,6 +2155,12 @@ function formatDateTime(value) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.history-list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .ranking-item {
@@ -2582,7 +2547,26 @@ function formatDateTime(value) {
 }
 
 .field textarea {
+  min-height: 118px;
+  max-height: 180px;
+  overflow-y: auto;
   resize: vertical;
+}
+
+.automation-panel-config .field-message-grow textarea.automation-message-input {
+  min-height: 320px;
+  max-height: none;
+  height: 100%;
+  flex: 1;
+  resize: vertical;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 8px;
+  color: #7b8ba3;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .field-full {
@@ -2775,6 +2759,36 @@ function formatDateTime(value) {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  height: 100%;
+}
+
+.automation-panel-config .automation-panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 16px;
+}
+
+.automation-panel-config .automation-form-grid-fill {
+  flex: 1;
+  height: 100%;
+  margin-top: 0;
+  min-height: 0;
+  grid-template-rows: auto auto auto minmax(320px, 1fr);
+  align-content: stretch;
+}
+
+.automation-panel-config .field-message-grow {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 320px;
+  align-self: stretch;
+}
+
+.automation-panel-config .field-message-grow .field-hint {
+  flex-shrink: 0;
 }
 
 .automation-panel-header {
@@ -2814,6 +2828,10 @@ function formatDateTime(value) {
   margin-top: 16px;
 }
 
+.automation-panel-config .automation-form-grid-fill {
+  margin-top: 0;
+}
+
 .checkpoint-row {
   display: flex;
   flex-wrap: wrap;
@@ -2841,6 +2859,7 @@ function formatDateTime(value) {
 .automation-actions {
   margin-top: auto;
   padding-top: 16px;
+  flex-shrink: 0;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -2918,6 +2937,12 @@ function formatDateTime(value) {
   gap: 10px;
 }
 
+.automation-history-list {
+  max-height: 390px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 .automation-list-item,
 .automation-history-item {
   border: 1px solid #e2e8f0;
@@ -2928,6 +2953,11 @@ function formatDateTime(value) {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.automation-history-item {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.45fr) minmax(0, 1fr);
 }
 
 .automation-list-main {
@@ -2959,10 +2989,20 @@ function formatDateTime(value) {
   gap: 4px;
 }
 
+.automation-history-meta {
+  min-width: 0;
+  align-items: flex-end;
+}
+
 .automation-list-side small,
 .automation-history-meta small {
   color: #6a7a90;
   font-size: 12px;
+}
+
+.automation-history-meta small {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .automation-history-meta span {
@@ -3043,6 +3083,7 @@ function formatDateTime(value) {
   .automation-list-item,
   .automation-history-item,
   .agenda-item {
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
   }

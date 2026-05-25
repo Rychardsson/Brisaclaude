@@ -58,7 +58,7 @@ public class PeopleIntegrationService {
     private static final List<String> STATUS_OPTIONS = List.of(
             "Ativa",
             "Pendente",
-            "Concluida",
+            "Concluída",
             "Reprovada",
             "Desclassificada"
     );
@@ -75,7 +75,7 @@ public class PeopleIntegrationService {
             "Feminino",
             "Masculino",
             "Outro",
-            "Nao informado"
+            "Não informado"
     );
 
     private static final List<String> TIPO_FORMACAO_OPTIONS = List.of(
@@ -89,7 +89,7 @@ public class PeopleIntegrationService {
             "Cursando",
             "Concluido",
             "Trancado",
-            "Nao informado"
+            "Não informado"
     );
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -116,7 +116,7 @@ public class PeopleIntegrationService {
             String city,
             String institution
     ) {
-        List<PeopleModel> people = peopleRepository.findAllByOrderByNameAsc();
+        List<PeopleModel> people = peopleRepository.findAllActiveOrderByNameAsc();
         Map<Long, List<EnrollmentModel>> enrollmentsByPeople = enrollmentRepository.findAllWithRelations().stream()
                 .collect(Collectors.groupingBy(enrollment -> enrollment.getPeople().getId()));
         Map<Long, List<StageCandidateModel>> candidatesByPeople = stageCandidateRepository.findAllWithRelations().stream()
@@ -148,8 +148,8 @@ public class PeopleIntegrationService {
                 allItems.size(),
                 allItems.stream().filter(this::isAtivaOuPendente).count(),
                 allItems.stream().filter(this::isEmProgramaAtivo).count(),
-                allItems.stream().filter(item -> "Nivelamento".equalsIgnoreCase(item.etapaAtual())).count(),
-                allItems.stream().filter(item -> "Imersao".equalsIgnoreCase(item.etapaAtual())).count(),
+                allItems.stream().filter(item -> normalize(item.etapaAtual()).contains("nivelamento")).count(),
+                allItems.stream().filter(item -> normalize(item.etapaAtual()).contains("imersao")).count(),
                 people.stream().filter(person -> isCreatedWithinLastDays(person.getCreatedAt(), 30)).count()
         );
 
@@ -167,7 +167,7 @@ public class PeopleIntegrationService {
         List<ProgramModel> programs = programRepository.findAllWithRelations();
         List<ClassModel> classes = classRepository.findAll();
         List<StageModel> stages = stageRepository.findAll();
-        List<PeopleModel> people = peopleRepository.findAll();
+        List<PeopleModel> people = peopleRepository.findAllActive();
 
         List<PeopleFilterOptionDTO> programOptions = programs.stream()
                 .sorted(Comparator.comparing(ProgramModel::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
@@ -215,7 +215,7 @@ public class PeopleIntegrationService {
             errors.add("Data de nascimento e obrigatoria.");
         }
         if (isBlank(request.getCota())) {
-            errors.add("Cota e obrigatoria.");
+            errors.add("Cota é obrigatória.");
         }
         if (!errors.isEmpty()) {
             throw new ValidationException(errors);
@@ -230,6 +230,7 @@ public class PeopleIntegrationService {
         }
 
         mergePersonData(person, request);
+        reactivateIfSoftDeleted(person);
         person = peopleRepository.save(person);
 
         Long personId = person.getId();
@@ -269,7 +270,7 @@ public class PeopleIntegrationService {
             throw new ValidationException(errors);
         }
 
-        PeopleModel person = peopleRepository.findById(request.getPeopleId())
+        PeopleModel person = peopleRepository.findActiveById(request.getPeopleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pessoa não encontrada."));
 
         ClassModel classModel = classRepository.findById(request.getTurmaId())
@@ -277,6 +278,11 @@ public class PeopleIntegrationService {
 
         StageModel stage = stageRepository.findById(request.getEtapaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Etapa não encontrada."));
+
+        List<String> stageProgressionErrors = validateStageProgression(person, stage);
+        if (!stageProgressionErrors.isEmpty()) {
+            throw new ValidationException(stageProgressionErrors);
+        }
 
         Optional<EnrollmentModel> existingEnrollment = enrollmentRepository.findAllWithRelations().stream()
                 .filter(e -> Objects.equals(e.getPeople().getId(), request.getPeopleId()) &&
@@ -294,7 +300,9 @@ public class PeopleIntegrationService {
         enrollment.setPeople(person);
         enrollment.setClassModel(classModel);
         enrollment.setAcademicRole(alunoRole);
-        enrollment.setEnrollmentDate(LocalDate.now());        enrollment.setStatus(normalizeEnrollmentStatus(request.getStatusInicial()));        enrollmentRepository.save(enrollment);
+        enrollment.setEnrollmentDate(LocalDate.now());
+        enrollment.setStatus(normalizeEnrollmentStatus(request.getStatusInicial()));
+        enrollmentRepository.save(enrollment);
 
         StageCandidateModel candidate = new StageCandidateModel();
         candidate.setPeople(person);
@@ -303,6 +311,14 @@ public class PeopleIntegrationService {
         stageCandidateRepository.save(candidate);
 
         Long personId = person.getId();
+
+        List<String> alerts = detectActiveConflicts(personId, classModel.getId());
+        // Bloquear se houver conflito de nivelamento
+        boolean hasNivelamentoConflict = alerts.stream().anyMatch(a -> normalize(a).contains("nivelament"));
+        if (hasNivelamentoConflict) {
+            throw new ValidationException(alerts);
+        }
+
         List<EnrollmentModel> personEnrollments = enrollmentRepository.findAllWithRelations().stream()
                 .filter(item -> Objects.equals(item.getPeople().getId(), personId))
                 .toList();
@@ -314,8 +330,8 @@ public class PeopleIntegrationService {
                 personId,
                 false,
                 true,
-                false,
-                List.of(),
+                !alerts.isEmpty(),
+                alerts,
                 buildPeopleListItem(person, personEnrollments, personCandidates)
         );
     }
@@ -324,37 +340,42 @@ public class PeopleIntegrationService {
     public PeopleCreateLinkResponseDTO createOrLink(PeopleCreateLinkRequestDTO request) {
         List<String> errors = new ArrayList<>();
         if (isBlank(request.getNome())) {
-            errors.add("Nome e obrigatorio.");
+            errors.add("Nome é obrigatório.");
         }
         if (isBlank(request.getCpf())) {
-            errors.add("CPF e obrigatorio.");
+            errors.add("CPF é obrigatório.");
         }
         if (isBlank(request.getEmail())) {
-            errors.add("Email e obrigatorio.");
+            errors.add("Email é obrigatório.");
         }
         if (request.getDataNascimento() == null) {
-            errors.add("Data de nascimento e obrigatoria.");
+            errors.add("Data de nascimento é obrigatória.");
         }
         if (request.getTurmaId() == null) {
-            errors.add("Turma e obrigatoria.");
+            errors.add("Turma é obrigatória.");
         }
         if (request.getEtapaId() == null) {
-            errors.add("Etapa inicial e obrigatoria.");
+            errors.add("Etapa inicial é obrigatória.");
         }
         if (!errors.isEmpty()) {
             throw new ValidationException(errors);
         }
 
         ClassModel classModel = classRepository.findById(request.getTurmaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Turma nao encontrada com id: " + request.getTurmaId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + request.getTurmaId()));
         StageModel stage = stageRepository.findById(request.getEtapaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Etapa nao encontrada com id: " + request.getEtapaId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Etapa não encontrada com id: " + request.getEtapaId()));
         if (!Objects.equals(stage.getClassModel().getId(), classModel.getId())) {
-            throw new ValidationException(List.of("A etapa selecionada nao pertence a turma informada."));
+            throw new ValidationException(List.of("A etapa selecionada não pertence à turma informada."));
         }
 
         PeopleModel person = findExistingPerson(request.getCpf(), request.getEmail()).orElse(null);
         boolean personCreated = false;
+
+        List<String> stageProgressionErrors = validateStageProgression(person, stage);
+        if (!stageProgressionErrors.isEmpty()) {
+            throw new ValidationException(stageProgressionErrors);
+        }
 
         if (person == null) {
             person = new PeopleModel();
@@ -362,6 +383,7 @@ public class PeopleIntegrationService {
         }
 
         mergePersonData(person, request);
+        reactivateIfSoftDeleted(person);
         person = peopleRepository.save(person);
 
         AcademicRoleModel alunoRole = academicRoleRepository.findByName("ALUNO")
@@ -399,6 +421,12 @@ public class PeopleIntegrationService {
         Long personId = person.getId();
         List<String> alerts = detectActiveConflicts(personId, classModel.getId());
 
+        // Se houver conflito de nivelamento, bloquear a operação e retornar erro de validação
+        boolean hasNivelamentoConflict = alerts.stream().anyMatch(a -> normalize(a).contains("nivelament"));
+        if (hasNivelamentoConflict) {
+            throw new ValidationException(alerts);
+        }
+
         List<EnrollmentModel> personEnrollments = enrollmentRepository.findAllWithRelations().stream()
                 .filter(item -> Objects.equals(item.getPeople().getId(), personId))
                 .toList();
@@ -414,6 +442,50 @@ public class PeopleIntegrationService {
                 alerts,
                 buildPeopleListItem(person, personEnrollments, personCandidates)
         );
+    }
+
+    public List<String> validateStageProgression(PeopleModel person, StageModel targetStage) {
+        if (targetStage == null || targetStage.getClassModel() == null || targetStage.getClassModel().getId() == null) {
+            return List.of();
+        }
+
+        String targetStageName = normalize(targetStage.getName());
+        String requiredStageToken;
+        String requiredStageLabel;
+        String targetStageLabel;
+
+        if (targetStageName.contains("nivel")) {
+            requiredStageToken = "selec";
+            requiredStageLabel = "processo seletivo";
+            targetStageLabel = "nivelamento";
+        } else if (targetStageName.contains("imers")) {
+            requiredStageToken = "nivel";
+            requiredStageLabel = "nivelamento";
+            targetStageLabel = "imersão";
+        } else {
+            return List.of();
+        }
+
+        if (person == null || person.getId() == null) {
+            return List.of("Pessoa precisa estar no " + requiredStageLabel + " desta turma antes de entrar na etapa de " + targetStageLabel + ".");
+        }
+
+        List<StageCandidateModel> previousCandidates = stageCandidateRepository.findByClassIdWithPeople(targetStage.getClassModel().getId()).stream()
+                .filter(candidate -> candidate.getPeople() != null && Objects.equals(candidate.getPeople().getId(), person.getId()))
+                .filter(candidate -> candidate.getStage() != null && normalize(candidate.getStage().getName()).contains(requiredStageToken))
+                .toList();
+
+        if (previousCandidates.isEmpty()) {
+            return List.of(person.getName() + " precisa estar no " + requiredStageLabel + " desta turma antes de entrar na etapa de " + targetStageLabel + ".");
+        }
+
+        boolean hasActivePreviousStage = previousCandidates.stream()
+                .anyMatch(candidate -> candidate.getStatus() != StageStatus.REPROVADO);
+        if (!hasActivePreviousStage) {
+            return List.of(person.getName() + " está como reprovado/desclassificado no " + requiredStageLabel + " desta turma.");
+        }
+
+        return List.of();
     }
 
     private Optional<PeopleModel> findExistingPerson(String cpf, String email) {
@@ -459,7 +531,13 @@ public class PeopleIntegrationService {
         }
     }
 
-    private List<String> detectActiveConflicts(Long peopleId, Long targetClassId) {
+    private void reactivateIfSoftDeleted(PeopleModel person) {
+        if (Boolean.TRUE.equals(person.getSoftDeleted())) {
+            person.setSoftDeleted(false);
+        }
+    }
+
+    public List<String> detectActiveConflicts(Long peopleId, Long targetClassId) {
         List<EnrollmentModel> enrollments = enrollmentRepository.findAllWithRelations().stream()
                 .filter(item -> Objects.equals(item.getPeople().getId(), peopleId))
                 .filter(item -> !Objects.equals(item.getClassModel().getId(), targetClassId))
@@ -467,7 +545,7 @@ public class PeopleIntegrationService {
                 .toList();
 
         ClassModel targetClass = classRepository.findById(targetClassId)
-                .orElseThrow(() -> new ResourceNotFoundException("Turma nao encontrada com id: " + targetClassId));
+                .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + targetClassId));
 
         List<String> alerts = new ArrayList<>();
         for (EnrollmentModel enrollment : enrollments) {
@@ -476,13 +554,34 @@ public class PeopleIntegrationService {
             }
 
             if (overlaps(targetClass, enrollment.getClassModel())) {
-                alerts.add("Conflito: aluno ja vinculado a programa simultaneo em andamento.");
+                alerts.add("Conflito: aluno já vinculado a programa simultâneo em andamento.");
+                return alerts;
+            }
+        }
+
+        // Verifica se já existe candidato em etapa de nivelamento em outra turma que se sobrepõe a esta
+        List<StageCandidateModel> otherNivelamentoCandidates = stageCandidateRepository.findAllWithRelations().stream()
+                .filter(c -> Objects.equals(c.getPeople().getId(), peopleId))
+                .filter(c -> c.getStage() != null && c.getStage().getClassModel() != null)
+                .filter(c -> !Objects.equals(c.getStage().getClassModel().getId(), targetClassId))
+                .filter(c -> normalize(c.getStage().getName()).contains("nivelament"))
+                .toList();
+
+        for (StageCandidateModel candidate : otherNivelamentoCandidates) {
+            // considera apenas candidatos que não foram reprovados
+            if (candidate.getStatus() == StageStatus.REPROVADO) {
+                continue;
+            }
+            ClassModel otherClass = candidate.getStage().getClassModel();
+            if (overlaps(targetClass, otherClass)) {
+                String code = otherClass.getCode() != null ? otherClass.getCode() : String.valueOf(otherClass.getId());
+                alerts.add(String.format("Erro: pessoa já está em nivelamento na turma '%s'. Não é permitido participar de dois nivelamentos simultâneos.", code));
                 return alerts;
             }
         }
 
         if (!enrollments.isEmpty()) {
-            alerts.add("Atencao: aluno ja vinculado a outro programa.");
+            alerts.add("Atenção: aluno já vinculado a outro programa.");
         }
         return alerts;
     }
@@ -525,9 +624,9 @@ public class PeopleIntegrationService {
                 person.getName(),
                 formatCpf(person.getCpf()),
                 person.getEmail(),
-                defaultIfBlank(person.getGender(), "Nao informado"),
+                defaultIfBlank(person.getGender(), "Não informado"),
                 calculateAge(person.getBirthDate()),
-                defaultIfBlank(person.getQuotaCategory(), "Nao informado"),
+                defaultIfBlank(person.getQuotaCategory(), "Não informado"),
                 defaultIfBlank(person.getCity(), "-"),
                 defaultIfBlank(person.getState(), "-"),
                 defaultIfBlank(institution, "-"),
@@ -590,7 +689,7 @@ public class PeopleIntegrationService {
             return "-";
         }
         if (isConcluded(enrollment.getStatus())) {
-            return "Concluida";
+            return "Concluída";
         }
         return "Nivelamento";
     }
@@ -714,13 +813,16 @@ public class PeopleIntegrationService {
     private String stageLabel(String stageName) {
         String normalized = normalize(stageName);
         if (normalized.contains("imersao")) {
-            return "Imersao";
+            return "Imersão";
         }
         if (normalized.contains("nivelamento")) {
             return "Nivelamento";
         }
-        if (normalized.contains("selecao") || normalized.contains("inscricao")) {
-            return "Inscricao";
+        if (normalized.contains("selecao")) {
+            return "Seleção";
+        }
+        if (normalized.contains("inscricao")) {
+            return "Inscrição";
         }
         return defaultIfBlank(stageName, "-");
     }
@@ -728,7 +830,7 @@ public class PeopleIntegrationService {
     private String displayStatus(String status) {
         return switch (normalizeEnrollmentStatus(status)) {
             case "ATIVA" -> "Ativa";
-            case "CONCLUIDA" -> "Concluida";
+            case "CONCLUIDA" -> "Concluída";
             case "REPROVADA" -> "Reprovada";
             case "DESCLASSIFICADA" -> "Desclassificada";
             default -> "Pendente";
@@ -765,10 +867,17 @@ public class PeopleIntegrationService {
     }
 
     private StageStatus toStageStatus(String status) {
-        String normalized = normalizeEnrollmentStatus(status);
-        return "REPROVADA".equals(normalized) || "DESCLASSIFICADA".equals(normalized)
-                ? StageStatus.REPROVADO
-                : StageStatus.APROVADO;
+        String normalized = normalize(status);
+        if (normalized.contains("reprov") || normalized.contains("desclass")) {
+            return StageStatus.REPROVADO;
+        }
+        if (normalized.contains("espera")) {
+            return StageStatus.LISTA_ESPERA;
+        }
+        if (normalized.contains("analise") || normalized.contains("inscrit") || normalized.contains("pendente")) {
+            return StageStatus.EM_ANALISE;
+        }
+        return StageStatus.APROVADO;
     }
 
     private String institutionLabel(ClassModel classModel) {

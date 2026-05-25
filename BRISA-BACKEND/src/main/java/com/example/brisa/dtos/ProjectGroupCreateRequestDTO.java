@@ -14,7 +14,8 @@ import java.util.List;
 public class ProjectGroupCreateRequestDTO {
     private String projectTheme; // nome do projeto
     private String description; // resumo do projeto
-    private Long projectCompanyId; // empresa/instituição
+    private Long projectCompanyId; // empresa/instituição parceira (patrocinadora) cadastrada no programa
+    private String sponsorCompany; // opcional no request; backend deriva da empresa/instituição selecionada
     private Long leaderId; // orientador (people_id)
     private List<Long> memberIds; // alunos do grupo
     private DayOfWeek weeklyMeetingDay; // dia da semana para reuniões

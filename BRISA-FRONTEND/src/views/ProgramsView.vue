@@ -130,6 +130,15 @@
               <span class="filters-badge">{{ activeFiltersCount }}</span>
             </button>
 
+            <button
+              v-if="hasActiveListingFilters"
+              type="button"
+              class="clear-filters-button"
+              @click="clearListingFilters"
+            >
+              Limpar filtros
+            </button>
+
             <button type="button" class="search-button" @click="applySearch">
               Pesquisar
             </button>
@@ -199,7 +208,6 @@
             v-for="program in paginatedPrograms"
             :key="`${program.programId}-${program.classId}`"
             class="program-row"
-            :class="{ 'program-row-active-tab': activeTab === 'ativos' }"
             @click="viewProgram(program)"
           >
             <div class="program-main">
@@ -211,7 +219,7 @@
                   </div>
 
                   <div class="program-meta">
-                    <span><Building2 :size="14" />{{ program.parceiro }}</span>
+                    <span><Building2 :size="14" />{{ program.executor || program.executora || '-' }}</span>
                     <span><MapPin :size="14" />{{ program.localidade }}</span>
                     <span><Calendar :size="14" />{{ program.periodo }}</span>
                   </div>
@@ -224,20 +232,20 @@
 
               <div class="stage-track">
                 <div v-for="(stage, index) in stageTrack" :key="stage" class="stage-step">
-                  <div class="stage-pill" :class="stageClass(program.etapaAtual, index)">
+                  <div class="stage-pill" :class="stageClass(program, stage)">
                     {{ stage }}
                   </div>
                   <div
                     v-if="index < stageTrack.length - 1"
                     class="stage-connector"
-                    :class="{ active: index < stageIndex(program.etapaAtual) }"
+                    :class="{ active: stageConnectorActive(program, index) }"
                   />
                 </div>
               </div>
 
               <div class="progress-wrap">
                 <div class="progress-bar">
-                  <div class="progress-fill" :style="{ width: `${program.progresso}%` }" />
+                  <div class="progress-fill" :style="{ width: `${progressPercent(program.progresso)}%` }" />
                 </div>
               </div>
 
@@ -306,7 +314,7 @@
                   </button>
                   <button type="button" class="options-danger" @click="askDelete(program)">
                     <Trash2 :size="16" />
-                    Excluir programa
+                    {{ deleteActionLabel(program) }}
                   </button>
                 </div>
               </div>
@@ -579,7 +587,7 @@
       <div class="modal-content modal-sm">
         <div class="modal-header">
           <div>
-            <h3>Excluir programa</h3>
+            <h3>{{ deleteModalTitle }}</h3>
             <p class="modal-subtitle">Essa ação não poderá ser desfeita.</p>
           </div>
           <button type="button" class="btn-close-modal" @click="closeDeleteModal">
@@ -589,14 +597,14 @@
 
         <div class="modal-body">
           <p class="delete-text">
-            Deseja excluir <strong>{{ programToDelete.nome }} - Turma {{ programToDelete.turma }}</strong>?
+            Deseja excluir <strong>{{ deleteModalSubject }}</strong>?
           </p>
         </div>
 
         <div class="modal-footer">
           <button type="button" class="footer-btn secondary" @click="closeDeleteModal">Cancelar</button>
           <button type="button" class="footer-btn danger" :disabled="deletingProgram" @click="deleteProgram">
-            {{ deletingProgram ? 'Excluindo...' : 'Excluir programa' }}
+            {{ deletingProgram ? 'Excluindo...' : deleteModalConfirmLabel }}
           </button>
         </div>
       </div>
@@ -710,6 +718,16 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
+function formatStageName(value) {
+  const normalized = normalizeText(value);
+  if (normalized.includes('inscri')) return 'Inscrição';
+  if (normalized.includes('selec')) return 'Seleção';
+  if (normalized.includes('nivel')) return 'Nivelamento';
+  if (normalized.includes('imers')) return 'Imersão';
+  if (normalized.includes('encerr')) return 'Encerrado';
+  return value || '-';
+}
+
 function parseYears(period) {
   const matches = String(period ?? '').match(/\d{4}/g) ?? [];
   return matches;
@@ -751,18 +769,47 @@ function mapClassToProgramListItem(classItem, fallbackProgram) {
   const programId = resolveProgramId(classItem) ?? String(fallbackProgram?.programId ?? '');
   const catalogProgram = programCatalog.value.find((item) => item.programId === programId) || null;
   const programName = classItem?.program?.name ?? fallbackProgram?.nome ?? catalogProgram?.nome ?? 'Programa';
-  const partnerName = fallbackProgram?.parceiro ?? catalogProgram?.parceiro ?? classItem?.location?.name ?? '-';
+  const executorValue = classItem?.program?.executor
+    ?? classItem?.program?.executorName
+    ?? fallbackProgram?.executor
+    ?? fallbackProgram?.executorName
+    ?? catalogProgram?.executor
+    ?? catalogProgram?.executorName
+    ?? '-';
+  const localityName = classItem?.locality ?? classItem?.location?.name ?? fallbackProgram?.location ?? '-';
+  
+  // Format period/dates: "DD/MM/YYYY - DD/MM/YYYY"
+  const formatDate = (date) => {
+    if (!date) return null;
+    if (typeof date === 'string') {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return null;
+      return d.toLocaleDateString('pt-BR');
+    }
+    if (date instanceof Date) {
+      return date.toLocaleDateString('pt-BR');
+    }
+    return null;
+  };
+  
+  const startDate = formatDate(classItem?.publishDate ?? classItem?.startDate ?? fallbackProgram?.startDate);
+  const endDate = formatDate(classItem?.endDate ?? fallbackProgram?.endDate);
+  const periodoText = startDate && endDate ? `${startDate} - ${endDate}` : (startDate || '-');
 
   return {
     programId: Number(programId || 0),
     classId: classItem?.id ?? classItem?.classId ?? null,
     nome: programName,
     turma: classItem?.code ?? classItem?.name ?? `Turma ${classItem?.id ?? '-'}`,
-    parceiro: partnerName,
-    localidade: classItem?.locality ?? classItem?.location?.name ?? '-',
-    periodo: '-',
+    parceiro: executorValue,
+    executor: executorValue,
+    executora: executorValue,
+    localidade: localityName,
+    periodo: periodoText,
     status: classItem?.status || 'andamento',
-    etapaAtual: classItem?.currentStage || 'Inscricao',
+    etapaAtual: formatStageName(classItem?.currentStage || 'Inscrição'),
+    inscricao: 0,
+    selecao: 0,
     inscritos: 0,
     ativos: 0,
     nivelamento: 0,
@@ -779,6 +826,9 @@ function formatError(error, fallback) {
 }
 
 const allPrograms = computed(() => overview.value?.items ?? []);
+const classesById = computed(() =>
+  new Map((allClasses.value || []).map((item) => [Number(item.id), item]))
+);
 
 const programCatalog = computed(() => {
   const map = new Map();
@@ -792,6 +842,7 @@ const programCatalog = computed(() => {
       map.set(key, {
         programId: key,
         nome: item.nome ?? 'Programa sem nome',
+        executor: item.executor ?? item.executora ?? item.parceiro ?? '-',
         parceiro: item.parceiro ?? '-',
         totalTurmas: 0,
       });
@@ -819,7 +870,7 @@ const filteredProgramCatalog = computed(() => {
 
   const normalizedTerm = normalizeText(term);
   return programCatalog.value.filter((item) =>
-    [item.nome, item.parceiro].some((field) => normalizeText(field).includes(normalizedTerm))
+    [item.nome, item.executor, item.parceiro].some((field) => normalizeText(field).includes(normalizedTerm))
   );
 });
 
@@ -857,6 +908,25 @@ const classesBySelectedProgram = computed(() => {
 function numberValue(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseDateValue(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function classByProgram(program) {
+  const classId = Number(program?.classId);
+  if (!classId) return null;
+  return classesById.value.get(classId) || null;
+}
+
+function hasStartedInscricao(program) {
+  const classModel = classByProgram(program);
+  const startDate = parseDateValue(classModel?.applicationStartDate);
+  if (!startDate) return false;
+  return startDate.getTime() <= Date.now();
 }
 
 function isStage(item, stageName) {
@@ -898,9 +968,9 @@ const tabs = computed(() => {
   const encerrados = items.filter((item) => normalizedStatus(item.status) === 'encerrado').length;
 
   return [
-    { id: 'ativos', label: 'Turmas ativas', count: ativos },
-    { id: 'espera', label: 'Em espera', count: espera },
-    { id: 'todos', label: 'Todas as turmas', count: items.length },
+    { id: 'ativos', label: 'Turmas Ativas', count: ativos },
+    { id: 'espera', label: 'Em Espera', count: espera },
+    { id: 'todos', label: 'Todas as Turmas', count: items.length },
     { id: 'encerrados', label: 'Encerradas', count: encerrados },
   ];
 });
@@ -927,6 +997,36 @@ const selectedTemplate = computed(() => classTemplates.value.find((item) => item
 
 const activeFiltersCount = computed(() => {
   return [selectedStatus.value, selectedStage.value, selectedYear.value, selectedLocality.value].filter(Boolean).length;
+});
+
+const hasActiveListingFilters = computed(() => {
+  return Boolean(
+    searchInput.value.trim()
+    || appliedSearch.value
+    || selectedStatus.value
+    || selectedStage.value
+    || selectedYear.value
+    || selectedLocality.value
+  );
+});
+
+const deleteTargetClassId = computed(() => {
+  return programToDelete.value
+    ? resolveClassId(programToDelete.value) || resolveClassIdByCode(programToDelete.value)
+    : null;
+});
+
+const deleteModalTitle = computed(() => (deleteTargetClassId.value == null ? 'Excluir programa' : 'Excluir turma'));
+
+const deleteModalConfirmLabel = computed(() => (deleteTargetClassId.value == null ? 'Excluir programa' : 'Excluir turma'));
+
+const deleteModalSubject = computed(() => {
+  if (!programToDelete.value) return '';
+
+  const classLabel = programToDelete.value.turma ? `Turma ${programToDelete.value.turma}` : 'turma selecionada';
+  return deleteTargetClassId.value == null
+    ? String(programToDelete.value.nome || 'programa selecionado')
+    : `${classLabel} - ${programToDelete.value.nome || 'Programa'}`;
 });
 
 const filteredPrograms = computed(() => {
@@ -998,24 +1098,46 @@ const pageNumbers = computed(() => {
   return Array.from({ length: adjustedEnd - adjustedStart + 1 }, (_, index) => adjustedStart + index);
 });
 
-function stageIndex(stage) {
-  const index = stageTrack.findIndex((item) => normalizeText(item) === normalizeText(stage));
-  return index === -1 ? 0 : index;
+function stageCountFor(program, stageLabel) {
+  const label = normalizeText(stageLabel);
+  const currentStageIndex = stageTrack.findIndex((stage) => normalizeText(stage) === normalizeText(formatStageName(program?.etapaAtual)));
+  const stageIndex = stageTrack.findIndex((stage) => normalizeText(stage) === normalizeText(stageLabel));
+  const stageReachedByCurrentStage = currentStageIndex >= 0 && stageIndex >= 0 && stageIndex <= currentStageIndex;
+
+  if (label.includes('inscri')) {
+    const count = numberValue(program?.inscricao ?? program?.inscritos);
+    return (hasStartedInscricao(program) || stageReachedByCurrentStage) ? Math.max(count, 1) : count;
+  }
+  if (label.includes('sele')) return stageReachedByCurrentStage ? Math.max(numberValue(program?.selecao), 1) : numberValue(program?.selecao);
+  if (label.includes('nivel')) return stageReachedByCurrentStage ? Math.max(numberValue(program?.nivelamento), 1) : numberValue(program?.nivelamento);
+  if (label.includes('imers')) return stageReachedByCurrentStage ? Math.max(numberValue(program?.imersao), 1) : numberValue(program?.imersao);
+  if (label.includes('encer')) return normalizedStatus(program?.status) === 'encerrado' || stageReachedByCurrentStage ? 1 : 0;
+  return 0;
 }
 
-function stageClass(stage, index) {
-  const current = stageIndex(stage);
-  if (index === current) return 'current';
-  if (index < current) return 'done';
-  return 'pending';
+function stageClass(program, stageLabel) {
+  return stageCountFor(program, stageLabel) > 0 ? 'done' : 'pending';
+}
+
+function stageConnectorActive(program, index) {
+  const lastActiveIndex = Math.max(
+    ...stageTrack.map((stage, idx) => (stageCountFor(program, stage) > 0 ? idx : -1))
+  );
+  return lastActiveIndex >= 0 && index < lastActiveIndex;
 }
 
 function statusLabel(status) {
-  return statusLabels[status] || status;
+  const key = normalizedStatus(status);
+  return statusLabels[key] || status || '-';
 }
 
 function statusClass(status) {
-  return statusClasses[status] || 'status-slate';
+  return statusClasses[normalizedStatus(status)] || 'status-slate';
+}
+
+function progressPercent(value) {
+  const parsed = numberValue(value);
+  return Math.min(100, Math.max(0, parsed));
 }
 
 function goToPage(page) {
@@ -1037,6 +1159,16 @@ function resetClassListingFilters() {
   selectedStage.value = '';
   selectedYear.value = '';
   selectedLocality.value = '';
+}
+
+function clearListingFilters() {
+  searchInput.value = '';
+  appliedSearch.value = '';
+  selectedStatus.value = '';
+  selectedStage.value = '';
+  selectedYear.value = '';
+  selectedLocality.value = '';
+  currentPage.value = 1;
 }
 
 function toggleProgramSelector() {
@@ -1110,11 +1242,33 @@ async function loadSelectedProgramClasses() {
 }
 
 function openDashboard(program) {
-  router.push({ path: '/home', query: { programa: `${program.nome} - Turma ${program.turma}` } });
+  const classId = resolveClassId(program) || resolveClassIdByCode(program);
+  const resolvedProgramId = program?.programId ?? program?.idPrograma ?? null;
+  const query = { programa: `${program.nome} - Turma ${program.turma}` };
+
+  if (resolvedProgramId != null) {
+    query.programaId = String(resolvedProgramId);
+  }
+  if (classId != null) {
+    query.turmaId = String(classId);
+  }
+
+  router.push({ path: '/dashboard', query });
 }
 
 function openPeople(program) {
-  router.push({ path: '/people', query: { programa: `${program.nome} - Turma ${program.turma}` } });
+  const classId = resolveClassId(program) || resolveClassIdByCode(program);
+  const resolvedProgramId = program?.programId ?? program?.idPrograma ?? null;
+  const query = { programa: `${program.nome} - Turma ${program.turma}` };
+
+  if (resolvedProgramId != null) {
+    query.programaId = String(resolvedProgramId);
+  }
+  if (classId != null) {
+    query.turmaId = String(classId);
+  }
+
+  router.push({ path: '/people', query });
 }
 
 function openClassCourses(program) {
@@ -1176,6 +1330,10 @@ function askDelete(program) {
   showOptionsMenu.value = null;
 }
 
+function deleteActionLabel(program) {
+  return (resolveClassId(program) || resolveClassIdByCode(program)) == null ? 'Excluir programa' : 'Excluir turma';
+}
+
 function closeDeleteModal() {
   programToDelete.value = null;
 }
@@ -1185,7 +1343,12 @@ async function deleteProgram() {
 
   deletingProgram.value = true;
   try {
-    await programService.delete(programToDelete.value.programId);
+    const classId = deleteTargetClassId.value;
+    if (classId != null) {
+      await classService.delete(classId);
+    } else {
+      await programService.delete(programToDelete.value.programId);
+    }
     programToDelete.value = null;
     await loadData();
   } catch (error) {
@@ -1569,7 +1732,19 @@ h1 {
 
 .table-card {
   padding: 0;
-  overflow: hidden;
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.table-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-card::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .tabs-bar {
@@ -1582,28 +1757,28 @@ h1 {
 }
 
 .tab-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 2px 14px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  color: #5f728d;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 12px 16px;
+   background: transparent;
+   border: none;
+   border-bottom: 2px solid transparent;
+   cursor: pointer;
+   font-size: 14px;
+   font-weight: 600;
+   color: var(--slate-600);
+   transition: all 0.2s ease;
+   white-space: nowrap;
 }
 
 .tab-item:hover {
-  color: #2a3566;
+   color: var(--color-text);
 }
 
 .tab-item.active {
-  color: #0f766e;
-  border-bottom-color: #14b8a6;
+   color: var(--teal-600);
+   border-bottom-color: var(--teal-600);
 }
 
 .tab-count {
@@ -1612,11 +1787,11 @@ h1 {
   border-radius: 999px;
   padding: 2px 7px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .tab-item.active .tab-count {
-  color: #14b8a6;
+  color: var(--teal-600);
 }
 
 .filters-row {
@@ -1684,6 +1859,25 @@ h1 {
 .filters-button:hover {
   background: #f8fafc;
   border-color: #cfd9e6;
+}
+
+.clear-filters-button {
+  height: 40px;
+  border-radius: 12px;
+  padding: 0 14px;
+  border: 1px solid #d8e1eb;
+  background: #fff;
+  color: #50619e;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.clear-filters-button:hover {
+  background: #f8fafc;
+  border-color: #cfd9e6;
+  color: #13233f;
 }
 
 .search-button {
@@ -1799,17 +1993,6 @@ h1 {
 
 .program-row:hover {
   background: #f9fbfd;
-}
-
-.program-row-active-tab .program-title-line h3 {
-  font-size: 24px;
-  font-weight: 800;
-}
-
-.program-row-active-tab .class-chip {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 8px;
 }
 
 .program-main {

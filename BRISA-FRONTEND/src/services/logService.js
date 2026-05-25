@@ -9,6 +9,7 @@ export const logService = {
       if (filters.action) params.append('action', filters.action);
       if (filters.userId) params.append('userId', filters.userId);
       if (filters.entityType) params.append('entityType', filters.entityType);
+      if (filters.entityId) params.append('entityId', filters.entityId);
       if (filters.startDate) params.append('startDate', filters.startDate);
       if (filters.endDate) params.append('endDate', filters.endDate);
       if (filters.page !== undefined) params.append('page', filters.page);

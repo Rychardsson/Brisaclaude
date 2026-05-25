@@ -57,7 +57,6 @@
           v-for="course in courseItems"
           :key="course.id"
           class="course-card"
-          @click="goToCourse(course)"
         >
           <div class="course-left">
             <!-- Info do curso -->
@@ -97,14 +96,11 @@
             </div>
 
             <div class="course-actions">
+              <button class="btn-secondary-action" @click.stop="openEvaluationModal(course)">Avaliações</button>
               <button v-if="course.assigned" class="btn-remove" @click.stop="removeCourse(course)">Remover</button>
               <button v-else class="btn-add" @click.stop="assignCourse(course)">Adicionar</button>
             </div>
           </div>
-
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" class="arrow-icon">
-            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-          </svg>
         </div>
       </div>
 
@@ -197,6 +193,143 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showEvaluationModal && evaluationCourse" class="modal-overlay" @click="closeEvaluationModal">
+      <div class="modal-content modal-content-large" @click.stop>
+        <div class="evaluation-modal-head">
+          <div>
+            <h2>Avaliações do curso</h2>
+            <p class="modal-hint">
+              Cadastre até 4 avaliações para <strong>{{ evaluationCourse.name }}</strong>.
+            </p>
+          </div>
+          <button class="btn-cancel btn-inline" @click="closeEvaluationModal">Fechar</button>
+        </div>
+
+        <div class="evaluation-summary">
+          <div class="evaluation-summary-card">
+            <span>Total cadastrado</span>
+            <strong>{{ evaluations.length }}/4</strong>
+          </div>
+          <div class="evaluation-summary-card">
+            <span>Área</span>
+            <strong>{{ evaluationCourse.knowledgeArea || 'Não informada' }}</strong>
+          </div>
+          <div class="evaluation-summary-card">
+            <span>Status</span>
+            <strong>{{ canCreateMoreEvaluations ? 'Aceitando novos itens' : 'Limite atingido' }}</strong>
+          </div>
+        </div>
+
+        <div v-if="evaluationsError" class="alert-error">{{ evaluationsError }}</div>
+
+        <div class="evaluation-layout">
+          <div class="evaluation-list-panel">
+            <div class="evaluation-panel-head">
+              <h3>Avaliações cadastradas</h3>
+            </div>
+
+            <div v-if="evaluationsLoading" class="no-data-inline">Carregando avaliações...</div>
+            <div v-else-if="evaluations.length === 0" class="no-data-inline">
+              Nenhuma avaliação cadastrada para este curso.
+            </div>
+
+            <div v-else class="evaluation-list">
+              <article v-for="evaluation in evaluations" :key="evaluation.id" class="evaluation-card">
+                <div class="evaluation-card-top">
+                  <div>
+                    <strong>{{ evaluation.name || 'Avaliação sem nome' }}</strong>
+                    <div class="evaluation-card-subtitle">
+                      {{ evaluation.type || 'Tipo não informado' }}
+                    </div>
+                  </div>
+                  <div class="evaluation-card-actions">
+                    <button class="btn-icon-pill" @click="startEditingEvaluation(evaluation)">Editar</button>
+                    <button
+                      class="btn-icon-pill danger"
+                      :disabled="deletingEvaluationId === evaluation.id"
+                      @click="removeEvaluation(evaluation)"
+                    >
+                      {{ deletingEvaluationId === evaluation.id ? 'Excluindo...' : 'Excluir' }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="evaluation-card-meta">
+                  <span><strong>Código:</strong> {{ evaluation.code || '-' }}</span>
+                  <span><strong>Data:</strong> {{ formatDate(evaluation.eventDate) }}</span>
+                </div>
+                <div class="evaluation-card-range">
+                  <span>Faixa de pontuação</span>
+                  <strong>{{ evaluation.minimumScore ?? 0 }} - {{ evaluation.maximumScore ?? 0 }}</strong>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <form class="evaluation-form-panel" @submit.prevent="saveEvaluation">
+            <div class="evaluation-panel-head">
+              <h3>{{ editingEvaluationId ? 'Editar avaliação' : 'Nova avaliação' }}</h3>
+              <button
+                v-if="editingEvaluationId"
+                type="button"
+                class="btn-cancel btn-inline"
+                @click="resetEvaluationForm"
+              >
+                Limpar
+              </button>
+            </div>
+
+            <div v-if="!canCreateMoreEvaluations && !editingEvaluationId" class="alert-error">
+              Este curso já atingiu o limite de 4 avaliações.
+            </div>
+
+            <div class="evaluation-form-grid">
+              <label class="evaluation-field">
+                <span>Código</span>
+                <input v-model="evaluationForm.code" type="text" placeholder="Ex: AV1" />
+              </label>
+
+              <label class="evaluation-field">
+                <span>Tipo</span>
+                <input v-model="evaluationForm.type" type="text" placeholder="Ex: Prova final" />
+              </label>
+
+              <label class="evaluation-field evaluation-field-full">
+                <span>Nome</span>
+                <input v-model="evaluationForm.name" type="text" placeholder="Ex: Avaliação final do módulo" required />
+              </label>
+
+              <label class="evaluation-field">
+                <span>Pontuação mínima</span>
+                <input v-model="evaluationForm.minimumScore" type="number" min="0" step="0.01" placeholder="0" />
+              </label>
+
+              <label class="evaluation-field">
+                <span>Pontuação máxima</span>
+                <input v-model="evaluationForm.maximumScore" type="number" min="0" step="0.01" placeholder="10" />
+              </label>
+
+              <label class="evaluation-field evaluation-field-full">
+                <span>Data de realização</span>
+                <input v-model="evaluationForm.eventDate" type="date" />
+              </label>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn-cancel" @click="resetEvaluationForm">Cancelar</button>
+              <button
+                type="submit"
+                class="btn-send"
+                :disabled="savingEvaluation || (!editingEvaluationId && !canCreateMoreEvaluations)"
+              >
+                {{ savingEvaluation ? 'Salvando...' : editingEvaluationId ? 'Salvar alterações' : 'Cadastrar avaliação' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -205,6 +338,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { classService } from '@/services/classService';
 import { courseService } from '@/services/courseService';
+import { courseEvaluationService } from '@/services/courseEvaluationService';
 
 export default {
   name: 'ClassCoursesView',
@@ -223,9 +357,24 @@ export default {
     const importingProgressions = ref(false);
     const progressionImportError = ref(null);
     const progressionImportSuccess = ref('');
+    const showEvaluationModal = ref(false);
+    const evaluationCourse = ref(null);
+    const evaluations = ref([]);
+    const evaluationsLoading = ref(false);
+    const evaluationsError = ref('');
+    const savingEvaluation = ref(false);
+    const deletingEvaluationId = ref(null);
+    const editingEvaluationId = ref(null);
+    const evaluationForm = ref({
+      code: '',
+      type: '',
+      name: '',
+      minimumScore: '',
+      maximumScore: '',
+      eventDate: ''
+    });
 
     const classId = computed(() => route.params.classId);
-    const programId = computed(() => route.params.programId);
 
     // Monta os itens de curso com estatísticas calculadas
     const courseItems = computed(() => {
@@ -267,17 +416,19 @@ export default {
       completed:  courseItems.value.filter(c => c.completionPct === 100).length,
     }));
 
+    const canCreateMoreEvaluations = computed(() => evaluations.value.length < 4 || Boolean(editingEvaluationId.value));
+
     const getCompletionColor = (pct) => {
       if (pct >= 80) return '#27ae60';
       if (pct >= 40) return '#f39c12';
       return '#e74c3c';
     };
 
-    const goToCourse = (course) => {
-      router.push({
-        name: 'CourseDetails',
-        params: { programId: programId.value, classId: classId.value, courseId: course.id }
-      });
+    const formatDate = (value) => {
+      if (!value) return '-';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString('pt-BR');
     };
 
     const assignCourse = async (course) => {
@@ -373,6 +524,110 @@ export default {
       progressionImportSuccess.value = '';
     };
 
+    const resetEvaluationForm = () => {
+      editingEvaluationId.value = null;
+      evaluationForm.value = {
+        code: '',
+        type: '',
+        name: '',
+        minimumScore: '',
+        maximumScore: '',
+        eventDate: ''
+      };
+    };
+
+    const loadEvaluations = async (courseId) => {
+      evaluationsLoading.value = true;
+      evaluationsError.value = '';
+      try {
+        const data = await courseEvaluationService.listByCourse(courseId);
+        evaluations.value = Array.isArray(data) ? data : [];
+      } catch (err) {
+        evaluations.value = [];
+        evaluationsError.value = `Erro ao carregar avaliações: ${err.response?.data?.message || err.message}`;
+      } finally {
+        evaluationsLoading.value = false;
+      }
+    };
+
+    const openEvaluationModal = async (course) => {
+      evaluationCourse.value = course;
+      showEvaluationModal.value = true;
+      resetEvaluationForm();
+      await loadEvaluations(course.id);
+    };
+
+    const closeEvaluationModal = () => {
+      showEvaluationModal.value = false;
+      evaluationCourse.value = null;
+      evaluations.value = [];
+      evaluationsError.value = '';
+      resetEvaluationForm();
+    };
+
+    const startEditingEvaluation = (evaluation) => {
+      editingEvaluationId.value = evaluation.id;
+      evaluationForm.value = {
+        code: evaluation.code || '',
+        type: evaluation.type || '',
+        name: evaluation.name || '',
+        minimumScore: evaluation.minimumScore ?? '',
+        maximumScore: evaluation.maximumScore ?? '',
+        eventDate: evaluation.eventDate || ''
+      };
+    };
+
+    const saveEvaluation = async () => {
+      if (!evaluationCourse.value) return;
+
+      savingEvaluation.value = true;
+      evaluationsError.value = '';
+
+      try {
+        const payload = {
+          code: evaluationForm.value.code || null,
+          type: evaluationForm.value.type || null,
+          name: evaluationForm.value.name,
+          minimumScore: evaluationForm.value.minimumScore === '' ? null : Number(evaluationForm.value.minimumScore),
+          maximumScore: evaluationForm.value.maximumScore === '' ? null : Number(evaluationForm.value.maximumScore),
+          eventDate: evaluationForm.value.eventDate || null
+        };
+
+        if (editingEvaluationId.value) {
+          await courseEvaluationService.update(evaluationCourse.value.id, editingEvaluationId.value, payload);
+        } else {
+          await courseEvaluationService.create(evaluationCourse.value.id, payload);
+        }
+
+        await loadEvaluations(evaluationCourse.value.id);
+        resetEvaluationForm();
+      } catch (err) {
+        evaluationsError.value = `Erro ao salvar avaliação: ${err.response?.data?.message || err.message}`;
+      } finally {
+        savingEvaluation.value = false;
+      }
+    };
+
+    const removeEvaluation = async (evaluation) => {
+      if (!evaluationCourse.value) return;
+      const confirmed = window.confirm(`Deseja excluir a avaliação "${evaluation.name}"?`);
+      if (!confirmed) return;
+
+      deletingEvaluationId.value = evaluation.id;
+      evaluationsError.value = '';
+      try {
+        await courseEvaluationService.delete(evaluationCourse.value.id, evaluation.id);
+        await loadEvaluations(evaluationCourse.value.id);
+        if (editingEvaluationId.value === evaluation.id) {
+          resetEvaluationForm();
+        }
+      } catch (err) {
+        evaluationsError.value = `Erro ao excluir avaliação: ${err.response?.data?.message || err.message}`;
+      } finally {
+        deletingEvaluationId.value = null;
+      }
+    };
+
     onMounted(loadData);
 
     const getNivelamentoStudents = computed(() => {
@@ -404,7 +659,8 @@ export default {
     return {
       router, classData, loading,
       courseItems, courseStats,
-      getCompletionColor, goToCourse,
+      getCompletionColor,
+      formatDate,
       assignCourse, removeCourse,
       showProgressionImportModal,
       progressionImportFile,
@@ -414,7 +670,23 @@ export default {
       handleProgressionFileChange,
       importProgressionsExcel,
       closeProgressionImportModal,
-      getNivelamentoStudents
+      getNivelamentoStudents,
+      showEvaluationModal,
+      evaluationCourse,
+      evaluations,
+      evaluationsLoading,
+      evaluationsError,
+      savingEvaluation,
+      deletingEvaluationId,
+      editingEvaluationId,
+      evaluationForm,
+      canCreateMoreEvaluations,
+      openEvaluationModal,
+      closeEvaluationModal,
+      startEditingEvaluation,
+      resetEvaluationForm,
+      saveEvaluation,
+      removeEvaluation
     };
   }
 };
@@ -623,9 +895,11 @@ export default {
 .no-data { text-align: center; color: #aaa; padding: 48px; font-size: 14px; }
 
 .course-actions { display: flex; gap: 8px; align-items: center; margin-right: 8px; }
+.btn-secondary-action,
 .btn-add, .btn-remove {
   background: #fff; border: 1px solid #c8d8ee; color: #1F285F; padding: 8px 10px; border-radius: 8px; font-weight: 700; cursor: pointer;
 }
+.btn-secondary-action:hover { background: #f6f8ff; }
 .btn-add:hover { background: #f0fbff; }
 .btn-remove { border-color: #f5d2d2; color: #b71c1c; }
 .btn-remove:hover { background: #fff5f5; }
@@ -665,6 +939,11 @@ export default {
   max-width: 94vw;
   padding: 24px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content-large {
+  width: min(980px, 96vw);
+  max-width: min(980px, 96vw);
 }
 
 .modal-content h2 {
@@ -741,11 +1020,219 @@ export default {
   cursor: not-allowed;
 }
 
+.btn-inline {
+  padding: 7px 10px;
+}
+
+.evaluation-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.evaluation-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.evaluation-summary-card {
+  background: #f8fbff;
+  border: 1px solid #d8e1ee;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.evaluation-summary-card span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.evaluation-summary-card strong {
+  color: #1F285F;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.evaluation-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.evaluation-list-panel,
+.evaluation-form-panel {
+  background: #fcfdff;
+  border: 1px solid #d8e1ee;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.evaluation-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.evaluation-panel-head h3 {
+  margin: 0;
+  color: #1F285F;
+  font-size: 16px;
+}
+
+.no-data-inline {
+  padding: 22px 14px;
+  text-align: center;
+  color: #64748b;
+  background: #fff;
+  border: 1px dashed #d8e1ee;
+  border-radius: 12px;
+}
+
+.evaluation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.evaluation-card {
+  border: 1px solid #d8e1ee;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.evaluation-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.evaluation-card-top strong {
+  color: #1F285F;
+  font-size: 15px;
+}
+
+.evaluation-card-subtitle {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.evaluation-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-icon-pill {
+  border: 1px solid #d8e1ee;
+  background: #fff;
+  color: #1F285F;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-icon-pill:hover {
+  background: #f6f8ff;
+}
+
+.btn-icon-pill.danger {
+  border-color: #f5d2d2;
+  color: #b71c1c;
+}
+
+.btn-icon-pill.danger:hover {
+  background: #fff5f5;
+}
+
+.evaluation-card-meta,
+.evaluation-card-range {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: #475569;
+  font-size: 13px;
+}
+
+.evaluation-card-range span {
+  color: #64748b;
+}
+
+.evaluation-card-range strong {
+  color: #1F285F;
+}
+
+.evaluation-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.evaluation-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.evaluation-field span {
+  color: #1F285F;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.evaluation-field input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d8e1ee;
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: #fff;
+  color: #1F285F;
+}
+
+.evaluation-field input:focus {
+  outline: none;
+  border-color: #5773d1;
+  box-shadow: 0 0 0 3px rgba(87, 115, 209, 0.14);
+}
+
+.evaluation-field-full {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 900px) {
   .summary-cards { grid-template-columns: repeat(2, 1fr); }
+  .evaluation-layout { grid-template-columns: 1fr; }
+  .evaluation-summary { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
   .courses-view { padding: 16px; }
   .summary-cards { grid-template-columns: 1fr 1fr; }
+  .course-card { flex-direction: column; align-items: stretch; gap: 16px; }
+  .course-right { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+  .course-actions { width: 100%; justify-content: flex-end; margin-right: 0; }
+  .evaluation-form-grid { grid-template-columns: 1fr; }
 }
 </style>

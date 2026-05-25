@@ -3,8 +3,7 @@ package com.example.brisa.controllers;
 import com.example.brisa.dtos.ProjectGroupCreateRequestDTO;
 import com.example.brisa.dtos.ProjectGroupDetailResponseDTO;
 import com.example.brisa.dtos.ProjectGroupResponseDTO;
-import com.example.brisa.models.StageCandidateModel;
-import com.example.brisa.repositories.StageCandidateRepository;
+import com.example.brisa.models.PeopleModel;
 import com.example.brisa.services.ProjectGroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,7 +21,6 @@ import java.util.stream.Collectors;
 public class ProjectGroupController {
 
     private final ProjectGroupService projectGroupService;
-    private final StageCandidateRepository stageCandidateRepository;
 
     // Endpoint para criar grupo
     @PostMapping("/groups")
@@ -99,17 +97,14 @@ public class ProjectGroupController {
     @GetMapping("/immersion-students")
     public ResponseEntity<?> getImmersionStudents(@PathVariable Long classId) {
         try {
-            List<StageCandidateModel> immersionCandidates = stageCandidateRepository.findAll().stream()
-                    .filter(sc -> sc.getStage().getClassModel().getId().equals(classId)
-                            && "imersao".equalsIgnoreCase(sc.getStage().getName()))
-                    .collect(Collectors.toList());
+            List<PeopleModel> availableStudents = projectGroupService.getAvailableImmersionStudents(classId);
 
-            List<Map<String, Object>> students = immersionCandidates.stream()
-                    .map(sc -> {
+            List<Map<String, Object>> students = availableStudents.stream()
+                    .map(people -> {
                         Map<String, Object> student = new HashMap<>();
-                        student.put("id", sc.getPeople().getId());
-                        student.put("name", sc.getPeople().getName());
-                        student.put("email", sc.getPeople().getEmail());
+                        student.put("id", people.getId());
+                        student.put("name", people.getName());
+                        student.put("email", people.getEmail());
                         return student;
                     })
                     .collect(Collectors.toList());

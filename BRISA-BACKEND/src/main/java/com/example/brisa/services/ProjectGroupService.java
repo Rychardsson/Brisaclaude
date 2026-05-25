@@ -3,16 +3,23 @@ package com.example.brisa.services;
 import com.example.brisa.dtos.ProjectGroupCreateRequestDTO;
 import com.example.brisa.dtos.ProjectGroupDetailResponseDTO;
 import com.example.brisa.dtos.ProjectGroupResponseDTO;
+import com.example.brisa.enums.AdvisorRoleType;
 import com.example.brisa.exceptions.ResourceNotFoundException;
 import com.example.brisa.exceptions.ValidationException;
+import com.example.brisa.models.AdvisorModel;
 import com.example.brisa.models.ClassModel;
+import com.example.brisa.models.EnrollmentModel;
 import com.example.brisa.models.InstitutionModel;
 import com.example.brisa.models.PeopleModel;
 import com.example.brisa.models.PeopleProjectGroupModel;
 import com.example.brisa.models.ProjectGroupMeetingModel;
 import com.example.brisa.models.ProjectGroupModel;
 import com.example.brisa.models.StageCandidateModel;
+import com.example.brisa.models.roles.AcademicRoleModel;
+import com.example.brisa.repositories.AcademicRoleRepository;
+import com.example.brisa.repositories.AdvisorRepository;
 import com.example.brisa.repositories.ClassRepository;
+import com.example.brisa.repositories.EnrollmentRepository;
 import com.example.brisa.repositories.InstitutionRepository;
 import com.example.brisa.repositories.PeopleProjectGroupRepository;
 import com.example.brisa.repositories.PeopleRepository;
@@ -23,10 +30,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,6 +54,9 @@ public class ProjectGroupService {
     private final InstitutionRepository institutionRepository;
     private final StageCandidateRepository stageCandidateRepository;
     private final PeopleProjectGroupRepository peopleProjectGroupRepository;
+    private final AdvisorRepository advisorRepository;
+    private final EnrollmentRepository enrollmentRepository;
+    private final AcademicRoleRepository academicRoleRepository;
 
     @Transactional
     public ProjectGroupResponseDTO createProjectGroup(Long classId, ProjectGroupCreateRequestDTO requestDTO) {
@@ -48,39 +64,19 @@ public class ProjectGroupService {
         ClassModel classModel = classRepository.findById(classId)
                 .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada"));
 
-        // Validar orientador
-        PeopleModel leader = peopleRepository.findById(requestDTO.getLeaderId())
-                .orElseThrow(() -> new ResourceNotFoundException("Orientador não encontrado"));
+        PeopleModel leader = resolveLeader(requestDTO.getLeaderId(), classModel);
 
-        // Validar empresa/instituição (opcional)
-        InstitutionModel company = null;
-        if (requestDTO.getProjectCompanyId() != null) {
-            company = institutionRepository.findById(requestDTO.getProjectCompanyId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Empresa/Instituição não encontrada"));
+        // Validar empresa/instituição parceira (obrigatória)
+        if (requestDTO.getProjectCompanyId() == null) {
+            throw new ValidationException(java.util.List.of("Empresa/Instituição parceira é obrigatória"));
         }
+        InstitutionModel company = institutionRepository.findById(requestDTO.getProjectCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa/Instituição não encontrada"));
+        validateProgramPartnerInstitution(classModel, company);
 
-        // Validar alunos (devem estar na etapa de imersão)
-        List<PeopleModel> members = new java.util.ArrayList<>();
-        if (requestDTO.getMemberIds() != null && !requestDTO.getMemberIds().isEmpty()) {
-            // Buscar candidates da etapa de imersão desta classe
-            List<StageCandidateModel> immersionCandidates = stageCandidateRepository.findAll().stream()
-                    .filter(sc -> sc.getStage().getClassModel().getId().equals(classId)
-                            && "imersao".equalsIgnoreCase(sc.getStage().getName()))
-                    .collect(Collectors.toList());
-
-            Set<Long> immersionPeopleIds = immersionCandidates.stream()
-                    .map(sc -> sc.getPeople().getId())
-                    .collect(Collectors.toSet());
-
-            for (Long memberId : requestDTO.getMemberIds()) {
-                if (!immersionPeopleIds.contains(memberId)) {
-                    throw new ValidationException(java.util.List.of("Aluno " + memberId + " não está na etapa de imersão"));
-                }
-                PeopleModel member = peopleRepository.findById(memberId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado"));
-                members.add(member);
-            }
-        }
+        // sponsorCompany agora é derivada da empresa/instituição parceira selecionada
+        String sponsorCompany = company.getName();
+        List<PeopleModel> members = resolveImmersionMembers(classModel, requestDTO.getMemberIds(), null, true);
 
         // Validar datas
         LocalDate now = LocalDate.now();
@@ -93,6 +89,7 @@ public class ProjectGroupService {
         projectGroup.setProjectTheme(requestDTO.getProjectTheme());
         projectGroup.setDescription(requestDTO.getDescription());
         projectGroup.setProjectCompany(company);
+        projectGroup.setSponsorCompany(sponsorCompany);
         projectGroup.setLeader(leader);
         projectGroup.setClassModel(classModel);
         projectGroup.setRepositoryLink(requestDTO.getRepositoryLink());
@@ -101,13 +98,7 @@ public class ProjectGroupService {
 
         ProjectGroupModel savedGroup = projectGroupRepository.save(projectGroup);
 
-        // Adicionar membros
-        for (PeopleModel member : members) {
-            PeopleProjectGroupModel membership = new PeopleProjectGroupModel();
-            membership.setPeople(member);
-            membership.setProjectGroup(savedGroup);
-            peopleProjectGroupRepository.save(membership);
-        }
+        syncGroupMembers(savedGroup, members);
 
         // Gerar reuniões semanais
         generateWeeklyMeetings(savedGroup);
@@ -137,6 +128,263 @@ public class ProjectGroupService {
             }
             currentDate = currentDate.plusDays(1);
         }
+    }
+
+    private PeopleModel resolveLeader(Long leaderId, ClassModel classModel) {
+        if (leaderId == null) {
+            throw new ValidationException(java.util.List.of("Selecione um orientador"));
+        }
+
+        AdvisorModel advisor = advisorRepository.findById(leaderId).orElse(null);
+        PeopleModel leader = advisor != null
+                ? resolvePeopleFromAdvisor(advisor)
+                : peopleRepository.findById(leaderId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Orientador não encontrado"));
+
+        ensureLeaderEnrollment(leader, classModel, advisor != null ? advisor.getRoleType() : AdvisorRoleType.ORIENTADOR);
+        return leader;
+    }
+
+    private PeopleModel resolvePeopleFromAdvisor(AdvisorModel advisor) {
+        String cpf = normalizeCpf(advisor.getCpf());
+        PeopleModel person = null;
+
+        if (!cpf.isBlank()) {
+            person = peopleRepository.findByCpf(cpf).orElse(null);
+        }
+
+        String email = normalizeEmail(advisor.getEmail(), cpf);
+        if (person == null && !email.isBlank()) {
+            person = peopleRepository.findByEmailIgnoreCase(email).orElse(null);
+        }
+
+        if (person == null) {
+            person = new PeopleModel();
+            person.setCpf(cpf);
+            person.setEmail(email);
+        }
+
+        person.setName(advisor.getName());
+        person.setCpf(cpf);
+        person.setEmail(email);
+        person.setEducationLevel(defaultIfBlank(advisor.getFormation(), person.getEducationLevel()));
+        if (advisor.getBirthDate() != null) {
+            person.setBirthDate(advisor.getBirthDate());
+        }
+        if (Boolean.TRUE.equals(person.getSoftDeleted())) {
+            person.setSoftDeleted(false);
+        }
+
+        return peopleRepository.save(person);
+    }
+
+    private void ensureLeaderEnrollment(PeopleModel leader, ClassModel classModel, AdvisorRoleType roleType) {
+        if (leader == null || classModel == null) {
+            return;
+        }
+
+        String roleName = roleType == AdvisorRoleType.GESTOR ? "GESTOR" : "ORIENTADOR";
+        AcademicRoleModel role = academicRoleRepository.findByName(roleName)
+                .orElseGet(() -> academicRoleRepository.save(new AcademicRoleModel(roleName, roleName.equals("GESTOR") ? "Gestor" : "Orientador")));
+
+        enrollmentRepository.findByPeopleIdAndClassModelIdAndAcademicRoleId(leader.getId(), classModel.getId(), role.getId())
+                .orElseGet(() -> {
+                    EnrollmentModel enrollment = new EnrollmentModel();
+                    enrollment.setPeople(leader);
+                    enrollment.setClassModel(classModel);
+                    enrollment.setAcademicRole(role);
+                    enrollment.setEnrollmentDate(LocalDate.now());
+                    enrollment.setStatus("ATIVA");
+                    return enrollmentRepository.save(enrollment);
+                });
+    }
+
+    private String normalizeCpf(String cpf) {
+        return cpf == null ? "" : cpf.replaceAll("\\D", "");
+    }
+
+    private String normalizeEmail(String email, String cpf) {
+        String trimmed = email == null ? "" : email.trim().toLowerCase();
+        if (trimmed.contains("@")) {
+            return trimmed;
+        }
+        return "academico-" + (cpf == null || cpf.isBlank() ? "sem-cpf" : cpf) + "@brisa.local";
+    }
+
+    private String defaultIfBlank(String value, String fallback) {
+        return value == null || value.trim().isBlank() ? fallback : value.trim();
+    }
+
+    private boolean isImmersionCandidate(StageCandidateModel candidate) {
+        return candidate != null
+                && candidate.getStage() != null
+                && normalizeStageName(candidate.getStage().getName()).contains("imers");
+    }
+
+    private List<StageCandidateModel> loadImmersionCandidates(Long classId) {
+        return stageCandidateRepository.findByClassIdWithPeople(classId).stream()
+                .filter(this::isImmersionCandidate)
+                .collect(Collectors.toList());
+    }
+
+    private List<PeopleModel> resolveImmersionMembers(
+            ClassModel classModel,
+            List<Long> memberIds,
+            Long currentGroupId,
+            boolean requireAtLeastOne
+    ) {
+        List<Long> normalizedMemberIds = memberIds == null
+                ? List.of()
+                : memberIds.stream()
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+        if (requireAtLeastOne && normalizedMemberIds.isEmpty()) {
+            throw new ValidationException(List.of("Selecione pelo menos um aluno para o projeto de imersÃ£o."));
+        }
+
+        if (normalizedMemberIds.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> immersionPeopleIds = loadImmersionCandidates(classModel.getId()).stream()
+                .map(StageCandidateModel::getPeople)
+                .filter(Objects::nonNull)
+                .map(PeopleModel::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        for (Long memberId : normalizedMemberIds) {
+            if (!immersionPeopleIds.contains(memberId)) {
+                throw new ValidationException(List.of("Aluno " + memberId + " nÃ£o estÃ¡ na etapa de imersÃ£o."));
+            }
+        }
+
+        List<PeopleModel> members = normalizedMemberIds.stream()
+                .map(memberId -> peopleRepository.findById(memberId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Aluno nÃ£o encontrado")))
+                .toList();
+
+        validateExclusiveImmersionMemberships(members, currentGroupId);
+        return members;
+    }
+
+    private void validateExclusiveImmersionMemberships(List<PeopleModel> members, Long currentGroupId) {
+        if (members == null || members.isEmpty()) {
+            return;
+        }
+
+        Set<Long> peopleIds = members.stream()
+                .map(PeopleModel::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (peopleIds.isEmpty()) {
+            return;
+        }
+
+        Map<Long, PeopleModel> peopleById = members.stream()
+                .filter(member -> member.getId() != null)
+                .collect(Collectors.toMap(PeopleModel::getId, member -> member, (left, right) -> left));
+
+        List<String> errors = new ArrayList<>();
+        Set<Long> conflictedPeopleIds = new HashSet<>();
+
+        for (PeopleProjectGroupModel membership : peopleProjectGroupRepository.findByPeople_IdIn(peopleIds)) {
+            Long existingGroupId = membership.getProjectGroup() != null ? membership.getProjectGroup().getId() : null;
+            Long peopleId = membership.getPeople() != null ? membership.getPeople().getId() : null;
+
+            if (peopleId == null || existingGroupId == null) {
+                continue;
+            }
+
+            if (currentGroupId != null && currentGroupId.equals(existingGroupId)) {
+                continue;
+            }
+
+            if (!conflictedPeopleIds.add(peopleId)) {
+                continue;
+            }
+
+            PeopleModel conflictedPerson = peopleById.get(peopleId);
+            ProjectGroupModel existingGroup = membership.getProjectGroup();
+            String personName = conflictedPerson != null ? conflictedPerson.getName() : "Pessoa " + peopleId;
+            String projectName = existingGroup != null && existingGroup.getProjectTheme() != null
+                    ? existingGroup.getProjectTheme()
+                    : "Projeto sem nome";
+            String classCode = existingGroup != null && existingGroup.getClassModel() != null && existingGroup.getClassModel().getCode() != null
+                    ? existingGroup.getClassModel().getCode()
+                    : "turma nÃ£o identificada";
+
+            errors.add(String.format(
+                    "A pessoa %s jÃ¡ participa do projeto de imersÃ£o \"%s\" na turma \"%s\". Cada pessoa pode participar de apenas um projeto de imersÃ£o.",
+                    personName,
+                    projectName,
+                    classCode
+            ));
+        }
+
+        if (!errors.isEmpty()) {
+            throw new ValidationException(errors);
+        }
+    }
+
+    private void syncGroupMembers(ProjectGroupModel group, List<PeopleModel> members) {
+        peopleProjectGroupRepository.deleteByProjectGroupId(group.getId());
+        Set<PeopleProjectGroupModel> savedMemberships = new HashSet<>();
+
+        for (PeopleModel member : members) {
+            PeopleProjectGroupModel membership = new PeopleProjectGroupModel();
+            membership.setPeople(member);
+            membership.setProjectGroup(group);
+            savedMemberships.add(peopleProjectGroupRepository.save(membership));
+        }
+
+        group.setMembers(savedMemberships);
+    }
+
+    private String normalizeStageName(String value) {
+        if (value == null) {
+            return "";
+        }
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PeopleModel> getAvailableImmersionStudents(Long classId) {
+        ClassModel classModel = classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Turma nÃ£o encontrada"));
+
+        List<StageCandidateModel> immersionCandidates = loadImmersionCandidates(classModel.getId());
+        Set<Long> candidateIds = immersionCandidates.stream()
+                .map(StageCandidateModel::getPeople)
+                .filter(Objects::nonNull)
+                .map(PeopleModel::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (candidateIds.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> unavailablePeopleIds = peopleProjectGroupRepository.findByPeople_IdIn(candidateIds).stream()
+                .map(PeopleProjectGroupModel::getPeople)
+                .filter(Objects::nonNull)
+                .map(PeopleModel::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return immersionCandidates.stream()
+                .map(StageCandidateModel::getPeople)
+                .filter(Objects::nonNull)
+                .filter(people -> people.getId() != null && !unavailablePeopleIds.contains(people.getId()))
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(PeopleModel::getId, people -> people, (left, right) -> left, LinkedHashMap::new),
+                        map -> new ArrayList<>(map.values())
+                ));
     }
 
     @Transactional(readOnly = true)
@@ -170,14 +418,28 @@ public class ProjectGroupService {
         if (requestDTO.getProjectCompanyId() != null) {
             InstitutionModel company = institutionRepository.findById(requestDTO.getProjectCompanyId())
                     .orElseThrow(() -> new ResourceNotFoundException("Empresa/Instituição não encontrada"));
+            validateProgramPartnerInstitution(group.getClassModel(), company);
             group.setProjectCompany(company);
+            group.setSponsorCompany(company.getName());
         }
 
         // Atualizar orientador
         if (requestDTO.getLeaderId() != null) {
-            PeopleModel leader = peopleRepository.findById(requestDTO.getLeaderId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Orientador não encontrado"));
+            PeopleModel leader = resolveLeader(requestDTO.getLeaderId(), group.getClassModel());
             group.setLeader(leader);
+        }
+
+        if (requestDTO.getWeeklyMeetingDay() != null) {
+            group.setWeeklyMeetingDay(requestDTO.getWeeklyMeetingDay());
+        }
+
+        if (requestDTO.getFirstMeetingDate() != null) {
+            group.setFirstMeetingDate(requestDTO.getFirstMeetingDate());
+        }
+
+        if (requestDTO.getMemberIds() != null) {
+            List<PeopleModel> members = resolveImmersionMembers(group.getClassModel(), requestDTO.getMemberIds(), group.getId(), true);
+            syncGroupMembers(group, members);
         }
 
         ProjectGroupModel updatedGroup = projectGroupRepository.save(group);
@@ -206,6 +468,7 @@ public class ProjectGroupService {
         dto.setDescription(group.getDescription());
         dto.setProjectCompanyName(group.getProjectCompany() != null ? group.getProjectCompany().getName() : null);
         dto.setProjectCompanyId(group.getProjectCompany() != null ? group.getProjectCompany().getId() : null);
+        dto.setSponsorCompany(group.getSponsorCompany());
         dto.setLeaderName(group.getLeader() != null ? group.getLeader().getName() : null);
         dto.setLeaderId(group.getLeader() != null ? group.getLeader().getId() : null);
         dto.setMemberCount(group.getMembers() != null ? group.getMembers().size() : 0);
@@ -230,6 +493,7 @@ public class ProjectGroupService {
         dto.setDescription(group.getDescription());
         dto.setProjectCompanyName(group.getProjectCompany() != null ? group.getProjectCompany().getName() : null);
         dto.setProjectCompanyId(group.getProjectCompany() != null ? group.getProjectCompany().getId() : null);
+        dto.setSponsorCompany(group.getSponsorCompany());
         dto.setLeaderName(group.getLeader() != null ? group.getLeader().getName() : null);
         dto.setLeaderId(group.getLeader() != null ? group.getLeader().getId() : null);
         dto.setWeeklyMeetingDay(group.getWeeklyMeetingDay());
@@ -257,5 +521,26 @@ public class ProjectGroupService {
         dto.setMeetings(meetingDTOs);
 
         return dto;
+    }
+
+    private void validateProgramPartnerInstitution(ClassModel classModel, InstitutionModel institution) {
+        if (classModel == null || classModel.getProgram() == null) {
+            throw new ValidationException(java.util.List.of("Turma sem programa vinculado para validar empresa/instituição parceira."));
+        }
+
+        Set<Long> partnerIds = classModel.getProgram().getProgramInstitutions().stream()
+                .map(membership -> membership.getInstitution())
+                .filter(Objects::nonNull)
+                .map(InstitutionModel::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (partnerIds.isEmpty()) {
+            throw new ValidationException(java.util.List.of("O programa da turma não possui empresas/instituições parceiras cadastradas."));
+        }
+
+        if (institution == null || institution.getId() == null || !partnerIds.contains(institution.getId())) {
+            throw new ValidationException(java.util.List.of("A empresa/instituição selecionada não está cadastrada como parceira deste programa."));
+        }
     }
 }

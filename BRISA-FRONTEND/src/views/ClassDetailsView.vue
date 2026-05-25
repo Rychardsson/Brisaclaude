@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="figma-page">
     <ConfirmDialog ref="confirmDialog" />
 
@@ -42,14 +42,14 @@
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
                 </svg>
-                {{ partnerLabel }}
+                {{ executorLabel }}
               </span>
               <span class="meta-item">
                 <svg class="meta-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 0 1 16 0Z" />
                   <circle cx="12" cy="10" r="3" />
                 </svg>
-                {{ classData.location?.name || '-' }}
+                {{ classLocationLabel }}
               </span>
               <span class="meta-item">
                 <svg class="meta-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -67,8 +67,8 @@
         <div class="hero-cards">
           <article class="hero-card">
             <span class="hero-label">Inscritos</span>
-            <strong>{{ totalCandidates || 612 }}</strong>
-            <small>+48 em lista</small>
+            <strong>{{ totalCandidates || 0 }}</strong>
+            <small>{{ selectionWaitlistCount }} em lista</small>
             <small class="hero-support">Candidatos cadastrados</small>
           </article>
           <article class="hero-card">
@@ -91,12 +91,14 @@
           </article>
         </div>
 
-        <div class="tabs">
+        <div class="tabs" role="tablist" aria-label="Seções da turma">
           <button
             v-for="tab in tabs"
             :key="tab.id"
             type="button"
             class="tab"
+            role="tab"
+            :aria-selected="activeTab === tab.id"
             :class="{ active: activeTab === tab.id }"
             @click="activeTab = tab.id"
           >
@@ -137,13 +139,26 @@
               </div>
               <div>
                 <span>Local</span>
-                <strong>{{ classData.location?.name || '-' }}</strong>
+                <strong>{{ classLocationLabel }}</strong>
               </div>
             </div>
 
             <p class="status-note">
-              A turma está em desenvolvimento dos projetos, com avaliação parcial como próximo marco.
+              {{ classData.description || classData.observations || currentStatusNote }}
             </p>
+          </article>
+
+          <article class="panel contract-panel">
+            <div class="panel-head">
+              <h3>Contrato do Programa</h3>
+              <button type="button" class="details-link contract-link" @click="goToProgramDetails">Ver programa</button>
+            </div>
+            <div class="contract-grid">
+              <div v-for="item in programContractItems" :key="item.label" class="contract-item">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+            </div>
           </article>
 
           <article class="panel">
@@ -158,7 +173,7 @@
 
             <div class="cycle">
               <div v-for="(item, index) in overviewCycle" :key="item" class="cycle-item">
-                <div class="cycle-pill" :class="{ done: index < overviewCurrentCycleIndex, current: index === overviewCurrentCycleIndex }">
+                <div class="cycle-pill" :class="{ done: overviewCycleHasStudents(item), current: index === overviewCurrentCycleIndex }">
                   {{ item }}
                 </div>
                 <div v-if="index < overviewCycle.length - 1" class="cycle-line" :class="{ done: index < overviewCurrentCycleIndex }" />
@@ -180,7 +195,7 @@
                     <strong :class="item.valueClass">{{ item.value }}</strong>
                   </div>
                 </div>
-                <button type="button" class="details-link">Ver detalhes →</button>
+                <button type="button" class="details-link" @click="openOverviewStageDetails(card.title)">Ver detalhes</button>
               </article>
             </div>
           </section>
@@ -199,7 +214,7 @@
                 </div>
               </div>
             </div>
-            <button type="button" class="details-link timeline-link">Ver cronograma completo →</button>
+            <button type="button" class="details-link timeline-link" @click="openFullTimeline">Ver cronograma completo</button>
           </article>
 
           <section class="overview-block">
@@ -284,7 +299,15 @@
                     placeholder="Buscar por nome, CPF ou e-mail..."
                   />
                 </div>
-                <button type="button" class="people-search-btn">Pesquisar</button>
+                <button type="button" class="people-search-btn" @click="applyPeopleFilters">Pesquisar</button>
+                <button
+                  v-if="hasPeopleFilters"
+                  type="button"
+                  class="people-clear-btn"
+                  @click="clearPeopleFilters"
+                >
+                  Limpar filtros
+                </button>
               </div>
 
               <div class="people-select-row">
@@ -397,7 +420,7 @@
           <article class="panel">
             <div class="panel-head">
               <h3>Distribuição de Vagas por Cotas</h3>
-              <button type="button" class="btn-primary" @click="openUpdateSelectionModal">Atualizar dados</button>
+              <button type="button" class="btn-primary" @click="openUpdateSelectionModal('selecao')">Atualizar dados</button>
             </div>
             <div class="quota-distribution">
               <article v-for="item in selectionQuotaCards" :key="item.label" class="quota-item">
@@ -407,7 +430,7 @@
             </div>
           </article>
 
-          <div class="alert-banner alert-warning">
+          <div v-if="selectionConflictCount > 0" class="alert-banner alert-warning">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 9v4" />
               <path d="M12 17h.01" />
@@ -522,11 +545,11 @@
               </div>
                <div class="n-card teal">
                 <div class="label">Conclusão obrigatórios</div>
-                <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '—' }}</div>
+                <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '-' }}</div>
               </div>
                <div class="n-card amber">
                 <div class="label">Nota de corte prova</div>
-                <div class="value">39</div>
+                <div class="value">{{ levelingCutoffScore }}</div>
               </div>
                <div class="n-card red">
                 <div class="label">Alertas</div>
@@ -535,12 +558,12 @@
             </div>
 
             <div class="email-banner">
-              <div style="display:flex;align-items:center;gap:12px;justify-content:space-between;width:100%;">
-                <div style="display:flex;align-items:center;gap:12px;">
+              <div class="email-banner-content">
+                <div class="email-banner-main">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
                   <div>
-                    <span style="font-weight:600;color:#075985;">Último e-mail enviado: </span>
-                    <span style="color:#0c4a6e;">{{ lastEmailInfo }}</span>
+                    <span class="email-banner-label">Último e-mail enviado: </span>
+                    <span class="email-banner-value">{{ lastEmailInfo }}</span>
                   </div>
                 </div>
                 <span class="email-banner-status" v-if="lastEmailInfo && lastEmailInfo !== 'Nenhum e-mail enviado recentemente'">Enviado</span>
@@ -548,7 +571,7 @@
             </div>
 
             <div class="nivelamento-actions">
-              <button type="button" class="btn-outline" @click="openUpdateSelectionModal"><span>Atualizar dados</span></button>
+              <button type="button" class="btn-outline" @click="openUpdateSelectionModal('nivelamento')"><span>Atualizar dados</span></button>
               <button type="button" class="btn-outline" @click="showSubmitCoursesModal = true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -566,7 +589,7 @@
                 <span>Submeter notas da prova</span>
               </button>
               <div class="spacer"></div>
-              <button type="button" class="btn-primary" @click="showSendMessageModal = true"><span>Enviar mensagem</span></button>
+              <button type="button" class="btn-primary" @click="openSendMessageModal()"><span>Enviar mensagem</span></button>
             </div>
           </div>
 
@@ -595,14 +618,15 @@
                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
                  </svg>
-                 <span class="course-name-new">{{ course?.name || 'Sem nome' }}</span>
-                 <span v-if="course?.required" class="course-badge course-badge-required">Obrigatório</span>
-                 <span v-if="course?.knowledgeArea" class="course-badge">{{ course.knowledgeArea }}</span>
-               </div>
+                  <span class="course-name-new">{{ course?.name || 'Sem nome' }}</span>
+                  <span v-if="course?.required" class="course-badge course-badge-required">Obrigatório</span>
+                  <span v-if="course?.knowledgeArea" class="course-badge">{{ course.knowledgeArea }}</span>
+                  <span v-if="course?.advisorName" class="course-badge">Orientador: {{ course.advisorName }}</span>
+                </div>
 
                <div class="course-right-new">
                  <div class="course-stats-new">
-                   <div class="course-stats-text">{{ course?.completedCount || 0 }} concluídos · {{ course?.pendingCount || 0 }} pendentes</div>
+                   <div class="course-stats-text">{{ course?.completedCount || 0 }} concluídos / {{ course?.pendingCount || 0 }} pendentes</div>
                    <div class="progress-container">
                      <div class="progress-bar">
                        <div class="progress-fill" :style="{ width: (course?.completionPct || 0) + '%', backgroundColor: getCompletionColor(course?.completionPct || 0) }"></div>
@@ -615,18 +639,65 @@
               </div>
            </div>
 
-           <div class="alert-banner alert-warning">
+           <div class="class-status-report">
+             <div class="class-status-head">
+               <div>
+                 <h4>Status da Turma</h4>
+                 <p>Quantidade de alunos por número de cursos concluídos.</p>
+               </div>
+               <span class="class-status-pill">{{ classStatusReport?.totalStudents || 0 }} aluno(s)</span>
+             </div>
+
+             <div v-if="classStatusLoading" class="state-box">Carregando status da turma...</div>
+             <div v-else-if="classStatusError" class="state-box state-error">{{ classStatusError }}</div>
+             <div v-else class="class-status-grid">
+               <article class="class-status-summary">
+                 <span>Total de alunos</span>
+                 <strong>{{ classStatusReport?.totalStudents || 0 }}</strong>
+               </article>
+               <article class="class-status-summary">
+                 <span>Alunos ativos</span>
+                 <strong>{{ classStatusReport?.activeStudents || 0 }}</strong>
+               </article>
+               <article class="class-status-summary">
+                 <span>Com progresso</span>
+                 <strong>{{ classStatusReport?.studentsWithProgress || 0 }}</strong>
+               </article>
+               <article class="class-status-summary">
+                 <span>Sem conclusão</span>
+                 <strong>{{ classStatusReport?.studentsWithoutProgress || 0 }}</strong>
+               </article>
+             </div>
+
+             <div v-if="!classStatusLoading && !classStatusError" class="class-status-bars">
+               <div
+                 v-for="bucket in classStatusBuckets"
+                 :key="bucket.completedCourses"
+                 class="class-status-row"
+               >
+                 <div class="class-status-row-head">
+                   <span>{{ bucket.completedCourses }} curso(s) concluído(s)</span>
+                   <strong>{{ bucket.students }} aluno(s)</strong>
+                 </div>
+                 <div class="class-status-track">
+                   <div class="class-status-fill" :style="{ width: `${bucket.percentage || 0}%` }"></div>
+                 </div>
+               </div>
+             </div>
+           </div>
+
+           <div v-if="requiredPendingStudentsCount > 0" class="alert-banner alert-warning">
              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z" />
                <line x1="12" y1="9" x2="12" y2="13" />
                <line x1="12" y1="17" x2="12.01" y2="17" />
              </svg>
-             <div class="alert-copy">
-               <strong>Cursos obrigatórios com pendências</strong>
-               <p>37 alunos ainda possuem pendências em cursos obrigatórios</p>
-             </div>
-             <button type="button" class="alert-link">Enviar mensagem</button>
-           </div>
+              <div class="alert-copy">
+                <strong>Cursos obrigatórios com pendências</strong>
+                <p>{{ requiredPendingStudentsCount }} aluno(s) ainda possuem pendências em cursos obrigatórios</p>
+              </div>
+              <button type="button" class="alert-link" @click="openSendMessageModal({ recipients: 'pending' })">Enviar mensagem</button>
+            </div>
           </article>
 
           <!-- Seção Prova Final do Nivelamento -->
@@ -638,27 +709,27 @@
            <div class="exam-stats">
              <div class="exam-stat-card">
                <div class="exam-stat-label">Data da prova</div>
-               <div class="exam-stat-value">{{ overviewTimeline[5]?.date || '30/04' }}</div>
+                <div class="exam-stat-value">{{ examSummaryData?.examDate ? formatDate(examSummaryData.examDate) : (overviewTimeline[5]?.date || '--') }}</div>
              </div>
              <div class="exam-stat-card">
-               <div class="exam-stat-label">Questões</div>
-               <div class="exam-stat-value">--</div>
+               <div class="exam-stat-label">Questáes mapeadas</div>
+                <div class="exam-stat-value">{{ examSummaryData?.totalQuestions || 0 }}</div>
              </div>
              <div class="exam-stat-card">
-               <div class="exam-stat-label">Duração</div>
-               <div class="exam-stat-value">--</div>
+               <div class="exam-stat-label">Participantes</div>
+                <div class="exam-stat-value">{{ examSummaryData?.totalParticipants || 0 }}</div>
              </div>
              <div class="exam-stat-card">
                <div class="exam-stat-label">Média geral</div>
-               <div class="exam-stat-value teal">--</div>
+                <div class="exam-stat-value teal">{{ examSummaryData?.averageScore != null ? Number(examSummaryData.averageScore).toFixed(1) : '--' }}</div>
              </div>
              <div class="exam-stat-card">
                <div class="exam-stat-label">Maior nota</div>
-               <div class="exam-stat-value emerald">--</div>
+                <div class="exam-stat-value emerald">{{ examSummaryData?.highestScore != null ? Number(examSummaryData.highestScore).toFixed(1) : '--' }}</div>
              </div>
              <div class="exam-stat-card">
-               <div class="exam-stat-label">Nota de corte</div>
-               <div class="exam-stat-value amber">--</div>
+               <div class="exam-stat-label">Candidatos aprovados</div>
+                <div class="exam-stat-value amber">{{ approvedRankingData?.approved?.length || 0 }}</div>
              </div>
            </div>
 
@@ -671,6 +742,178 @@
           <article class="panel">
            <div class="panel-head">
              <h3>Alunos do Nivelamento</h3>
+           </div>
+
+           <div v-if="examInsightsError" class="state-box state-error" style="margin-bottom: 14px;">{{ examInsightsError }}</div>
+
+           <div v-if="examSummaryData" class="exam-insights-grid">
+             <article class="panel exam-insight-card">
+               <h4>Resumo importado da prova</h4>
+               <div class="simple-list">
+                 <div>
+                   <span>Participantes</span>
+                   <strong>{{ examSummaryData.totalParticipants || 0 }}</strong>
+                 </div>
+                 <div>
+                   <span>Média geral</span>
+                   <strong>{{ examSummaryData.averageScore != null ? Number(examSummaryData.averageScore).toFixed(1) : '--' }}</strong>
+                 </div>
+                 <div>
+                   <span>Maior nota</span>
+                   <strong>{{ examSummaryData.highestScore != null ? Number(examSummaryData.highestScore).toFixed(1) : '--' }}</strong>
+                 </div>
+                 <div>
+                   <span>Notas zero</span>
+                   <strong>{{ examSummaryData.zeroScoreCount || 0 }}</strong>
+                 </div>
+               </div>
+             </article>
+
+              <article class="panel exam-insight-card">
+                <h4>Distribuição de notas</h4>
+                <div class="simple-list">
+                  <div v-for="bucket in examSummaryData.scoreDistribution || []" :key="bucket.label">
+                    <span>{{ bucket.label }}</span>
+                    <strong>{{ bucket.count }}</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article class="panel exam-insight-card">
+                <h4>Participantes por cota</h4>
+                <div class="simple-list">
+                  <div v-for="quota in examSummaryData.quotaParticipants || []" :key="`quota-participant-${quota.label}`">
+                    <span>{{ quota.label }}</span>
+                    <strong>{{ quota.count }}</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article class="panel exam-insight-card">
+                <h4>15 questões com mais acertos</h4>
+                <div class="simple-list">
+                  <div v-for="question in (examSummaryData.bestQuestions || []).slice(0, 15)" :key="`best-${question.questionNumber}`">
+                    <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
+                    <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article class="panel exam-insight-card">
+                <h4>15 questões com menos acertos</h4>
+                <div class="simple-list">
+                  <div v-for="question in (examSummaryData.worstQuestions || []).slice(0, 15)" :key="`worst-${question.questionNumber}`">
+                    <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
+                    <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
+                  </div>
+               </div>
+             </article>
+           </div>
+
+            <div v-if="examRespondentProfileData" class="exam-profile-grid">
+              <article class="panel exam-insight-card">
+                <h4>Cursos de origem</h4>
+                <div class="simple-list">
+                  <div v-for="item in (examRespondentProfileData.courseDistribution || []).slice(0, 5)" :key="`course-${item.label}`">
+                   <span>{{ item.label }}</span>
+                   <strong>{{ item.count }}</strong>
+                 </div>
+               </div>
+             </article>
+
+             <article class="panel exam-insight-card">
+               <h4>Melhor acerto por curso</h4>
+               <div class="simple-list">
+                 <div v-for="item in (examRespondentProfileData.topCourseAccuracy || []).slice(0, 5)" :key="`accuracy-${item.label}`">
+                   <span>{{ item.label }}</span>
+                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
+                 </div>
+               </div>
+             </article>
+
+             <article class="panel exam-insight-card">
+               <h4>Cotas com maior desempenho</h4>
+               <div class="simple-list">
+                 <div v-for="item in (examRespondentProfileData.quotaAccuracy || []).slice(0, 5)" :key="`quota-${item.label}`">
+                   <span>{{ item.label }}</span>
+                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
+                 </div>
+               </div>
+             </article>
+
+             <article class="panel exam-insight-card">
+               <h4>Cidades com maior desempenho</h4>
+               <div class="simple-list">
+                 <div v-for="item in (examRespondentProfileData.topCityAccuracy || []).slice(0, 5)" :key="`city-${item.label}`">
+                   <span>{{ item.label }}</span>
+                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
+                 </div>
+                </div>
+              </article>
+            </div>
+
+            <article class="exam-ranking-config">
+              <div class="exam-ranking-config-head">
+                <h4>Parâmetros da aprovação</h4>
+                <button type="button" class="btn-outline compact-btn" :disabled="approvedRankingLoading" @click="recalculateApprovedRanking">
+                  {{ approvedRankingLoading ? 'Recalculando...' : 'Recalcular' }}
+                </button>
+              </div>
+              <div class="ranking-form-grid">
+                <label class="ranking-field">
+                  <span>Vagas imersão</span>
+                  <input v-model.number="approvedRankingForm.totalVacancies" type="number" min="1" />
+                </label>
+                <label class="ranking-field">
+                  <span>Pontos por curso</span>
+                  <input v-model.number="approvedRankingForm.pointsPerCompletedCourse" type="number" min="0" step="0.5" />
+                </label>
+                <label class="ranking-field">
+                  <span>Bônus cidade</span>
+                  <input v-model.number="approvedRankingForm.bonusPerPriorityCity" type="number" min="0" />
+                </label>
+                <label class="ranking-field ranking-field-wide">
+                  <span>Cidades com bônus</span>
+                  <textarea v-model="approvedRankingForm.priorityCitiesText" rows="2"></textarea>
+                </label>
+              </div>
+              <div class="ranking-form-grid ranking-quota-grid">
+                <label class="ranking-field">
+                  <span>Ampla</span>
+                  <input v-model.number="approvedRankingForm.amplaConcorrenciaSeats" type="number" min="0" />
+                </label>
+                <label class="ranking-field">
+                  <span>PcD/Neuro</span>
+                  <input v-model.number="approvedRankingForm.pcdSeats" type="number" min="0" />
+                </label>
+                <label class="ranking-field">
+                  <span>Negros/Pardos</span>
+                  <input v-model.number="approvedRankingForm.negroPardoSeats" type="number" min="0" />
+                </label>
+                <label class="ranking-field">
+                  <span>Mulheres</span>
+                  <input v-model.number="approvedRankingForm.mulheresSeats" type="number" min="0" />
+                </label>
+                <label class="ranking-field">
+                  <span>45+</span>
+                  <input v-model.number="approvedRankingForm.age45Seats" type="number" min="0" />
+                </label>
+              </div>
+            </article>
+
+            <div v-if="approvedRankingData" class="exam-ranking-grid">
+             <article class="panel exam-ranking-card">
+               <span>Aprovados</span>
+               <strong>{{ approvedRankingData.approved?.length || 0 }}</strong>
+             </article>
+             <article class="panel exam-ranking-card">
+               <span>Lista de espera</span>
+               <strong>{{ approvedRankingData.waitlist?.length || 0 }}</strong>
+             </article>
+             <article class="panel exam-ranking-card">
+               <span>Não selecionados</span>
+               <strong>{{ approvedRankingData.rejected?.length || 0 }}</strong>
+             </article>
            </div>
 
            <div class="students-table">
@@ -750,6 +993,38 @@
               </button>
             </div>
 
+            <article class="panel imersao-students-panel">
+              <div class="panel-head">
+                <h3>Alunos da imersão</h3>
+                <span class="class-status-pill">{{ imersaoStageStudents.length }} aluno(s)</span>
+              </div>
+
+              <div v-if="!imersaoStageStudents.length" class="state-box">
+                Nenhum aluno vinculado à etapa de imersão.
+              </div>
+
+              <div v-else class="students-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>CPF</th>
+                      <th>E-mail</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="student in imersaoStageStudents" :key="student.id">
+                      <td>{{ student.name }}</td>
+                      <td>{{ formatCPF(student.cpf) }}</td>
+                      <td>{{ student.email }}</td>
+                      <td><span class="status-pill" :class="student.statusClass">{{ student.status }}</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
             <div class="imersao-groups-list">
               <div v-for="group in imersaoGroups" :key="group.id" class="imersao-group-item">
                 <button type="button" class="imersao-group-card" @click="toggleImersaoGroup(group.id)">
@@ -792,8 +1067,8 @@
                 <div v-if="imersaoExpandedGroupId === group.id" class="imersao-group-expanded">
                   <div class="imersao-group-tabs">
                     <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'resumo' }" @click="setImersaoGroupTab(group.id, 'resumo')">Resumo</button>
-                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'parcial' }" @click="setImersaoGroupTab(group.id, 'parcial')">Avaliação Parcial</button>
-                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'final' }" @click="setImersaoGroupTab(group.id, 'final')">Avaliação Final</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'parcial' }" @click="setImersaoGroupTab(group.id, 'parcial')">Avaliação parcial</button>
+                    <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'final' }" @click="setImersaoGroupTab(group.id, 'final')">Avaliação final</button>
                     <button type="button" class="imersao-group-tab-btn" :class="{ active: getImersaoGroupTab(group.id) === 'presenca' }" @click="setImersaoGroupTab(group.id, 'presenca')">Presença</button>
                   </div>
 
@@ -917,7 +1192,7 @@
     <div v-if="showUpdateSelectionModal" class="modal-overlay" @click="closeUpdateSelectionModal">
       <div :class="['modal', selectedUpdateAction === 'lista-espera' ? 'modal-waitlist' : 'modal-large']" @click.stop>
         <div class="modal-header">
-          <h2>Atualizar dados do processo seletivo</h2>
+          <h2>{{ updateStageModalTitle }}</h2>
           <button type="button" class="modal-close" @click="closeUpdateSelectionModal">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -927,7 +1202,7 @@
         </div>
 
         <div v-if="!selectedUpdateAction" class="modal-content update-selection-home">
-          <p class="modal-subtitle">Escolha uma das ações abaixo para atualizar os dados do processo seletivo:</p>
+          <p class="modal-subtitle">{{ updateStageModalSubtitle }}</p>
           
           <div class="update-actions-grid">
             <button type="button" class="update-action-card" @click="openIndividualRegistration">
@@ -938,7 +1213,7 @@
                 </svg>
               </div>
               <h4>Cadastrar aluno individualmente</h4>
-              <p>Adicione um novo candidato manualmente ao processo seletivo</p>
+              <p>{{ individualRegistrationActionDescription }}</p>
             </button>
 
             <button type="button" class="update-action-card" @click="selectedUpdateAction = 'import-inscricoes'">
@@ -949,11 +1224,11 @@
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
               </div>
-              <h4>Importar planilha de inscritos</h4>
-              <p>Envie uma planilha com a lista de candidatos inscritos</p>
+              <h4>{{ importStudentsActionTitle }}</h4>
+              <p>{{ importStudentsActionDescription }}</p>
             </button>
 
-            <button type="button" class="update-action-card" @click="selectedUpdateAction = 'import-aprovados'">
+            <button v-if="isSelectionUpdateContext" type="button" class="update-action-card" @click="selectedUpdateAction = 'import-aprovados'">
               <div class="card-icon icon-check">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -964,7 +1239,7 @@
               <p>Atualize os status dos candidatos aprovados via planilha</p>
             </button>
 
-            <button type="button" class="update-action-card" @click="selectedUpdateAction = 'lista-espera'">
+            <button v-if="isSelectionUpdateContext" type="button" class="update-action-card" @click="selectedUpdateAction = 'lista-espera'">
               <div class="card-icon icon-clock">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10" />
@@ -984,7 +1259,7 @@
         <!-- Individual Registration -->
         <div v-else-if="selectedUpdateAction === 'individual'" class="modal-content modal-large individual-modal">
           <div class="modal-back">
-            <button type="button" @click="closeIndividualRegistration" class="back-link">← Voltar</button>
+            <button type="button" @click="closeIndividualRegistration" class="back-link">Voltar</button>
           </div>
           <h3>Cadastrar aluno individualmente</h3>
 
@@ -1072,7 +1347,7 @@
 
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="closeIndividualRegistration">Cancelar</button>
-            <button type="button" class="btn-primary" :disabled="registeringCandidate" @click="registerCandidateIndividually">
+            <button type="button" class="btn-primary" :disabled="registeringCandidate || !canRegisterIndividually" @click="registerCandidateIndividually">
               {{ registeringCandidate ? 'Cadastrando...' : 'Cadastrar aluno' }}
             </button>
           </div>
@@ -1081,32 +1356,44 @@
         <!-- Import Inscricoes -->
         <div v-else-if="selectedUpdateAction === 'import-inscricoes'" class="modal-content import-inscricoes-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">Voltar</button>
           </div>
-          <h3>Importar planilha de inscritos</h3>
-          <p class="modal-desc">Envie uma planilha Excel ou CSV com os dados dos candidatos inscritos. A planilha deve conter as seguintes colunas:</p>
+          <div class="modal-header-with-action">
+            <h3>{{ importStudentsModalTitle }}</h3>
+            <button type="button" class="ghost-btn hero-btn" @click="downloadPeopleTemplate(updatePeopleTemplateFileName)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Baixar Modelo .xlsx</span>
+            </button>
+          </div>
+          <p class="modal-desc">{{ importStudentsModalDescription }}</p>
 
           <div class="columns-grid">
-            <div class="column-item">Nome completo</div>
-            <div class="column-item">CPF</div>
-            <div class="column-item">E-mail</div>
-            <div class="column-item">Gênero</div>
-            <div class="column-item">Data de nascimento</div>
-            <div class="column-item">Cidade/UF</div>
-            <div class="column-item">Tipo de formação</div>
-            <div class="column-item">Instituição</div>
-            <div class="column-item">Cota</div>
+            <div v-for="column in peopleSpreadsheetColumns" :key="column" class="column-item">{{ column }}</div>
           </div>
 
-          <div class="file-upload-area">
+          <input
+            type="file"
+            ref="fileInputImportInscricoes"
+            style="display: none"
+            accept=".xlsx,.xls"
+            @change="handleInscricoesFileChange"
+          />
+
+          <div class="file-upload-area" @click="$refs.fileInputImportInscricoes?.click()">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls (máx. 10MB)</small>
           </div>
+
+          <div v-if="importInscricoesFile" class="selected-file-name">{{ importInscricoesFile.name }}</div>
 
           <div class="info-box info-yellow">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1116,39 +1403,54 @@
             </svg>
             <div>
               <strong>Validação de conflitos</strong>
-              <p>Após o envio, o sistema verificará automaticamente se algum CPF já está vinculado a outro programa vigente e sinalizará os conflitos.</p>
+              <p>Após o envio, o sistema vinculará os alunos à {{ activeUpdateStageLabel }} desta turma e verificará automaticamente conflitos com outros programas vigentes.</p>
             </div>
+          </div>
+
+          <div v-if="importInscricoesError" class="state-box state-error">{{ importInscricoesError }}</div>
+          <div v-if="importInscricoesResult" class="state-box state-success">
+            Processadas: {{ importInscricoesResult.totalProcessed }} · Inseridas: {{ importInscricoesResult.successfullyInserted }} · Já na etapa: {{ importInscricoesResult.alreadyInStage }} · Novas pessoas: {{ importInscricoesResult.newPeopleCreated }}
           </div>
 
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="selectedUpdateAction = null">Cancelar</button>
-            <button type="button" class="btn-primary">Importar planilha</button>
+            <button type="button" class="btn-primary" :disabled="importingInscricoes || !importInscricoesFile" @click="importSelectionCandidates">
+              {{ importingInscricoes ? 'Importando...' : 'Importar planilha' }}
+            </button>
           </div>
         </div>
 
         <!-- Import Aprovados -->
         <div v-else-if="selectedUpdateAction === 'import-aprovados'" class="modal-content import-aprovados-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">Voltar</button>
           </div>
           <h3>Importar planilha de aprovados</h3>
           <p class="modal-desc">Envie uma planilha com a lista final de candidatos aprovados. O sistema atualizará automaticamente o status de cada candidato.</p>
 
           <div class="columns-grid">
-            <div class="columns-grid-title">Colunas necessárias:</div>
-            <div class="column-item"><strong>CPF</strong></div>
-            <div class="column-item"><strong>Status</strong> (Aprovado / Lista de espera)</div>
-            <div class="column-item"><strong>Nome completo</strong></div>
+            <div class="columns-grid-title">Use a mesma estrutura do cadastro de pessoa. Para aprovados, o sistema usa principalmente CPF e Status inicial.</div>
+            <div v-for="column in peopleSpreadsheetColumns" :key="column" class="column-item">{{ column }}</div>
           </div>
 
-          <div class="file-upload-area">
+          <input
+            type="file"
+            ref="fileInputImportAprovados"
+            style="display: none"
+            accept=".xlsx,.xls"
+            @change="handleAprovadosFileChange"
+          />
+
+          <div class="file-upload-area" @click="$refs.fileInputImportAprovados?.click()">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
             <p>Clique para selecionar ou arraste o arquivo</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
+            <small>Formatos aceitos: .xlsx, .xls (máx. 10MB)</small>
           </div>
+
+          <div v-if="importAprovadosFile" class="selected-file-name">{{ importAprovadosFile.name }}</div>
 
           <div class="info-box info-green">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1173,31 +1475,38 @@
             </div>
           </div>
 
+          <div v-if="importAprovadosError" class="state-box state-error">{{ importAprovadosError }}</div>
+          <div v-if="importAprovadosResult" class="state-box state-success">
+            Processadas: {{ importAprovadosResult.totalProcessed }} · Aprovados: {{ importAprovadosResult.approvedCount }} · Lista de espera: {{ importAprovadosResult.waitlistCount }} · Reprovados: {{ importAprovadosResult.rejectedCount }} · Conflitos: {{ importAprovadosResult.conflictsCount }}
+          </div>
+
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="selectedUpdateAction = null">Cancelar</button>
-            <button type="button" class="btn-primary">Importar e atualizar</button>
+            <button type="button" class="btn-primary" :disabled="importingAprovados || !importAprovadosFile" @click="importApprovedCandidates">
+              {{ importingAprovados ? 'Importando...' : 'Importar e atualizar' }}
+            </button>
           </div>
         </div>
 
         <!-- Lista de Espera -->
         <div v-else-if="selectedUpdateAction === 'lista-espera'" class="modal-content modal-large waitlist-modal">
           <div class="modal-back">
-            <button type="button" @click="selectedUpdateAction = null" class="back-link">← Voltar</button>
+            <button type="button" @click="selectedUpdateAction = null" class="back-link">Voltar</button>
           </div>
           <h3>Atualizar lista de espera</h3>
 
           <div class="waitlist-stats">
             <div class="stat-item">
               <span>Candidatos em espera</span>
-              <strong>48</strong>
+              <strong>{{ selectionWaitlistCount }}</strong>
             </div>
             <div class="stat-item">
               <span>Vagas disponíveis</span>
-              <strong class="teal-strong">250</strong>
+              <strong class="teal-strong">{{ selectionAvailableVacancies }}</strong>
             </div>
             <div class="stat-item">
               <span>Vagas preenchidas</span>
-              <strong>250</strong>
+              <strong>{{ selectionApprovedCount }}</strong>
             </div>
           </div>
 
@@ -1206,7 +1515,7 @@
           <div class="waitlist-form-row waitlist-form-row--count">
             <label for="convokeCount">Quantidade de convocações</label>
             <input id="convokeCount" v-model="waitlistForm.convokeCount" type="number" class="field" placeholder="Digite a quantidade" />
-            <small>Máximo: 48 candidatos disponíveis</small>
+            <small>Máximo: {{ selectionWaitlistCount }} candidatos disponíveis</small>
           </div>
 
           <div class="waitlist-form-row">
@@ -1231,9 +1540,16 @@
             </div>
           </div>
 
+          <div v-if="waitlistError" class="state-box state-error">{{ waitlistError }}</div>
+          <div v-if="waitlistSuccess" class="state-box state-success">
+            Convocados: {{ waitlistSuccess.convokedCount }} de {{ waitlistSuccess.requestedCount }} solicitados.
+          </div>
+
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="selectedUpdateAction = null">Cancelar</button>
-            <button type="button" class="btn-primary">Convocar candidatos</button>
+            <button type="button" class="btn-primary" :disabled="convokingWaitlist || !selectionWaitlistCount" @click="convokeWaitlistCandidates">
+              {{ convokingWaitlist ? 'Convocando...' : 'Convocar candidatos' }}
+            </button>
           </div>
         </div>
       </div>
@@ -1260,7 +1576,7 @@
       </div>
     </div>
 
-    <!-- Modal: Submit Courses Data -->
+        <!-- Modal: Submit Courses Data -->
     <div v-if="showSubmitCoursesModal" class="modal-overlay" @click="showSubmitCoursesModal = false">
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
@@ -1274,20 +1590,41 @@
         </div>
 
         <div class="modal-content submit-cursos-modal">
-          <p class="modal-desc">Envie a planilha com os dados de conclusão e notas dos cursos</p>
+          <div class="modal-header-with-action" style="margin-bottom: 16px;">
+            <p class="modal-desc" style="margin: 0;">Envie a planilha com os dados de conclusão e notas dos cursos</p>
+            <a href="/Modelo_Nivelamento_Cursos.xlsx" download="Modelo_Nivelamento_Cursos.xlsx" class="ghost-btn hero-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Baixar Modelo .xlsx</span>
+            </a>
+          </div>
 
           <div class="columns-grid">
             <div class="columns-grid-title">A planilha deve conter as seguintes colunas:</div>
             <div class="column-item"><strong>CPF</strong></div>
             <div class="column-item"><strong>Nome</strong></div>
-            <div class="column-item"><strong>Curso</strong></div>
+            <div class="column-item"><strong>Código do curso ou Curso</strong></div>
+            <div class="column-item"><strong>Orientador</strong></div>
+            <div class="column-item"><strong>CPF do orientador</strong></div>
             <div class="column-item"><strong>Percentual de conclusão</strong></div>
             <div class="column-item"><strong>Nota</strong></div>
+            <div class="column-item"><strong>Frequência</strong></div>
             <div class="column-item"><strong>Status</strong></div>
             <div class="column-item"><strong>Data de atualização</strong></div>
           </div>
 
-          <div class="file-upload-area">
+          <input
+            type="file"
+            ref="fileInputSubmitCourses"
+            style="display: none"
+            accept=".xlsx,.xls"
+            @change="handleSubmitCoursesFileChange"
+          />
+
+          <div class="file-upload-area" @click="$refs.fileInputSubmitCourses?.click()">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
@@ -1309,14 +1646,21 @@
                 <li>Atualização dos percentuais de conclusão</li>
                 <li>Registro das notas obtidas</li>
                 <li>Identificação de alunos com pendências em cursos obrigatórios</li>
-                <li>Verificação de conflitos com outros programas vigentes</li>
+                <li>Registro da frequência e do status do aluno no curso</li>
               </ul>
             </div>
           </div>
 
+          <div v-if="submitCoursesFile" class="selected-file-name">{{ submitCoursesFile.name }}</div>
+
+          <div v-if="submitCoursesError" class="state-box state-error">{{ submitCoursesError }}</div>
+          <div v-if="submitCoursesSuccess" class="state-box state-success">{{ submitCoursesSuccess }}</div>
+
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="showSubmitCoursesModal = false">Cancelar</button>
-            <button type="button" class="btn-primary">Submeter planilha</button>
+            <button type="button" class="btn-primary" :disabled="submittingCourses || !submitCoursesFile" @click="submitCoursesSpreadsheet">
+              {{ submittingCourses ? 'Enviando...' : 'Submeter planilha' }}
+            </button>
           </div>
         </div>
       </div>
@@ -1341,6 +1685,7 @@
           <div class="columns-grid">
             <p class="columns-grid-title">A planilha deve conter as seguintes colunas:</p>
             <div class="column-item"><strong>Obrigatórias:</strong> CPF, Nome, Nota final, Tempo de conclusão</div>
+            <div class="column-item"><strong>Prova:</strong> Código da prova, Nome da prova, Data da prova</div>
             <div class="column-item"><strong>Questões:</strong> Q1, Q2, Q3... Q80 (respostas ou pontuação por questão)</div>
             <div class="column-item"><strong>Opcional:</strong> Área/Assunto (para análise por tema)</div>
           </div>
@@ -1349,7 +1694,8 @@
             type="file"
             ref="fileInputTestGrades"
             style="display: none"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls"
+            @change="handleSubmitProvaFileChange"
           />
 
           <div class="file-upload-area" @click="$refs.fileInputTestGrades?.click()">
@@ -1361,6 +1707,8 @@
             <p>Clique para selecionar ou arraste o arquivo</p>
             <small>Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)</small>
           </div>
+
+          <div v-if="submitProvaFile" class="selected-file-name">{{ submitProvaFile.name }}</div>
 
           <div class="info-box">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1379,9 +1727,14 @@
             </div>
           </div>
 
+          <div v-if="submitProvaError" class="state-box state-error">{{ submitProvaError }}</div>
+          <div v-if="submitProvaSuccess" class="state-box state-success">{{ submitProvaSuccess }}</div>
+
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="showSubmitProvaNotasModal = false">Cancelar</button>
-            <button type="button" class="btn-primary">Submeter notas</button>
+            <button type="button" class="btn-primary" :disabled="submittingProva || !submitProvaFile" @click="submitExamSpreadsheet">
+              {{ submittingProva ? 'Enviando...' : 'Submeter notas' }}
+            </button>
           </div>
         </div>
       </div>
@@ -1401,11 +1754,29 @@
         </div>
 
         <div class="modal-content import-imersao-modal">
+          <div class="modal-header-with-action" style="margin-bottom: 16px;">
+            <p class="modal-desc" style="margin: 0;">Envie a planilha com os alunos da imersão usando a mesma estrutura do cadastro de pessoa.</p>
+            <button type="button" class="ghost-btn hero-btn" @click="downloadPeopleTemplate('Modelo_Imersao_Alunos.xlsx')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Baixar Modelo .xlsx</span>
+            </button>
+          </div>
+
+          <div class="columns-grid">
+            <div class="columns-grid-title">A planilha deve conter as seguintes colunas:</div>
+            <div v-for="column in peopleSpreadsheetColumns" :key="column" class="column-item">{{ column }}</div>
+          </div>
+
           <input
             type="file"
             ref="fileInputImportImersao"
             style="display: none"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls"
+            @change="handleImportImersaoFileChange"
           />
 
           <div class="file-upload-area" @click="$refs.fileInputImportImersao?.click()">
@@ -1415,8 +1786,10 @@
               <line x1="12" y1="5" x2="12" y2="17" />
             </svg>
             <p>Envie a planilha com os alunos da imersão</p>
-            <small>Formatos aceitos: .xlsx, .xls, .csv</small>
+            <small>Formatos aceitos: .xlsx, .xls</small>
           </div>
+
+          <div v-if="importImersaoFile" class="selected-file-name">{{ importImersaoFile.name }}</div>
 
           <div class="info-box info-yellow">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1431,9 +1804,14 @@
           </div>
         </div>
 
+        <div v-if="importImersaoError" class="state-box state-error">{{ importImersaoError }}</div>
+        <div v-if="importImersaoSuccess" class="state-box state-success">{{ importImersaoSuccess }}</div>
+
         <div class="modal-actions-footer import-imersao-footer">
           <button type="button" class="btn-outline" @click="showImportImersaoModal = false">Cancelar</button>
-          <button type="button" class="btn-primary">Importar</button>
+          <button type="button" class="btn-primary" :disabled="importingImersao || !importImersaoFile" @click="importImersaoStudents">
+            {{ importingImersao ? 'Importando...' : 'Importar' }}
+          </button>
         </div>
       </div>
     </div>
@@ -1461,7 +1839,7 @@
               :class="{ active: tipoAvaliacaoImersao === 'parcial' }"
               @click="tipoAvaliacaoImersao = 'parcial'"
             >
-              Avaliação Parcial
+              Avaliação parcial
             </button>
             <button
               type="button"
@@ -1469,7 +1847,7 @@
               :class="{ active: tipoAvaliacaoImersao === 'final' }"
               @click="tipoAvaliacaoImersao = 'final'"
             >
-              Avaliação Final
+              Avaliação final
             </button>
           </div>
 
@@ -1566,7 +1944,7 @@
     </div>
 
     <!-- Modal: Send Message -->
-    <div v-if="showSendMessageModal" class="modal-overlay" @click="showSendMessageModal = false">
+    <div v-if="showSendMessageModal" class="modal-overlay modal-overlay-top" @click="showSendMessageModal = false">
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
           <h2>Enviar mensagem aos alunos</h2>
@@ -1584,11 +1962,11 @@
           <div class="send-message-section">
             <label class="section-label">Destinatários</label>
             <div class="radio-option">
-              <input type="radio" id="all-students" name="recipients" value="all" checked />
+              <input type="radio" id="all-students" name="recipients" value="all" v-model="sendMessageRecipients" />
               <label for="all-students">Todos os alunos do nivelamento</label>
             </div>
             <div class="radio-option">
-              <input type="radio" id="pending-students" name="recipients" value="pending" />
+              <input type="radio" id="pending-students" name="recipients" value="pending" v-model="sendMessageRecipients" />
               <label for="pending-students">Apenas alunos com cursos obrigatórios pendentes</label>
             </div>
 
@@ -1615,6 +1993,7 @@
               type="text"
               placeholder="Pendência na conclusão dos cursos obrigatórios"
               class="text-input"
+              v-model="sendMessageSubject"
             />
           </div>
 
@@ -1625,7 +2004,8 @@
               class="textarea-input"
               rows="6"
               placeholder="Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo."
-            >Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.</textarea>
+              v-model="sendMessageBody"
+            />
           </div>
 
           <div class="modal-actions">
@@ -1672,6 +2052,10 @@
               <div class="course-detail-label">Pendentes</div>
               <div class="course-detail-value amber">{{ selectedCourseItem?.pendingCount || 0 }}</div>
             </div>
+            <div class="course-detail-stat">
+              <div class="course-detail-label">Orientador</div>
+              <div class="course-detail-value">{{ selectedCourseItem?.advisorName || '--' }}</div>
+            </div>
           </div>
 
           <div class="alert-banner alert-warning">
@@ -1684,9 +2068,11 @@
               <strong>Alunos com pendência</strong>
               <p>{{ selectedCourseItem?.pendingCount || 0 }} alunos ainda não concluíram este curso</p>
             </div>
+            <button type="button" class="alert-link" @click="openCoursePendingMessage">Enviar mensagem</button>
           </div>
 
           <div class="modal-actions">
+            <button type="button" class="btn-outline" @click="openClassCourses">Avaliações do curso</button>
             <button type="button" class="btn-outline" @click="closeCourseDetailsModal">Fechar</button>
           </div>
         </div>
@@ -1712,130 +2098,20 @@ import { enrollmentService } from '@/services/enrollmentService';
 import { peopleService } from '@/services/peopleService';
 import { stageService } from '@/services/stageService';
 import { courseService } from '@/services/courseService';
+import { examService } from '@/services/examService';
 import { groupService } from '@/services/groupService';
+import { analyticsService } from '@/services/analyticsService';
+import { programService } from '@/services/programService';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import GroupCreateModal from '@/components/GroupCreateModal.vue';
+import {
+  PEOPLE_SPREADSHEET_COLUMNS,
+  downloadPeopleSpreadsheetTemplate
+} from '@/utils/peopleSpreadsheetTemplate';
 
 const cycle = ['Inscrição', 'Seleção', 'Nivelamento', 'Imersão', 'Encerrado'];
-const overviewCycle = ['Inscrição', 'Processo Seletivo', 'Nivelamento', 'Prova', 'Imersão', 'Avaliação Final', 'Encerramento'];
-const overviewStageCards = [
-  {
-    title: 'Processo Seletivo',
-    status: 'Concluído',
-    statusClass: 'pill-green',
-    items: [
-      { label: 'Inscritos', value: '612' },
-      { label: 'Vagas nivelamento', value: '250' },
-      { label: 'Pendências doc.', value: '22', valueClass: 'warning-strong' },
-      { label: 'Conflitos', value: '3', valueClass: 'warning-strong' },
-    ],
-  },
-  {
-    title: 'Nivelamento',
-    status: 'Concluído',
-    statusClass: 'pill-green',
-    items: [
-      { label: 'Selecionados', value: '250' },
-      { label: 'Ativos', value: '229' },
-      { label: 'Cursos obrigatórios', value: '6' },
-      { label: 'Prova final', value: '22/10/2025' },
-    ],
-  },
-  {
-    title: 'Imersão',
-    status: 'Em andamento',
-    statusClass: 'pill-teal',
-    items: [
-      { label: 'Aprovados', value: '50' },
-      { label: 'Alunos ativos', value: '44' },
-      { label: 'Grupos formados', value: '10' },
-      { label: 'Avaliação Final', value: '30/11/2025' },
-    ],
-  },
-];
-const overviewTimeline = [
-  { label: 'Período de Inscrição', date: '01/02 - 28/02', status: 'Concluído' },
-  { label: 'Divulgação Resultado Preliminar', date: '05/03', status: 'Concluído' },
-  { label: 'Período de Recursos', date: '06/03 - 10/03', status: 'Concluído' },
-  { label: 'Resultado Final', date: '15/03', status: 'Concluído' },
-  { label: 'Confirmação de Participação', date: '16/03 - 20/03', status: 'Concluído' },
-  { label: 'Nivelamento', date: '21/03 - 30/04', status: 'Concluído' },
-];
-const quotaDistribution = [
-  { label: 'Ampla Concorrência', value: 45, color: '#3b82f6' },
-  { label: 'Mulheres', value: 25, color: '#a855f7' },
-  { label: 'Negros/Pardos', value: 15, color: '#f59e0b' },
-  { label: 'PCD/Neurodivergente', value: 10, color: '#14b8a6' },
-  { label: '45+', value: 5, color: '#64748b' },
-];
-const genderDistribution = [
-  { label: 'Feminino', value: 42 },
-  { label: 'Masculino', value: 56 },
-  { label: 'Outro', value: 1 },
-  { label: 'Não inf.', value: 1 },
-];
-const cityDistribution = [
-  { label: 'Maceió - AL', value: 32 },
-  { label: 'Arapiraca - AL', value: 8 },
-  { label: 'Rio Largo - AL', value: 5 },
-  { label: 'Outros municípios', value: 5 },
-];
-const educationDistribution = [
-  { label: 'Graduação em andamento', value: 28 },
-  { label: 'Graduação concluída', value: 15 },
-  { label: 'Curso técnico', value: 5 },
-  { label: 'Outros cursos', value: 2 },
-];
-const overviewUpdates = [
-  {
-    action: 'Planilha de notas da prova importada',
-    author: 'Ana Souza',
-    date: '24/10/2025 14:32',
-    status: 'Concluído',
-    statusClass: 'pill-green',
-    dotClass: 'dot-green',
-  },
-  {
-    action: 'Dados dos cursos atualizados',
-    author: 'Carlos Lima',
-    date: '21/10/2025 09:18',
-    status: 'Concluído',
-    statusClass: 'pill-green',
-    dotClass: 'dot-green',
-  },
-  {
-    action: 'Lista de aprovados para imersão atualizada',
-    author: 'Mariana Torres',
-    date: '30/10/2025 16:05',
-    status: 'Concluído',
-    statusClass: 'pill-green',
-    dotClass: 'dot-green',
-  },
-  {
-    action: 'Contratos pendentes identificados',
-    author: 'Sistema',
-    date: '05/11/2025 10:44',
-    status: 'Atenção',
-    statusClass: 'pill-amber',
-    dotClass: 'dot-amber',
-  },
-  {
-    action: 'Notas da avaliação parcial aguardando envio',
-    author: 'Sistema',
-    date: '25/02/2026 08:20',
-    status: 'Pendente',
-    statusClass: 'pill-slate',
-    dotClass: 'dot-slate',
-  },
-];
-const overviewTopCards = {
-  nivelamentoSelecionados: 250,
-  nivelamentoAtivos: 229,
-  imersaoAprovados: 50,
-  imersaoGrupos: 10,
-  alertasCriticos: 7,
-  alertasRisco: 3,
-};
+const overviewCycle = ['Inscrição', 'Processo Seletivo', 'Nivelamento', 'Prova', 'Imersão', 'Avaliação final', 'Encerramento'];
+const peopleSpreadsheetColumns = PEOPLE_SPREADSHEET_COLUMNS;
 
 const selectionQuotaLabels = [
   'Ampla Concorrência',
@@ -1852,11 +2128,15 @@ export default {
     const route = useRoute();
     const router = useRouter();
     const classData = ref({});
+    const overviewProgramItem = ref(null);
     const stages = ref([]);
     const stageCandidatesCount = ref({});
     const classEnrollments = ref([]);
     const allEnrollments = ref([]);
     const allClasses = ref([]);
+    const classStatusReport = ref(null);
+    const classStatusLoading = ref(false);
+    const classStatusError = ref(null);
     const loading = ref(false);
     const peopleLoading = ref(false);
     const error = ref(null);
@@ -1886,12 +2166,30 @@ export default {
     const showAtualizarPresencaImersaoModal = ref(false);
     const tipoAvaliacaoImersao = ref('parcial');
     const showSendMessageModal = ref(false);
+    const sendMessageRecipients = ref('all');
+    const sendMessageSubject = ref('Pendência na conclusão dos cursos obrigatórios');
+    const sendMessageBody = ref('Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.');
+    const downloadPeopleTemplate = (fileName) => {
+      downloadPeopleSpreadsheetTemplate(fileName);
+    };
     const showCourseDetailsModal = ref(false);
     const selectedCourseItem = ref(null);
     const showGroupCreateModal = ref(false);
     const selectedUpdateAction = ref(null);
+    const updateStageContext = ref('selecao');
+    const selectionStageCandidates = ref([]);
+    const imersaoStageCandidates = ref([]);
+    const selectionCandidatesLoading = ref(false);
     const registeringCandidate = ref(false);
     const registrationError = ref('');
+    const importInscricoesFile = ref(null);
+    const importingInscricoes = ref(false);
+    const importInscricoesError = ref('');
+    const importInscricoesResult = ref(null);
+    const importAprovadosFile = ref(null);
+    const importingAprovados = ref(false);
+    const importAprovadosError = ref('');
+    const importAprovadosResult = ref(null);
     const newCandidateForm = ref({
       name: '',
       cpf: '',
@@ -1909,84 +2207,49 @@ export default {
       convokeDate: '',
       notes: '',
     });
-    const imersaoMetricsCards = ref([
-      { label: 'Total de grupos', value: '10', valueClass: '' },
-      { label: 'Total de alunos', value: '50', valueClass: 'teal-strong' },
-      { label: 'Alunos ativos', value: '44', valueClass: 'teal-strong' },
-      { label: 'Nota de corte parcial', value: '3,75', valueClass: 'warning-strong' },
-      { label: 'Nota de corte final', value: '75% da maior', valueClass: 'warning-strong' },
-      { label: 'Alunos em risco', value: '3', valueClass: 'danger-strong' },
-    ]);
-    const imersaoGroups = ref([
-      {
-        id: 1,
-        name: 'Grupo 03',
-        status: 'OK',
-        statusClass: 'is-ok',
-        mentor: 'Prof. João Silva',
-        project: 'Plataforma de Gestão Acadêmica',
-        partnerCompany: 'BRISA',
-        lastGradesUpdate: '25/04/2026',
-        lastMeetingDate: '24/04/2026',
-        students: 5,
-        partialAverage: '7.8',
-        finalAverage: '8.4',
-        studentsDetails: [
-          { id: 'g03-1', name: 'João Silva', partial: '4.2', final: '4.5', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g03-2', name: 'Maria Santos', partial: '3.8', final: '4.1', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g03-3', name: 'Carlos Oliveira', partial: '4.5', final: '4.7', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g03-4', name: 'Ana Costa', partial: '4.0', final: '4.3', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g03-5', name: 'Pedro Lima', partial: '3.5', final: '3.8', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: false },
-        ],
-      },
-      {
-        id: 2,
-        name: 'Grupo 07',
-        status: 'OK',
-        statusClass: 'is-ok',
-        mentor: 'Prof. Maria Santos',
-        project: 'Sistema de Controle de Estoque',
-        partnerCompany: 'BRISA',
-        lastGradesUpdate: '25/04/2026',
-        lastMeetingDate: '24/04/2026',
-        students: 4,
-        partialAverage: '8.2',
-        finalAverage: '8.9',
-        studentsDetails: [
-          { id: 'g07-1', name: 'Fernanda Lima', partial: '4.4', final: '4.8', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g07-2', name: 'Gustavo Rocha', partial: '4.1', final: '4.6', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g07-3', name: 'Helena Costa', partial: '3.9', final: '4.4', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g07-4', name: 'Igor Nascimento', partial: '4.0', final: '4.5', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-        ],
-      },
-      {
-        id: 3,
-        name: 'Grupo 12',
-        status: 'Atenção',
-        statusClass: 'is-warning',
-        mentor: 'Prof. Carlos Oliveira',
-        project: 'App de Mobilidade Urbana',
-        partnerCompany: 'BRISA',
-        lastGradesUpdate: '25/04/2026',
-        lastMeetingDate: '24/04/2026',
-        students: 5,
-        partialAverage: '6.5',
-        finalAverage: '7.2',
-        studentsDetails: [
-          { id: 'g12-1', name: 'João Victor Melo', partial: '3.6', final: '3.9', situation: 'Atenção', situationClass: 'status-warning', attendedLastMeeting: false },
-          { id: 'g12-2', name: 'Karina Souza', partial: '3.8', final: '4.0', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g12-3', name: 'Lucas Monteiro', partial: '4.0', final: '4.1', situation: 'Regular', situationClass: 'status-regular', attendedLastMeeting: true },
-          { id: 'g12-4', name: 'Mariana Lopes', partial: '3.7', final: '3.9', situation: 'Atenção', situationClass: 'status-warning', attendedLastMeeting: false },
-          { id: 'g12-5', name: 'Nicolas Barros', partial: '3.5', final: '3.8', situation: 'Atenção', situationClass: 'status-warning', attendedLastMeeting: true },
-        ],
-      },
-    ]);
-    const imersaoExpandedGroupId = ref(1);
-    const imersaoGroupTabs = ref({
-      1: 'resumo',
-      2: 'resumo',
-      3: 'resumo',
+    const convokingWaitlist = ref(false);
+    const waitlistError = ref('');
+    const waitlistSuccess = ref(null);
+    const submitCoursesFile = ref(null);
+    const submittingCourses = ref(false);
+    const submitCoursesError = ref('');
+    const submitCoursesSuccess = ref('');
+    const submitProvaFile = ref(null);
+    const submittingProva = ref(false);
+    const submitProvaError = ref('');
+    const submitProvaSuccess = ref('');
+    const importImersaoFile = ref(null);
+    const importingImersao = ref(false);
+    const importImersaoError = ref('');
+    const importImersaoSuccess = ref('');
+    const examSummaryData = ref(null);
+    const examRespondentProfileData = ref(null);
+    const approvedRankingData = ref(null);
+    const approvedRankingLoading = ref(false);
+    const approvedRankingForm = ref({
+      totalVacancies: 50,
+      pointsPerCompletedCourse: 2.5,
+      bonusPerPriorityCity: 10,
+      priorityCitiesText: 'Maceió - AL\nArapiraca - AL\nRio Largo - AL',
+      amplaConcorrenciaSeats: 24,
+      pcdSeats: 3,
+      negroPardoSeats: 10,
+      mulheresSeats: 10,
+      age45Seats: 3,
     });
+    const examInsightsLoading = ref(false);
+    const examInsightsError = ref('');
+    const imersaoMetricsCards = ref([
+      { label: 'Total de grupos', value: '0', valueClass: '' },
+      { label: 'Total de alunos', value: '0', valueClass: 'teal-strong' },
+      { label: 'Alunos ativos', value: '0', valueClass: 'teal-strong' },
+      { label: 'Nota de corte parcial', value: '-', valueClass: 'warning-strong' },
+      { label: 'Nota de corte final', value: '-', valueClass: 'warning-strong' },
+      { label: 'Alunos em risco', value: '0', valueClass: 'danger-strong' },
+    ]);
+    const imersaoGroups = ref([]);
+    const imersaoExpandedGroupId = ref(null);
+    const imersaoGroupTabs = ref({});
     const toggleImersaoGroup = (groupId) => {
       imersaoExpandedGroupId.value = imersaoExpandedGroupId.value === groupId ? null : groupId;
     };
@@ -1994,58 +2257,10 @@ export default {
       imersaoGroupTabs.value[groupId] = tabId;
     };
     const getImersaoGroupTab = (groupId) => imersaoGroupTabs.value[groupId] || 'resumo';
-    const imersaoPresencaGroups = ref([
-      {
-        id: 'grupo-03',
-        name: 'Grupo 03',
-        meetings: [
-          { value: '2026-03-03', label: '03/03/2026' },
-          { value: '2026-03-10', label: '10/03/2026' },
-          { value: '2026-03-17', label: '17/03/2026' },
-        ],
-        students: [
-          { id: 'g03-s1', name: 'Ana Beatriz Santos' },
-          { id: 'g03-s2', name: 'Bruno Almeida' },
-          { id: 'g03-s3', name: 'Camila Ferreira' },
-          { id: 'g03-s4', name: 'Diego Araújo' },
-          { id: 'g03-s5', name: 'Ester Oliveira' },
-        ],
-      },
-      {
-        id: 'grupo-07',
-        name: 'Grupo 07',
-        meetings: [
-          { value: '2026-03-04', label: '04/03/2026' },
-          { value: '2026-03-11', label: '11/03/2026' },
-          { value: '2026-03-18', label: '18/03/2026' },
-        ],
-        students: [
-          { id: 'g07-s1', name: 'Fernanda Lima' },
-          { id: 'g07-s2', name: 'Gustavo Rocha' },
-          { id: 'g07-s3', name: 'Helena Costa' },
-          { id: 'g07-s4', name: 'Igor Nascimento' },
-        ],
-      },
-      {
-        id: 'grupo-12',
-        name: 'Grupo 12',
-        meetings: [
-          { value: '2026-03-05', label: '05/03/2026' },
-          { value: '2026-03-12', label: '12/03/2026' },
-          { value: '2026-03-19', label: '19/03/2026' },
-        ],
-        students: [
-          { id: 'g12-s1', name: 'João Victor Melo' },
-          { id: 'g12-s2', name: 'Karina Souza' },
-          { id: 'g12-s3', name: 'Lucas Monteiro' },
-          { id: 'g12-s4', name: 'Mariana Lopes' },
-          { id: 'g12-s5', name: 'Nicolas Barros' },
-        ],
-      },
-    ]);
+    const imersaoPresencaGroups = ref([]);
     const imersaoPresencaForm = ref({
-      groupId: 'grupo-03',
-      meetingDate: '2026-03-03',
+      groupId: '',
+      meetingDate: '',
     });
     const presencaDraft = ref({});
     const selectedPresencaGroup = computed(() => imersaoPresencaGroups.value.find((group) => group.id === imersaoPresencaForm.value.groupId) || null);
@@ -2170,16 +2385,44 @@ export default {
       return 'badge-green';
     });
 
-    const currentStageIndex = computed(() => {
-      const fromClass = mapCycle(classData.value?.currentStage || classData.value?.status);
-      if (fromClass) return cycle.indexOf(fromClass);
+    const stageIndexFromLabel = (value) => {
+      const label = mapCycle(value);
+      return label ? cycle.indexOf(label) : -1;
+    };
 
-      let maxIndex = 0;
+    const currentStageIndex = computed(() => {
+      if (normalizeText(classData.value?.status).includes('encerr')) {
+        return cycle.indexOf('Encerrado');
+      }
+
+      const explicitStageIndex = stageIndexFromLabel(
+        overviewProgramItem.value?.etapaAtual ||
+        overviewProgramItem.value?.currentStage ||
+        classData.value?.currentStage
+      );
+
+      let maxIndexWithPeople = 0;
       stages.value.forEach((stage) => {
-        const index = cycle.indexOf(mapCycle(stage?.name || ''));
-        if (index > maxIndex) maxIndex = index;
+        const count = Number(stageCandidatesCount.value?.[stage.id] ?? 0);
+        if (!count) return;
+        const index = stageIndexFromLabel(stage?.name || '');
+        if (index > maxIndexWithPeople) maxIndexWithPeople = index;
       });
-      return maxIndex;
+
+      const now = Date.now();
+      const isStarted = (value) => {
+        const date = parseDateValue(value);
+        return date && date.getTime() <= now;
+      };
+
+      let dateStageIndex = 0;
+      if (isStarted(classData.value?.immersionStartDate)) dateStageIndex = cycle.indexOf('Imersão');
+      else if (isStarted(classData.value?.levelingStartDate)) dateStageIndex = cycle.indexOf('Nivelamento');
+      if (isStarted(classData.value?.levelingSelectionAnnouncementDate) || isStarted(classData.value?.applicationEndDate)) {
+        dateStageIndex = Math.max(dateStageIndex, cycle.indexOf('Seleção'));
+      }
+
+      return Math.max(explicitStageIndex, maxIndexWithPeople, dateStageIndex, cycle.indexOf('Inscrição'));
     });
 
     const currentStageLabel = computed(() => cycle[currentStageIndex.value] || 'Inscrição');
@@ -2189,10 +2432,10 @@ export default {
     const classModelLabel = computed(() => classData.value?.model || classData.value?.modality || 'Híbrido');
     const classWorkloadLabel = computed(() => {
       const workload = classData.value?.workload || classData.value?.totalHours;
-      return workload ? `${workload}h` : '480h';
+      return workload ? `${workload}h` : '-';
     });
     const classPeriodLabel = computed(() => {
-      if (!classData.value?.startDate || !classData.value?.endDate) return 'Ago/2025 → Jun/2026';
+      if (!classData.value?.startDate || !classData.value?.endDate) return '-';
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const start = new Date(classData.value.startDate);
       const end = new Date(classData.value.endDate);
@@ -2204,22 +2447,263 @@ export default {
         classData.value?.program?.partnerInstitution?.name ||
         classData.value?.program?.partnerName ||
         classData.value?.program?.institutionName ||
-        'EASY/UFAL'
+        '-'
     );
-    const currentStagePeriod = computed(() => classData.value?.stagePeriod || '17/11/2025 a 18/05/2026');
-    const currentStageMilestone = computed(() => classData.value?.nextMilestone || 'Avaliação parcial');
-    const currentStageMilestoneDate = computed(() => classData.value?.nextMilestoneDate || '03/03/2026');
-    const overviewCurrentCycleIndex = computed(() => {
-      const normalized = normalizeText(classData.value?.currentStage || classData.value?.status || '');
-      if (normalized.includes('imersa')) return 4;
-      if (normalized.includes('nivel')) return 2;
-      if (normalized.includes('sele')) return 1;
-      if (normalized.includes('prova')) return 3;
-      if (normalized.includes('encer')) return 6;
+    const executorLabel = computed(() => {
+      if (overviewProgramItem.value) {
+        return (
+          // Alinhar com ProgramsView: usar o executor vindo do overview.
+          overviewProgramItem.value?.executor ||
+          overviewProgramItem.value?.executora ||
+          overviewProgramItem.value?.parceiro ||
+          '-'
+        );
+      }
+
+      return (
+        classData.value?.executora ||
+        classData.value?.executor ||
+        classData.value?.program?.executora ||
+        classData.value?.program?.executor ||
+        classData.value?.program?.executorName ||
+        classData.value?.executorName ||
+        classData.value?.parceiro ||
+        classData.value?.program?.parceiro ||
+        partnerLabel.value ||
+        '-'
+      );
+    });
+    const classLocationLabel = computed(() => {
+      const locality = classData.value?.locality || classData.value?.localidade;
+      if (locality) return locality;
+
+      const location = classData.value?.location;
+      if (!location) return '-';
+
+      if (location.name && location.state) {
+        return `${location.name} - ${location.state}`;
+      }
+
+      return location.name || '-';
+    });
+    const currentStagePeriod = computed(() => classData.value?.stagePeriod || classPeriodLabel.value);
+    const currentStageMilestone = computed(() => classData.value?.nextMilestone || nextStageLabel.value);
+    const currentStageMilestoneDate = computed(() => classData.value?.nextMilestoneDate || '-');
+    const currentStatusNote = computed(() => {
+      const milestone = currentStageMilestone.value && currentStageMilestone.value !== '-'
+        ? ` Próximo marco: ${currentStageMilestone.value}.`
+        : '';
+      return `Turma ${classStatusLabel.value.toLowerCase()} na etapa ${currentStageLabel.value}.${milestone}`;
+    });
+    const overviewStageIndexFromLabel = (value) => {
+      const normalized = normalizeText(value);
+      if (!normalized) return -1;
+      if (normalized.includes('encerr')) return 6;
       if (normalized.includes('avali')) return 5;
-      return 0;
+      if (normalized.includes('imersa') || normalized.includes('imers')) return 4;
+      if (normalized.includes('prova')) return 3;
+      if (normalized.includes('nivel')) return 2;
+      if (normalized.includes('process') || normalized.includes('sele')) return 1;
+      if (normalized.includes('inscri')) return 0;
+      return -1;
+    };
+    const latestStartedOverviewStageIndex = () => {
+      const now = Date.now();
+      const isStarted = (value) => {
+        const date = parseDateValue(value);
+        return date && date.getTime() <= now;
+      };
+
+      let index = isStarted(classData.value?.applicationStartDate) ? 0 : -1;
+      if (isStarted(classData.value?.applicationEndDate) || isStarted(classData.value?.levelingSelectionAnnouncementDate)) index = Math.max(index, 1);
+      if (isStarted(classData.value?.levelingStartDate)) index = Math.max(index, 2);
+      if (isStarted(classData.value?.levelingFinalExamDate)) index = Math.max(index, 3);
+      if (isStarted(classData.value?.immersionStartDate)) index = Math.max(index, 4);
+      if (isStarted(classData.value?.finalEvaluationDate)) index = Math.max(index, 5);
+      if (isStarted(classData.value?.certificateIssueDate) || isStarted(classData.value?.endDate)) index = Math.max(index, 6);
+      return Math.max(index, 0);
+    };
+    const overviewCurrentCycleIndex = computed(() => {
+      const statusIndex = normalizeText(classData.value?.status).includes('encerr') ? 6 : -1;
+      const explicitIndex = overviewStageIndexFromLabel(
+        overviewProgramItem.value?.etapaAtual ||
+        overviewProgramItem.value?.currentStage ||
+        classData.value?.currentStage ||
+        currentStageLabel.value
+      );
+      const countIndex = [
+        overviewStageCounts.value.inscricao > 0 ? 0 : -1,
+        overviewStageCounts.value.selecao > 0 ? 1 : -1,
+        overviewStageCounts.value.nivelamento > 0 ? 2 : -1,
+        overviewStageCounts.value.prova > 0 ? 3 : -1,
+        overviewStageCounts.value.imersao > 0 ? 4 : -1,
+        overviewStageCounts.value.avaliacao > 0 ? 5 : -1,
+      ].reduce((max, item) => Math.max(max, item), -1);
+
+      return Math.max(statusIndex, explicitIndex, countIndex, latestStartedOverviewStageIndex(), 0);
     });
     const overviewProgressPct = computed(() => Math.round((overviewCurrentCycleIndex.value / (overviewCycle.length - 1)) * 100));
+    const hasStartedInscricao = computed(() => {
+      const startDate = parseDateValue(classData.value?.applicationStartDate);
+      if (!startDate) return false;
+      return startDate.getTime() <= Date.now();
+    });
+
+    const overviewStageCounts = computed(() => {
+      const counts = {
+        inscricao: 0,
+        selecao: 0,
+        nivelamento: 0,
+        prova: 0,
+        imersao: 0,
+        avaliacao: 0,
+      };
+      stages.value.forEach((stage) => {
+        const count = Number(stageCandidatesCount.value?.[stage.id] ?? 0);
+        if (!count) return;
+        const value = normalizeText(stage?.name || '');
+        if (value.includes('inscri')) counts.inscricao += count;
+        if (value.includes('sele')) counts.selecao += count;
+        if (value.includes('nivel')) counts.nivelamento += count;
+        if (value.includes('prova')) counts.prova += count;
+        if (value.includes('imers')) counts.imersao += count;
+        if (value.includes('avali')) counts.avaliacao += count;
+      });
+      return counts;
+    });
+
+    const overviewTopCards = computed(() => {
+      const imersaoActiveStudents = imersaoStageCandidates.value.filter((candidate) => String(candidate?.status || '').toUpperCase() !== 'REPROVADO').length;
+      return {
+        nivelamentoSelecionados: overviewStageCounts.value.nivelamento,
+        nivelamentoAtivos: overviewStageCounts.value.nivelamento,
+        imersaoAprovados: imersaoActiveStudents || overviewStageCounts.value.imersao,
+        imersaoGrupos: imersaoGroups.value.length,
+        alertasCriticos: 0,
+        alertasRisco: 0,
+      };
+    });
+
+    const overviewCycleHasStudents = (label) => {
+      const index = overviewCycle.indexOf(label);
+      if (index >= 0 && index <= overviewCurrentCycleIndex.value) return true;
+
+      const value = normalizeText(label);
+      if (value.includes('inscri')) {
+        return overviewStageCounts.value.inscricao > 0 || hasStartedInscricao.value;
+      }
+      if (value.includes('process')) return overviewStageCounts.value.selecao > 0;
+      if (value.includes('sele')) return overviewStageCounts.value.selecao > 0;
+      if (value.includes('nivel')) return overviewStageCounts.value.nivelamento > 0;
+      if (value.includes('prova')) return overviewStageCounts.value.prova > 0;
+      if (value.includes('imers')) return overviewStageCounts.value.imersao > 0;
+      if (value.includes('avali')) return overviewStageCounts.value.avaliacao > 0;
+      if (value.includes('encerr')) {
+        return normalizeText(classData.value?.status || '').includes('encerr');
+      }
+      return false;
+    };
+
+    const activeClassPeopleCount = computed(() => {
+      const activePeopleIds = new Set();
+      (classEnrollments.value || []).forEach((enrollment) => {
+        const personId = enrollment?.people?.id;
+        if (!personId || !isConflictRelevantStatus(enrollment?.status)) return;
+        activePeopleIds.add(personId);
+      });
+      return activePeopleIds.size;
+    });
+
+    const imersaoActiveStudentsCount = computed(() => {
+      const fromStage = imersaoStageCandidates.value.filter((candidate) => String(candidate?.status || '').toUpperCase() !== 'REPROVADO').length;
+      return fromStage || activeClassPeopleCount.value;
+    });
+
+    const formatCurrency = (value) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return '-';
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numeric);
+    };
+
+    const programContractItems = computed(() => {
+      const program = classData.value?.program || {};
+      const vigencia = program.startDate || program.endDate
+        ? `${formatDate(program.startDate)} até ${formatDate(program.endDate)}`
+        : classPeriodLabel.value;
+
+      return [
+        { label: 'Contrato/Fomento', value: program.contractNumber || '-' },
+        { label: 'Entidade de fomento', value: program.fundingEntity || '-' },
+        { label: 'Valor do programa', value: formatCurrency(program.programValue) },
+        { label: 'Coordenador geral', value: program.generalCoordinator || '-' },
+        { label: 'Vigência', value: vigencia || '-' },
+        { label: 'Executor/Parceiro', value: program.executorName || program.executor || executorLabel.value || '-' },
+      ];
+    });
+
+    const overviewStageCards = computed(() => [
+      {
+        title: 'Processo Seletivo',
+        status: overviewStageCounts.value.selecao > 0 ? 'Em andamento' : 'Aguardando dados',
+        statusClass: overviewStageCounts.value.selecao > 0 ? 'pill-teal' : 'pill-slate',
+        items: [
+          { label: 'Inscritos', value: totalCandidates.value },
+          { label: 'Vagas nivelamento', value: classData.value?.defaultLevelingCapacity ?? '-' },
+          { label: 'Lista de espera', value: selectionWaitlistCount.value },
+          { label: 'Conflitos', value: selectionConflictCount.value, valueClass: selectionConflictCount.value ? 'warning-strong' : '' },
+        ],
+      },
+      {
+        title: 'Nivelamento',
+        status: overviewStageCounts.value.nivelamento > 0 ? 'Em andamento' : 'Aguardando dados',
+        statusClass: overviewStageCounts.value.nivelamento > 0 ? 'pill-teal' : 'pill-slate',
+        items: [
+          { label: 'Selecionados', value: overviewStageCounts.value.nivelamento || '-' },
+          { label: 'Ativos', value: classStatusReport.value?.activeStudents ?? activeClassPeopleCount.value },
+          { label: 'Cursos obrigatórios', value: courseItems.value.filter((course) => course.required).length },
+          { label: 'Prova final', value: formatDate(classData.value?.levelingFinalExamDate) },
+        ],
+      },
+      {
+        title: 'Imersão',
+        status: overviewStageCounts.value.imersao > 0 ? 'Em andamento' : 'Aguardando dados',
+        statusClass: overviewStageCounts.value.imersao > 0 ? 'pill-teal' : 'pill-slate',
+        items: [
+          { label: 'Aprovados', value: overviewStageCounts.value.imersao || '-' },
+          { label: 'Alunos ativos', value: imersaoActiveStudentsCount.value || '-' },
+          { label: 'Grupos formados', value: imersaoGroups.value.length },
+          { label: 'Avaliação final', value: formatDate(classData.value?.finalEvaluationDate) },
+        ],
+      },
+    ]);
+
+    const openOverviewStageDetails = (title) => {
+      activeTab.value = 'etapas';
+      etapasSubTab.value = normalizeText(title).includes('imers') ? 'imersao' : 'nivelamento';
+    };
+
+    const openFullTimeline = () => {
+      activeTab.value = 'etapas';
+      etapasSubTab.value = currentStageIndex.value >= 3 ? 'imersao' : 'nivelamento';
+    };
+
+    const openSendMessageModal = (options = {}) => {
+      const { subject, body, recipients } = options;
+      sendMessageSubject.value = subject ?? 'Pendência na conclusão dos cursos obrigatórios';
+      sendMessageBody.value = body ?? 'Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.';
+      sendMessageRecipients.value = recipients ?? 'all';
+      showSendMessageModal.value = true;
+    };
+
+    const openCoursePendingMessage = () => {
+      if (!selectedCourseItem.value) return;
+      const courseName = selectedCourseItem.value?.name || 'este curso';
+      openSendMessageModal({
+        subject: `Pendência no curso ${courseName}`,
+        body: `Olá, identificamos que você ainda possui pendência no curso "${courseName}" do nivelamento. A conclusão desse curso é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.`,
+        recipients: 'pending',
+      });
+    };
 
     const stageBucket = computed(() => {
       const summary = { selecao: 0, nivelamento: 0, imersao: 0 };
@@ -2373,6 +2857,31 @@ export default {
     });
 
     const selectionProcessBaseRows = computed(() => {
+      if (selectionStageCandidates.value.length > 0) {
+        return [...selectionStageCandidates.value]
+          .map((candidate) => {
+            const meta = selectionStatusMeta(candidate.status, candidate.notes);
+            return {
+              id: candidate.id,
+              peopleId: candidate.peopleId,
+              name: candidate.peopleName || '-',
+              cpf: candidate.peopleCpf || '',
+              email: candidate.peopleEmail || '-',
+              gender: formatGender(candidate.peopleGender),
+              age: formatAge(candidate.peopleBirthDate),
+              quota: normalizeQuotaLabel(candidate.peopleQuotaCategory || '-'),
+              city: formatCity({ city: candidate.peopleCity, state: candidate.peopleState }),
+              education: formatEducation(candidate.peopleEducationLevel),
+              educationLevel: candidate.peopleEducationLevel || '-',
+              conflict: meta.conflict,
+              status: meta.label,
+              statusClass: meta.className,
+              notes: candidate.notes || '',
+            };
+          })
+          .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
+      }
+
       const totalRows = classPeopleRows.value.length;
       const conflictCount = selectionConflictPeopleIds.value.size;
       const eligibleRows = Math.max(totalRows - conflictCount, 0);
@@ -2443,7 +2952,11 @@ export default {
     });
 
     const selectionConflictCount = computed(() => selectionProcessBaseRows.value.filter((row) => row.conflict).length);
+    const selectionApprovedCount = computed(() => selectionProcessBaseRows.value.filter((row) => row.status === 'Aprovado').length);
     const selectionWaitlistCount = computed(() => selectionProcessBaseRows.value.filter((row) => row.status === 'Lista de espera').length);
+    const selectionAvailableVacancies = computed(() =>
+      Math.max(Number(classData.value?.defaultLevelingCapacity ?? 250) - selectionApprovedCount.value, 0)
+    );
     const selectionProcessTotalPages = computed(() => {
       const total = Math.ceil(selectionProcessRows.value.length / selectionProcessPageSize);
       return Math.max(total, 1);
@@ -2492,6 +3005,7 @@ export default {
     ]);
     const selectionConflictSummary = computed(() => {
       const count = selectionConflictCount.value;
+      if (!count) return 'Nenhum conflito de inscrição identificado';
       return `${count} ${count === 1 ? 'aluno encontrado' : 'alunos encontrados'} em outro programa vigente`;
     });
     const selectionConflictButtonLabel = computed(() => (selectionConflictOnly.value ? 'Ver todos →' : 'Ver conflitos →'));
@@ -2501,7 +3015,117 @@ export default {
       return `Mostrando ${selectionProcessPageStart.value}-${selectionProcessPageEnd.value} de ${total} inscritos`;
     });
 
-    const openUpdateSelectionModal = () => {
+    const distributionPalette = ['#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#64748b'];
+    const distributionRows = computed(() => (
+      classPeopleRows.value.length ? classPeopleRows.value : selectionProcessBaseRows.value
+    ));
+    const buildCountDistribution = (rows, resolveLabel, fallbackLabel = 'Não informado', maxItems = 6) => {
+      const counts = new Map();
+      (rows || []).forEach((row) => {
+        const rawLabel = resolveLabel(row);
+        const label = rawLabel && rawLabel !== '-' ? rawLabel : fallbackLabel;
+        counts.set(label, (counts.get(label) || 0) + 1);
+      });
+
+      if (!counts.size) {
+        return [{ label: 'Sem dados', value: 0, count: 0 }];
+      }
+
+      return Array.from(counts.entries())
+        .map(([label, count]) => ({ label, value: count, count }))
+        .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label, 'pt-BR'))
+        .slice(0, maxItems);
+    };
+    const buildPercentDistribution = (rows, resolveLabel, fallbackLabel = 'Não informado') => {
+      const source = buildCountDistribution(rows, resolveLabel, fallbackLabel);
+      const total = source.reduce((sum, item) => sum + item.count, 0);
+      if (!total) {
+        return [{ label: 'Sem dados', value: 0, color: '#cbd5e1' }];
+      }
+
+      return source.map((item, index) => ({
+        label: item.label,
+        value: Math.round((item.count / total) * 100),
+        count: item.count,
+        color: distributionPalette[index % distributionPalette.length],
+      }));
+    };
+
+    const quotaDistribution = computed(() =>
+      buildPercentDistribution(distributionRows.value, (row) => normalizeQuotaLabel(row.quota || row.peopleQuotaCategory))
+    );
+    const genderDistribution = computed(() =>
+      buildPercentDistribution(distributionRows.value, (row) => formatGender(row.gender || row.peopleGender))
+    );
+    const cityDistribution = computed(() =>
+      buildCountDistribution(distributionRows.value, (row) => row.city || formatCity(row), 'Não informado', 5)
+    );
+    const educationDistribution = computed(() =>
+      buildCountDistribution(distributionRows.value, (row) => formatEducation(row.educationLevel || row.education), 'Não informado', 5)
+    );
+
+    const timelinePeriodLabel = (start, end) => {
+      const startLabel = formatDate(start);
+      const endLabel = formatDate(end);
+      if (startLabel !== '-' && endLabel !== '-') return `${startLabel} a ${endLabel}`;
+      return startLabel !== '-' ? startLabel : endLabel;
+    };
+    const timelineStatus = (dateValue) => {
+      const date = parseDateValue(dateValue);
+      if (!date) return 'Pendente';
+      return date.getTime() <= Date.now() ? 'Concluído' : 'Previsto';
+    };
+    const timelinePeriodStatus = (start, end) => timelineStatus(end || start);
+    const overviewTimeline = computed(() => [
+      { label: 'Publicação do edital', date: formatDate(classData.value?.publicationDate), status: timelineStatus(classData.value?.publicationDate) },
+      { label: 'Inscrições', date: timelinePeriodLabel(classData.value?.applicationStartDate, classData.value?.applicationEndDate), status: timelinePeriodStatus(classData.value?.applicationStartDate, classData.value?.applicationEndDate) },
+      { label: 'Selecionados para nivelamento', date: formatDate(classData.value?.levelingSelectionAnnouncementDate), status: timelineStatus(classData.value?.levelingSelectionAnnouncementDate) },
+      { label: 'Nivelamento', date: timelinePeriodLabel(classData.value?.levelingStartDate, classData.value?.levelingEndDate), status: timelinePeriodStatus(classData.value?.levelingStartDate, classData.value?.levelingEndDate) },
+      { label: 'Prova final', date: formatDate(classData.value?.levelingFinalExamDate), status: timelineStatus(classData.value?.levelingFinalExamDate) },
+      { label: 'Selecionados para imersão', date: formatDate(classData.value?.immersionSelectionAnnouncementDate), status: timelineStatus(classData.value?.immersionSelectionAnnouncementDate) },
+      { label: 'Imersão', date: timelinePeriodLabel(classData.value?.immersionStartDate, classData.value?.immersionEndDate), status: timelinePeriodStatus(classData.value?.immersionStartDate, classData.value?.immersionEndDate) },
+      { label: 'Avaliação parcial', date: formatDate(classData.value?.partialEvaluationDate), status: timelineStatus(classData.value?.partialEvaluationDate) },
+      { label: 'Avaliação final', date: formatDate(classData.value?.finalEvaluationDate), status: timelineStatus(classData.value?.finalEvaluationDate) },
+      { label: 'Certificados', date: formatDate(classData.value?.certificateIssueDate), status: timelineStatus(classData.value?.certificateIssueDate) },
+    ]);
+
+    const overviewUpdates = computed(() => [
+      {
+        action: `${selectionProcessBaseRows.value.length || totalCandidates.value} inscrição(ões) no processo seletivo`,
+        author: 'Processo seletivo',
+        date: formatDate(classData.value?.applicationEndDate || classData.value?.applicationStartDate),
+        status: 'Sincronizado',
+        statusClass: 'pill-teal',
+        dotClass: 'dot-green',
+      },
+      {
+        action: `${courseItems.value.length} curso(s) vinculado(s) ao nivelamento`,
+        author: 'Cursos',
+        date: formatDate(classData.value?.levelingStartDate),
+        status: courseItems.value.length ? 'Atualizado' : 'Pendente',
+        statusClass: courseItems.value.length ? 'pill-teal' : 'pill-slate',
+        dotClass: courseItems.value.length ? 'dot-green' : 'dot-slate',
+      },
+      {
+        action: `${overviewStageCounts.value.imersao || imersaoActiveStudentsCount.value} aluno(s) aprovado(s) para imersão`,
+        author: 'Imersão',
+        date: formatDate(classData.value?.immersionSelectionAnnouncementDate || classData.value?.immersionStartDate),
+        status: overviewStageCounts.value.imersao ? 'Consolidado' : 'Pendente',
+        statusClass: overviewStageCounts.value.imersao ? 'pill-teal' : 'pill-slate',
+        dotClass: overviewStageCounts.value.imersao ? 'dot-green' : 'dot-slate',
+      },
+      {
+        action: `${imersaoGroups.value.length} grupo(s) de projeto cadastrado(s)`,
+        author: 'Projetos',
+        date: formatDate(classData.value?.immersionStartDate),
+        status: imersaoGroups.value.length ? 'Atualizado' : 'Pendente',
+        statusClass: imersaoGroups.value.length ? 'pill-teal' : 'pill-slate',
+        dotClass: imersaoGroups.value.length ? 'dot-green' : 'dot-slate',
+      },
+    ]);
+
+    const openUpdateSelectionModal = (context = 'selecao') => {
+      updateStageContext.value = context;
       selectedUpdateAction.value = null;
       showUpdateSelectionModal.value = true;
     };
@@ -2534,32 +3158,89 @@ export default {
       }
     };
 
+    const loadClassStatusReport = async () => {
+      if (!classId.value) return;
+      classStatusLoading.value = true;
+      classStatusError.value = null;
+      try {
+        classStatusReport.value = await analyticsService.getClassStatusReport(classId.value);
+      } catch (err) {
+        console.error('Erro ao carregar status da turma:', err);
+        classStatusError.value = 'Não foi possível carregar o relatório de status da turma.';
+      } finally {
+        classStatusLoading.value = false;
+      }
+    };
+
+    const isCompletedProgression = (progression) => {
+      const normalizedStatus = normalizeText(progression?.status || '');
+      const completion = Number(progression?.completionPercentage ?? progression?.completionPct ?? progression?.completion ?? 0);
+      return normalizedStatus.includes('conclu')
+        || normalizedStatus.includes('realizado')
+        || normalizedStatus.includes('finaliz')
+        || completion >= 100;
+    };
+
+    const isNotStartedProgression = (progression) => {
+      const normalizedStatus = normalizeText(progression?.status || '');
+      const completion = Number(progression?.completionPercentage ?? progression?.completionPct ?? progression?.completion ?? 0);
+      return normalizedStatus.includes('naoiniciado')
+        || normalizedStatus.includes('nao-iniciado')
+        || normalizedStatus.includes('nao-realizado')
+        || normalizedStatus.includes('pendente')
+        || completion <= 0;
+    };
+
     const courseItems = computed(() => {
       if (!courses.value.length) return [];
       return courses.value.map(course => {
         const courseProgressions = progressions.value.filter(p => p.course?.id === course.id);
+        const assignment = assignments.value.find(a => a.course?.id === course.id);
         const total = courseProgressions.length || 1;
-        const notStarted = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('não iniciado') || p.status === 'não iniciado').length;
-        const inProgress = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('em andamento') || p.status === 'em andamento').length;
-        const completed = courseProgressions.filter(p => (String(p.status || '').toLowerCase()).includes('concluído') || p.status === 'concluído').length;
+        const notStarted = courseProgressions.filter(isNotStartedProgression).length;
+        const completed = courseProgressions.filter(isCompletedProgression).length;
+        const inProgress = Math.max(total - notStarted - completed, 0);
         const pending = Math.max(total - completed, 0);
         const workloadHours = Number(course.workloadHours || course.workload || course.hourLoad || course.cargaHoraria || 0);
         const avgCompletion = courseProgressions.length ? Math.round((courseProgressions.reduce((acc, p) => acc + Number(p.completionPercentage || p.completionPct || p.completion || 0), 0)) / total) : 0; // eslint-disable-line
+        const grades = courseProgressions
+          .map((p) => Number(p.grade ?? p.nota))
+          .filter((value) => Number.isFinite(value));
+        const frequencies = courseProgressions
+          .map((p) => Number(p.frequency ?? p.frequencia))
+          .filter((value) => Number.isFinite(value));
         return {
           id: course.id,
           name: course.name,
           knowledgeArea: course.knowledgeArea?.name,
-          required: assignments.value.find(a => a.course?.id === course.id)?.required !== false,
+          code: course.code,
+          required: assignment?.required !== false,
+          advisorName: assignment?.advisor?.name || '',
           completionPct: avgCompletion,
           pctNotStarted: Math.round((notStarted / total) * 100),
           pctInProgress: Math.round((inProgress / total) * 100),
           pctCompleted: Math.round((completed / total) * 100),
           completedCount: completed,
           pendingCount: pending,
+          avgGrade: grades.length ? (grades.reduce((sum, value) => sum + value, 0) / grades.length).toFixed(1) : null,
+          avgFrequency: frequencies.length ? Math.round(frequencies.reduce((sum, value) => sum + value, 0) / frequencies.length) : null,
           workloadHours,
           assigned: assignedIdsIncludes(assignments.value, course.id),
         };
       });
+    });
+
+    const requiredPendingStudentsCount = computed(() => {
+      const requiredCourseIds = new Set(courseItems.value.filter((course) => course.required).map((course) => course.id));
+      if (!requiredCourseIds.size) return 0;
+      const pendingPeopleIds = new Set();
+      progressions.value.forEach((progression) => {
+        const courseId = progression?.course?.id;
+        const peopleId = progression?.people?.id || progression?.peopleId || progression?.personId || progression?.person?.id;
+        if (!requiredCourseIds.has(courseId) || !peopleId) return;
+        if (!isCompletedProgression(progression)) pendingPeopleIds.add(peopleId);
+      });
+      return pendingPeopleIds.size;
     });
 
     function assignedIdsIncludes(list, id) {
@@ -2572,6 +3253,15 @@ export default {
       inProgress: courseItems.value.filter(c => c.completionPct > 0 && c.completionPct < 100).length,
       completed: courseItems.value.filter(c => c.completionPct === 100).length,
     }));
+
+    const classStatusBuckets = computed(() => {
+      const buckets = classStatusReport.value?.completionBuckets || [];
+      return buckets.map((bucket) => ({
+        completedCourses: bucket.completedCourses ?? 0,
+        students: bucket.students ?? 0,
+        percentage: Number(bucket.percentage || 0),
+      }));
+    });
 
     const getCompletionColor = (pct) => {
       if (pct >= 80) return '#27ae60';
@@ -2626,12 +3316,6 @@ export default {
           }
         };
 
-        const goToCourse = (course) => {
-          router.push({
-            name: 'CourseDetails',
-            params: { programId: programId.value, classId: classId.value, courseId: course.id },
-          });
-        };
         const openCourseDetails = (course) => {
           selectedCourseItem.value = course;
           showCourseDetailsModal.value = true;
@@ -2640,9 +3324,31 @@ export default {
           showCourseDetailsModal.value = false;
           selectedCourseItem.value = null;
         };
+        const openClassCourses = () => {
+          router.push({
+            name: 'ClassCourses',
+            params: {
+              programId: route.params.programId || classData.value?.program?.id || route.params.id,
+              classId: classId.value,
+            },
+          });
+        };
 
         // Load nivelamento data when Etapas tab is opened
         const etapasSubTab = ref('nivelamento');
+        const etapasSubTabTitles = {
+          nivelamento: 'Nivelamento',
+          imersao: 'Imersão',
+        };
+        const syncDocumentTitle = () => {
+          const classTitle = classData.value?.code ? `Turma ${classData.value.code}` : 'Detalhes da Turma';
+          const tabTitle = tabs.find((tab) => tab.id === activeTab.value)?.label;
+          const subTabTitle = activeTab.value === 'etapas'
+            ? etapasSubTabTitles[etapasSubTab.value] || etapasSubTabTitles.nivelamento
+            : null;
+
+          document.title = [classTitle, tabTitle, subTabTitle, 'BRISA One'].filter(Boolean).join(' | ');
+        };
         const applyTabStateFromQuery = () => {
           const tab = String(route.query?.tab || '').toLowerCase();
           const rawSubTab = route.query?.subTab ?? route.query?.etapasSubTab;
@@ -2656,8 +3362,8 @@ export default {
             etapasSubTab.value = subTab;
           }
         };
-        // When false, keep frontend mocks for imersaoGroups instead of replacing them with API results
-        const useRealImersaoGroups = ref(false);
+        // Mantido como flag para forcar a leitura real dos grupos da imersao.
+        const useRealImersaoGroups = ref(true);
         const lastEmailInfo = computed(() => {
           const info = classData.value?.lastEmailSent;
           if (info && info.date) {
@@ -2668,7 +3374,11 @@ export default {
         });
 
         watch(() => activeTab.value, (tab) => {
-          if (tab === 'etapas') loadNivelamentoData();
+          if (tab === 'etapas') {
+            loadNivelamentoData();
+            loadClassStatusReport();
+            loadExamInsights();
+          }
         });
 
         watch(
@@ -2678,43 +3388,114 @@ export default {
           }
         );
 
+        watch(
+          () => [classData.value?.code, activeTab.value, etapasSubTab.value],
+          () => {
+            syncDocumentTitle();
+          },
+          { immediate: true }
+        );
+
         // Load imersao groups when sub-tab switches to 'imersao'
-        const loadImersaoGroups = async () => {
-          try {
-            const res = await groupService.getGroupsByClass(classId.value);
-            const groups = (res && res.data && (Array.isArray(res.data) ? res.data : res.data.groups)) || res.data || res || [];
-            imersaoGroups.value = (groups || []).map((g) => ({
-              id: g.id,
-              name: g.projectTheme || g.name || '-',
-              status: g.status || 'Ativo',
-              statusClass: (g.status === 'Atenção') ? 'is-warning' : 'is-ok',
-              mentor: g.leaderName || g.leader || '-',
-              project: g.projectTheme || g.project || '-',
-              partnerCompany: g.projectCompanyName || g.projectCompany || '',
-              lastGradesUpdate: g.lastGradesUpdate || '-',
-              lastMeetingDate: g.lastMeetingDate || '-',
-              students: g.memberCount ?? (g.members?.length ?? 0),
-              partialAverage: g.partialAverage ?? '-',
-              finalAverage: g.finalAverage ?? '-',
-              studentsDetails: (g.members || g.studentDetails || []).map((m) => ({
-                id: m.id,
-                name: m.name,
-                partial: m.partial ?? '-',
-                final: m.final ?? '-',
-                situation: m.situation || 'Regular',
-                situationClass: (m.situation === 'Atenção') ? 'status-warning' : 'status-regular',
-                attendedLastMeeting: !!m.attendedLastMeeting,
+        const syncImersaoPresenceGroups = (groups) => {
+          imersaoPresencaGroups.value = groups
+            .filter((group) => group.studentsDetails.length > 0)
+            .map((group) => ({
+              id: group.id,
+              name: group.name,
+              meetings: group.meetings,
+              students: group.studentsDetails.map((student) => ({
+                id: student.id,
+                name: student.name,
               })),
             }));
-            // update metrics
-            imersaoMetricsCards.value[0].value = String(imersaoGroups.value.length || 0);
-            imersaoMetricsCards.value[1].value = String(imersaoGroups.value.reduce((s, g) => s + (g.students || 0), 0));
+          const firstGroup = imersaoPresencaGroups.value[0] || null;
+          const currentGroup = imersaoPresencaGroups.value.find((group) => group.id === imersaoPresencaForm.value.groupId);
+          const targetGroup = currentGroup || firstGroup;
+          imersaoPresencaForm.value.groupId = targetGroup?.id || '';
+          imersaoPresencaForm.value.meetingDate = targetGroup?.meetings?.[0]?.value || '';
+        };
+
+        const syncImersaoMetrics = () => {
+          const activeStudents = imersaoStageCandidates.value.filter((candidate) => String(candidate?.status || '').toUpperCase() !== 'REPROVADO').length;
+          imersaoMetricsCards.value[0].value = String(imersaoGroups.value.length || 0);
+          imersaoMetricsCards.value[1].value = String(imersaoStageCandidates.value.length || 0);
+          imersaoMetricsCards.value[2].value = String(activeStudents);
+          imersaoMetricsCards.value[5].value = String(
+            imersaoGroups.value.filter((group) => group.statusClass === 'is-warning').length
+          );
+          imersaoMetricsCards.value = [...imersaoMetricsCards.value];
+        };
+
+        const loadImersaoGroups = async () => {
+          try {
+            const groups = await groupService.getGroupsByClass(classId.value);
+            const safeGroups = Array.isArray(groups) ? groups : [];
+            const details = await Promise.all(
+              safeGroups.map(async (group) => {
+                try {
+                  const detail = await groupService.getGroupDetail(classId.value, group.id);
+                  return detail && typeof detail === 'object' ? detail : group;
+                } catch (error) {
+                  console.error('Erro ao carregar detalhes do grupo:', error);
+                  return group;
+                }
+              })
+            );
+            imersaoGroups.value = details.map((group) => {
+              const meetings = Array.isArray(group.meetings)
+                ? [...group.meetings]
+                    .map((meeting) => ({
+                      value: meeting.meetingDate,
+                      label: formatDate(meeting.meetingDate),
+                    }))
+                    .sort((left, right) => new Date(left.value) - new Date(right.value))
+                : [];
+              const studentsDetails = Array.isArray(group.members)
+                ? group.members.map((member) => ({
+                    id: member.id,
+                    name: member.name,
+                    partial: '-',
+                    final: '-',
+                    situation: 'Regular',
+                    situationClass: 'status-regular',
+                    attendedLastMeeting: false,
+                  }))
+                : [];
+              const totalStudents = group.memberCount ?? studentsDetails.length;
+              const hasStudents = totalStudents > 0;
+              const latestMeeting = meetings.length ? meetings[meetings.length - 1].label : '-';
+              return {
+                id: group.id,
+                name: group.projectTheme || group.name || '-',
+                status: hasStudents ? 'OK' : 'Atenção',
+                statusClass: hasStudents ? 'is-ok' : 'is-warning',
+                mentor: group.leaderName || group.leader || '-',
+                project: group.projectTheme || group.project || '-',
+                partnerCompany: group.projectCompanyName || group.projectCompany || '',
+                lastGradesUpdate: latestMeeting,
+                lastMeetingDate: latestMeeting,
+                students: totalStudents,
+                partialAverage: '-',
+                finalAverage: '-',
+                studentsDetails,
+                meetings,
+              };
+            });
+            syncImersaoPresenceGroups(imersaoGroups.value);
+            syncImersaoMetrics();
           } catch (err) {
             console.error('Erro ao carregar grupos:', err);
+            imersaoGroups.value = [];
+            imersaoPresencaGroups.value = [];
+            imersaoPresencaForm.value.groupId = '';
+            imersaoPresencaForm.value.meetingDate = '';
+            syncImersaoMetrics();
           }
         };
 
         watch(() => etapasSubTab.value, (tab) => {
+          if (tab === 'nivelamento') loadClassStatusReport();
           if (tab === 'imersao' && useRealImersaoGroups.value) loadImersaoGroups();
         });
 
@@ -2731,6 +3512,12 @@ export default {
     const closeUpdateSelectionModal = () => {
       showUpdateSelectionModal.value = false;
       selectedUpdateAction.value = null;
+      importInscricoesError.value = '';
+      importInscricoesResult.value = null;
+      importAprovadosError.value = '';
+      importAprovadosResult.value = null;
+      waitlistError.value = '';
+      waitlistSuccess.value = null;
     };
 
     const peopleStageOptions = computed(() => [...new Set(classPeopleRows.value.map((row) => row.stage).filter((item) => item && item !== '-'))]);
@@ -2738,6 +3525,20 @@ export default {
     const peopleQuotaOptions = computed(() => [...new Set(classPeopleRows.value.map((row) => row.quota).filter((item) => item && item !== '-'))]);
     const peopleCityOptions = computed(() => [...new Set(classPeopleRows.value.map((row) => row.city).filter((item) => item && item !== '-'))]);
     const peopleGenderOptions = computed(() => [...new Set(classPeopleRows.value.map((row) => row.gender).filter((item) => item && item !== '-'))]);
+    const hasPeopleFilters = computed(() => Boolean(
+      peopleSearch.value.trim()
+      || peopleFilterStage.value
+      || peopleFilterStatus.value
+      || peopleFilterQuota.value
+      || peopleFilterCity.value
+      || peopleFilterGender.value
+    ));
+    const levelingCutoffScore = computed(() => (
+      classData.value?.levelingPassingScore
+      ?? classData.value?.passingScore
+      ?? classData.value?.minimumExamScore
+      ?? '-'
+    ));
 
     const filteredClassPeople = computed(() => {
       const term = normalizeText(peopleSearch.value);
@@ -2785,11 +3586,355 @@ export default {
       }
       return pages;
     });
+    const applyPeopleFilters = () => {
+      classPeoplePage.value = 1;
+    };
+    const clearPeopleFilters = () => {
+      peopleSearch.value = '';
+      peopleFilterStage.value = '';
+      peopleFilterStatus.value = '';
+      peopleFilterQuota.value = '';
+      peopleFilterCity.value = '';
+      peopleFilterGender.value = '';
+      classPeoplePage.value = 1;
+    };
+
+    const toPositiveNumber = (value, fallback = 0) => {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) && numeric >= 0 ? numeric : fallback;
+    };
+
+    const toPositiveInteger = (value, fallback = 0) => Math.round(toPositiveNumber(value, fallback));
+
+    const quotaSeatsFromTotal = (total) => {
+      const totalSeats = Math.max(toPositiveInteger(total, 50), 1);
+      const pcdSeats = Math.ceil(totalSeats * 0.05);
+      const negroPardoSeats = Math.round(totalSeats * 0.20);
+      const mulheresSeats = Math.round(totalSeats * 0.20);
+      const age45Seats = Math.ceil(totalSeats * 0.05);
+      const amplaConcorrenciaSeats = Math.max(totalSeats - pcdSeats - negroPardoSeats - mulheresSeats - age45Seats, 0);
+      return { amplaConcorrenciaSeats, pcdSeats, negroPardoSeats, mulheresSeats, age45Seats };
+    };
+
+    const syncApprovedRankingDefaults = () => {
+      const totalVacancies = Math.max(toPositiveInteger(
+        classData.value?.defaultImmersionCapacity ?? classData.value?.qtdVagas,
+        50
+      ), 1);
+      approvedRankingForm.value = {
+        ...approvedRankingForm.value,
+        totalVacancies,
+        pointsPerCompletedCourse: 2.5,
+        bonusPerPriorityCity: 10,
+        ...quotaSeatsFromTotal(totalVacancies),
+      };
+    };
+
+    const buildApprovedRankingPayload = () => {
+      const form = approvedRankingForm.value;
+      return {
+        totalVacancies: Math.max(toPositiveInteger(form.totalVacancies, 50), 1),
+        pointsPerCompletedCourse: toPositiveNumber(form.pointsPerCompletedCourse, 2.5),
+        bonusPerPriorityCity: toPositiveInteger(form.bonusPerPriorityCity, 10),
+        priorityCities: String(form.priorityCitiesText || '')
+          .split(/[\n;,]+/)
+          .map((city) => city.trim())
+          .filter(Boolean),
+        amplaConcorrenciaSeats: toPositiveInteger(form.amplaConcorrenciaSeats, 0),
+        pcdSeats: toPositiveInteger(form.pcdSeats, 0),
+        negroPardoSeats: toPositiveInteger(form.negroPardoSeats, 0),
+        mulheresSeats: toPositiveInteger(form.mulheresSeats, 0),
+        age45Seats: toPositiveInteger(form.age45Seats, 0),
+      };
+    };
+
+    const recalculateApprovedRanking = async () => {
+      approvedRankingLoading.value = true;
+      examInsightsError.value = '';
+      try {
+        approvedRankingData.value = await examService.calculateApprovedRanking(classId.value, buildApprovedRankingPayload());
+      } catch (err) {
+        examInsightsError.value = err.response?.data?.message || err.message || 'Erro ao recalcular aprovados.';
+      } finally {
+        approvedRankingLoading.value = false;
+      }
+    };
+
+    const loadSelectionStageCandidates = async () => {
+      if (!firstSelectionStageId.value) {
+        selectionStageCandidates.value = [];
+        return;
+      }
+
+      selectionCandidatesLoading.value = true;
+      try {
+        const data = await stageService.getCandidatesByStageId(firstSelectionStageId.value);
+        selectionStageCandidates.value = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.error('Erro ao carregar candidatos da seleção:', err);
+        selectionStageCandidates.value = [];
+      } finally {
+        selectionCandidatesLoading.value = false;
+      }
+    };
+
+    const loadImersaoStageCandidates = async () => {
+      if (!imersaoStageId.value) {
+        imersaoStageCandidates.value = [];
+        return;
+      }
+
+      try {
+        const data = await stageService.getCandidatesByStageId(imersaoStageId.value);
+        imersaoStageCandidates.value = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.error('Erro ao carregar alunos da imersão:', err);
+        imersaoStageCandidates.value = [];
+      } finally {
+        syncImersaoMetrics();
+      }
+    };
+
+    const loadExamInsights = async () => {
+      examInsightsLoading.value = true;
+      examInsightsError.value = '';
+      try {
+        const [summary, respondentProfile, ranking] = await Promise.all([
+          examService.getSummary(classId.value).catch(() => null),
+          examService.getRespondentProfile(classId.value).catch(() => null),
+          examService.calculateApprovedRanking(classId.value, buildApprovedRankingPayload()).catch(() => null),
+        ]);
+
+        examSummaryData.value = summary;
+        examRespondentProfileData.value = respondentProfile;
+        approvedRankingData.value = ranking;
+      } catch (err) {
+        examSummaryData.value = null;
+        examRespondentProfileData.value = null;
+        approvedRankingData.value = null;
+        examInsightsError.value = err.response?.data?.message || err.message || 'Erro ao carregar dados da prova.';
+      } finally {
+        examInsightsLoading.value = false;
+      }
+    };
+
+    const formatImportWarnings = (warnings = []) => {
+      if (!Array.isArray(warnings) || warnings.length === 0) return '';
+      return ` Avisos: ${warnings.slice(0, 3).join(' | ')}`;
+    };
+
+    const formatStageImportRowErrors = (rowErrors = []) => {
+      if (!Array.isArray(rowErrors) || rowErrors.length === 0) return '';
+      const preview = rowErrors
+        .slice(0, 5)
+        .map((item) => `Linha ${item.row}: ${(item.messages || []).join(' ')}`)
+        .join(' | ');
+      const remaining = rowErrors.length > 5 ? ` (+${rowErrors.length - 5} outras linhas)` : '';
+      return `${preview}${remaining}`;
+    };
+
+    const handleInscricoesFileChange = (event) => {
+      importInscricoesFile.value = event.target.files?.[0] || null;
+      importInscricoesError.value = '';
+      importInscricoesResult.value = null;
+    };
+
+    const handleAprovadosFileChange = (event) => {
+      importAprovadosFile.value = event.target.files?.[0] || null;
+      importAprovadosError.value = '';
+      importAprovadosResult.value = null;
+    };
+
+    const handleSubmitCoursesFileChange = (event) => {
+      submitCoursesFile.value = event.target.files?.[0] || null;
+      submitCoursesError.value = '';
+      submitCoursesSuccess.value = '';
+    };
+
+    const handleSubmitProvaFileChange = (event) => {
+      submitProvaFile.value = event.target.files?.[0] || null;
+      submitProvaError.value = '';
+      submitProvaSuccess.value = '';
+    };
+
+    const handleImportImersaoFileChange = (event) => {
+      importImersaoFile.value = event.target.files?.[0] || null;
+      importImersaoError.value = '';
+      importImersaoSuccess.value = '';
+    };
+
+    const importSelectionCandidates = async () => {
+      if (!activeUpdateStageId.value) {
+        importInscricoesError.value = `Nenhuma ${activeUpdateStageLabel.value} foi encontrada para esta turma.`;
+        return;
+      }
+      if (!importInscricoesFile.value) {
+        importInscricoesError.value = 'Selecione uma planilha para continuar.';
+        return;
+      }
+
+      importingInscricoes.value = true;
+      importInscricoesError.value = '';
+      importInscricoesResult.value = null;
+      try {
+        const formData = new FormData();
+        formData.append('file', importInscricoesFile.value);
+        const result = await stageService.importCandidates(activeUpdateStageId.value, formData);
+        importInscricoesResult.value = result;
+        const rowErrorSummary = formatStageImportRowErrors(result?.rowErrors);
+        if (rowErrorSummary) {
+          importInscricoesError.value = rowErrorSummary;
+        }
+        await loadStages();
+        if (updateStageContext.value === 'nivelamento') {
+          await loadNivelamentoData();
+        }
+        await loadSelectionProcessContext();
+      } catch (err) {
+        importInscricoesError.value = err.response?.data?.message || err.message || 'Erro ao importar inscritos.';
+      } finally {
+        importingInscricoes.value = false;
+      }
+    };
+
+    const importApprovedCandidates = async () => {
+      if (!firstSelectionStageId.value) {
+        importAprovadosError.value = 'Nenhuma etapa de seleção foi encontrada para esta turma.';
+        return;
+      }
+      if (!importAprovadosFile.value) {
+        importAprovadosError.value = 'Selecione uma planilha de aprovados para continuar.';
+        return;
+      }
+
+      importingAprovados.value = true;
+      importAprovadosError.value = '';
+      importAprovadosResult.value = null;
+      try {
+        const formData = new FormData();
+        formData.append('file', importAprovadosFile.value);
+        const result = await stageService.importApprovedCandidates(firstSelectionStageId.value, formData);
+        importAprovadosResult.value = result;
+        await loadStages();
+        await loadSelectionProcessContext();
+      } catch (err) {
+        importAprovadosError.value = err.response?.data?.message || err.message || 'Erro ao importar aprovados.';
+      } finally {
+        importingAprovados.value = false;
+      }
+    };
+
+    const convokeWaitlistCandidates = async () => {
+      if (!firstSelectionStageId.value) {
+        waitlistError.value = 'Nenhuma etapa de seleção foi encontrada para esta turma.';
+        return;
+      }
+      if (!waitlistForm.value.convokeCount) {
+        waitlistError.value = 'Informe quantos candidatos devem ser convocados.';
+        return;
+      }
+
+      convokingWaitlist.value = true;
+      waitlistError.value = '';
+      waitlistSuccess.value = null;
+      try {
+        const result = await stageService.convokeWaitlist(firstSelectionStageId.value, {
+          convokeCount: Number(waitlistForm.value.convokeCount),
+          deadline: parseBrazilianDate(waitlistForm.value.convokeDate) || waitlistForm.value.convokeDate || null,
+          notes: waitlistForm.value.notes || null,
+        });
+        waitlistSuccess.value = result;
+        await loadStages();
+        await loadSelectionProcessContext();
+      } catch (err) {
+        waitlistError.value = err.response?.data?.message || err.message || 'Erro ao convocar lista de espera.';
+      } finally {
+        convokingWaitlist.value = false;
+      }
+    };
+
+    const submitCoursesSpreadsheet = async () => {
+      if (!submitCoursesFile.value) {
+        submitCoursesError.value = 'Selecione uma planilha de cursos para continuar.';
+        return;
+      }
+
+      submittingCourses.value = true;
+      submitCoursesError.value = '';
+      submitCoursesSuccess.value = '';
+      try {
+        const formData = new FormData();
+        formData.append('file', submitCoursesFile.value);
+        const result = await courseService.importProgressionsFromExcel(classId.value, formData);
+        submitCoursesSuccess.value = `Processadas: ${result.totalProcessed}. Criadas: ${result.createdProgressions}. Atualizadas: ${result.updatedProgressions}. Notas atualizadas: ${result.updatedGrades}. Ignoradas: ${result.skippedRows}.`;
+        await loadNivelamentoData();
+      } catch (err) {
+        submitCoursesError.value = err.response?.data?.message || err.message || 'Erro ao importar progressões.';
+      } finally {
+        submittingCourses.value = false;
+      }
+    };
+
+    const submitExamSpreadsheet = async () => {
+      if (!submitProvaFile.value) {
+        submitProvaError.value = 'Selecione uma planilha da prova para continuar.';
+        return;
+      }
+
+      submittingProva.value = true;
+      submitProvaError.value = '';
+      submitProvaSuccess.value = '';
+      try {
+        const formData = new FormData();
+        formData.append('file', submitProvaFile.value);
+        const result = await examService.importResults(classId.value, formData);
+        submitProvaSuccess.value = `Participantes processados: ${result.participantsProcessed}. Questões detectadas: ${result.questionsDetected}.${formatImportWarnings(result.warnings)}`;
+        await loadExamInsights();
+      } catch (err) {
+        submitProvaError.value = err.response?.data?.message || err.message || 'Erro ao importar resultados da prova.';
+      } finally {
+        submittingProva.value = false;
+      }
+    };
+
+    const importImersaoStudents = async () => {
+      if (!imersaoStageId.value) {
+        importImersaoError.value = 'Nenhuma etapa de imersão foi encontrada para esta turma.';
+        return;
+      }
+      if (!importImersaoFile.value) {
+        importImersaoError.value = 'Selecione uma planilha de alunos da imersão para continuar.';
+        return;
+      }
+
+      importingImersao.value = true;
+      importImersaoError.value = '';
+      importImersaoSuccess.value = '';
+      try {
+        const formData = new FormData();
+        formData.append('file', importImersaoFile.value);
+        const result = await stageService.importCandidates(imersaoStageId.value, formData);
+        importImersaoSuccess.value = `Processadas: ${result.totalProcessed}. Inseridas: ${result.successfullyInserted}. Novas pessoas: ${result.newPeopleCreated}.`;
+        const rowErrorSummary = formatStageImportRowErrors(result?.rowErrors);
+        if (rowErrorSummary) {
+          importImersaoError.value = rowErrorSummary;
+        }
+        await loadStages();
+      } catch (err) {
+        importImersaoError.value = err.response?.data?.message || err.message || 'Erro ao importar alunos da imersão.';
+      } finally {
+        importingImersao.value = false;
+      }
+    };
 
     const loadStages = async () => {
       try {
         stages.value = await stageService.getByClassId(classId.value);
         stageCandidatesCount.value = await stageService.getCandidatesCountByClassId(classId.value);
+        await Promise.all([
+          loadSelectionStageCandidates(),
+          loadImersaoStageCandidates(),
+        ]);
       } catch (err) {
         console.error('Erro ao carregar etapas:', err);
       }
@@ -2824,12 +3969,38 @@ export default {
       }
     };
 
+    const loadProgramOverviewItem = async () => {
+      try {
+        const overviewData = await programService.getOverview();
+        const items = Array.isArray(overviewData?.items) ? overviewData.items : [];
+        const classIdValue = Number(classId.value);
+        const programIdValue = Number(classData.value?.program?.id ?? classData.value?.programId ?? programId.value);
+        overviewProgramItem.value =
+          items.find((item) => Number(item?.classId) === classIdValue) ||
+          (programIdValue ? items.find((item) => Number(item?.programId) === programIdValue) : null) ||
+          null;
+      } catch (err) {
+        console.error('Erro ao carregar executora do programa:', err);
+        overviewProgramItem.value = null;
+      }
+    };
+
     const loadClassDetails = async () => {
       loading.value = true;
       error.value = null;
       try {
         classData.value = await classService.getById(classId.value);
-        await Promise.all([loadStages(), loadClassPeople(), loadSelectionProcessContext()]);
+        syncApprovedRankingDefaults();
+        await Promise.all([
+          loadStages(),
+          loadClassPeople(),
+          loadSelectionProcessContext(),
+          loadProgramOverviewItem(),
+          loadNivelamentoData(),
+          loadClassStatusReport(),
+          loadImersaoGroups(),
+          loadExamInsights(),
+        ]);
       } catch (err) {
         error.value = `Erro ao carregar detalhes da turma: ${err.response?.data?.message || err.message}`;
       } finally {
@@ -2907,6 +4078,7 @@ export default {
     const displayStageName = (name) => {
       if (!name) return '';
       const normalized = name.normalize('NFD').replace(/\p{Diacritic}/gu, '').toUpperCase();
+      if (normalized === 'INSCRICAO') return 'INSCRIÇÃO';
       if (normalized === 'SELECAO') return 'SELEÇÃO';
       if (normalized === 'IMERSAO') return 'IMERSÃO';
       return name;
@@ -2915,7 +4087,18 @@ export default {
     const goToPeople = () => {
       const programName = classData.value?.program?.name || 'Programa';
       const classCode = classData.value?.code || '-';
-      router.push({ path: '/people', query: { programa: `${programName} - Turma ${classCode}` } });
+      const turmaId = classId.value ? String(classId.value) : null;
+      const resolvedProgramId = classData.value?.program?.id ?? programId.value ?? null;
+      const query = { programa: `${programName} - Turma ${classCode}` };
+
+      if (resolvedProgramId != null && resolvedProgramId !== '') {
+        query.programaId = String(resolvedProgramId);
+      }
+      if (turmaId) {
+        query.turmaId = turmaId;
+      }
+
+      router.push({ path: '/people', query });
     };
 
     const viewPerson = (person) => {
@@ -2963,6 +4146,15 @@ export default {
       router.push({ path: '/programs/register', query: { edit: String(programId.value) } });
     };
 
+    const goToProgramDetails = () => {
+      const resolvedProgramId = classData.value?.program?.id || programId.value;
+      if (!resolvedProgramId) {
+        router.push({ name: 'Programs' });
+        return;
+      }
+      router.push({ name: 'ProgramDetails', params: { id: resolvedProgramId } });
+    };
+
     const closeCreateStageModal = () => {
       showCreateStageModal.value = false;
       newStage.value = { name: '', description: '' };
@@ -2995,6 +4187,7 @@ export default {
 
     const openIndividualRegistration = () => {
       registrationError.value = '';
+      newCandidateForm.value.status = defaultStatusForUpdateContext.value;
       selectedUpdateAction.value = 'individual';
     };
 
@@ -3008,6 +4201,58 @@ export default {
       return `${year}-${month}-${day}`;
     };
 
+    const selectionStage = computed(() =>
+      (stages.value || []).find((item) => normalizeText(item?.name).includes('selec'))
+      || (stages.value || [])[0]
+    );
+
+    const nivelamentoStage = computed(() =>
+      (stages.value || []).find((item) => normalizeText(item?.name).includes('nivel'))
+      || null
+    );
+
+    const imersaoStage = computed(() =>
+      (stages.value || []).find((item) => normalizeText(item?.name).includes('imers'))
+      || null
+    );
+
+    const nivelamentoStageId = computed(() => nivelamentoStage.value?.id || null);
+    const imersaoStageId = computed(() => imersaoStage.value?.id || null);
+
+    const selectionStatusMeta = (status, notes = '') => {
+      const normalizedStatus = String(status || '').toUpperCase();
+      const normalizedNotes = normalizeText(notes);
+      const hasConflict = normalizedNotes.includes('conflit') || normalizedNotes.includes('outroprograma');
+
+      if (normalizedStatus === 'APROVADO') return { label: 'Aprovado', className: 'status-active', conflict: hasConflict };
+      if (normalizedStatus === 'LISTA_ESPERA') return { label: 'Lista de espera', className: 'status-pending', conflict: hasConflict };
+      if (normalizedStatus === 'EM_ANALISE') return { label: 'Em análise', className: 'status-pending', conflict: hasConflict };
+      if (normalizedStatus === 'REPROVADO') return { label: 'Não selecionado', className: 'status-inactive', conflict: hasConflict };
+
+      return {
+        label: status ? String(status) : 'Sem status',
+        className: 'status-inactive',
+        conflict: hasConflict,
+      };
+    };
+
+    const imersaoStageStudents = computed(() =>
+      [...imersaoStageCandidates.value]
+        .map((candidate) => {
+          const meta = selectionStatusMeta(candidate.status, candidate.notes);
+          return {
+            id: candidate.id,
+            peopleId: candidate.peopleId,
+            name: candidate.peopleName || '-',
+            cpf: candidate.peopleCpf || '',
+            email: candidate.peopleEmail || '-',
+            status: meta.label,
+            statusClass: meta.className,
+          };
+        })
+        .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
+    );
+
     const firstSelectionStageId = computed(() => {
       const stage = (stages.value || []).find((item) => normalizeText(item?.name) === 'selecao')
         || (stages.value || []).find((item) => normalizeText(item?.name) === 'seleção')
@@ -3015,6 +4260,76 @@ export default {
 
       return stage?.id || null;
     });
+
+    const isSelectionUpdateContext = computed(() => updateStageContext.value === 'selecao');
+    const activeUpdateStageId = computed(() => {
+      if (updateStageContext.value === 'nivelamento') return nivelamentoStageId.value;
+      if (updateStageContext.value === 'imersao') return imersaoStageId.value;
+      return firstSelectionStageId.value;
+    });
+    const activeUpdateStageLabel = computed(() => {
+      if (updateStageContext.value === 'nivelamento') return 'etapa de nivelamento';
+      if (updateStageContext.value === 'imersao') return 'etapa de imersão';
+      return 'etapa de seleção';
+    });
+    const activeUpdateStageShortLabel = computed(() => {
+      if (updateStageContext.value === 'nivelamento') return 'do nivelamento';
+      if (updateStageContext.value === 'imersao') return 'da imersão';
+      return 'de inscritos';
+    });
+    const updateStageModalTitle = computed(() => {
+      if (updateStageContext.value === 'nivelamento') return 'Atualizar dados do nivelamento';
+      if (updateStageContext.value === 'imersao') return 'Atualizar dados da imersão';
+      return 'Atualizar dados do processo seletivo';
+    });
+    const updateStageModalSubtitle = computed(() => {
+      if (updateStageContext.value === 'nivelamento') {
+        return 'Escolha uma ação para atualizar os alunos da etapa de nivelamento desta turma:';
+      }
+      if (updateStageContext.value === 'imersao') {
+        return 'Escolha uma ação para atualizar os alunos da etapa de imersão desta turma:';
+      }
+      return 'Escolha uma das ações abaixo para atualizar os dados do processo seletivo:';
+    });
+    const importStudentsActionTitle = computed(() => (
+      isSelectionUpdateContext.value ? 'Importar planilha de inscritos' : `Importar alunos ${activeUpdateStageShortLabel.value}`
+    ));
+    const importStudentsActionDescription = computed(() => (
+      isSelectionUpdateContext.value
+        ? 'Envie uma planilha com a lista de candidatos inscritos'
+        : `Envie uma planilha com os alunos que devem entrar na ${activeUpdateStageLabel.value} desta turma`
+    ));
+    const individualRegistrationActionDescription = computed(() => (
+      isSelectionUpdateContext.value
+        ? 'Adicione um novo candidato manualmente ao processo seletivo'
+        : `Adicione um aluno manualmente à ${activeUpdateStageLabel.value} desta turma`
+    ));
+    const importStudentsModalTitle = computed(() => (
+      isSelectionUpdateContext.value ? 'Importar planilha de inscritos' : `Importar alunos ${activeUpdateStageShortLabel.value}`
+    ));
+    const importStudentsModalDescription = computed(() => (
+      isSelectionUpdateContext.value
+        ? 'Envie uma planilha Excel com os dados dos candidatos inscritos. A planilha deve conter as seguintes colunas:'
+        : `Envie uma planilha Excel com os dados dos alunos. Eles serão vinculados automaticamente à ${activeUpdateStageLabel.value} desta turma.`
+    ));
+    const updatePeopleTemplateFileName = computed(() => {
+      if (updateStageContext.value === 'nivelamento') return 'Modelo_Nivelamento_Alunos.xlsx';
+      if (updateStageContext.value === 'imersao') return 'Modelo_Imersao_Alunos.xlsx';
+      return 'Modelo_Inscritos.xlsx';
+    });
+    const defaultStatusForUpdateContext = computed(() => (
+      isSelectionUpdateContext.value ? 'Inscrito' : 'Aprovado'
+    ));
+
+    const newCandidateCpfDigits = computed(() => (newCandidateForm.value.cpf || '').replace(/\D/g, ''));
+
+    const canRegisterIndividually = computed(() => (
+      !registeringCandidate.value
+      && newCandidateForm.value.name
+      && newCandidateForm.value.birthDate
+      && (newCandidateCpfDigits.value.length === 11)
+      && newCandidateForm.value.status
+    ));
 
     const registerCandidateIndividually = async () => {
       registeringCandidate.value = true;
@@ -3026,9 +4341,9 @@ export default {
           throw new Error('Informe uma data de nascimento válida no formato dd/mm/aaaa.');
         }
 
-        const stageId = firstSelectionStageId.value;
+        const stageId = activeUpdateStageId.value;
         if (!stageId) {
-          throw new Error('Nenhuma etapa disponível para vincular o candidato.');
+          throw new Error(`Nenhuma ${activeUpdateStageLabel.value} disponível para vincular o aluno.`);
         }
 
         await peopleService.createLink({
@@ -3049,8 +4364,12 @@ export default {
 
         await Promise.all([loadClassDetails(), loadClassPeople(), loadSelectionProcessContext()]);
         closeIndividualRegistration();
-      } catch (error) {
-        registrationError.value = error?.response?.data?.message || error.message || 'Erro ao cadastrar aluno.';
+      } catch (err) {
+        if (err?.response?.data?.details && Array.isArray(err.response.data.details) && err.response.data.details.length) {
+          registrationError.value = err.response.data.details.join(' ');
+        } else {
+          registrationError.value = err?.response?.data?.message || err.message || 'Erro ao cadastrar aluno.';
+        }
       } finally {
         registeringCandidate.value = false;
       }
@@ -3062,11 +4381,10 @@ export default {
     };
 
     const onGroupCreated = (group) => {
-      // Atualizar lista de grupos se necessário
-      // ou apenas fechar o modal (que já é feito pelo evento close)
+      // Atualizar lista de grupos, mantendo a tela sincronizada apos o cadastro.
       console.log('Grupo criado:', group);
-      // Recarregar dados se necessário
       loadClassDetails();
+      loadImersaoGroups();
     };
 
     const goBack = () => router.back();
@@ -3074,6 +4392,12 @@ export default {
     onMounted(() => {
       applyTabStateFromQuery();
       loadClassDetails();
+      if (activeTab.value === 'etapas') {
+        loadClassStatusReport();
+      }
+      if (activeTab.value === 'etapas' && etapasSubTab.value === 'imersao') {
+        loadImersaoGroups();
+      }
     });
 
     watch(
@@ -3116,6 +4440,10 @@ export default {
       classPeopleTotalPages,
       classPeopleVisiblePages,
       classStatusLabel,
+      classStatusReport,
+      classStatusLoading,
+      classStatusError,
+      classStatusBuckets,
       closeCreateStageModal,
       closeEditStageModal,
       closeIndividualRegistration,
@@ -3127,6 +4455,7 @@ export default {
       currentStageMilestone,
       currentStageMilestoneDate,
       currentStagePeriod,
+      currentStatusNote,
       cycle,
       deleteStage,
       displayStageName,
@@ -3139,30 +4468,50 @@ export default {
       formatCPF,
       genderDistribution,
       filteredClassPeople,
+      applyPeopleFilters,
+      clearPeopleFilters,
       getStageCandidatesCount,
       goBack,
       goToClassCourses,
       goToPeople,
+      goToProgramDetails,
       goToStageDetails,
       classModelLabel,
+      classLocationLabel,
       classPeriodLabel,
       classWorkloadLabel,
       loading,
+      downloadPeopleTemplate,
+      peopleSpreadsheetColumns,
+      updateStageModalTitle,
+      updateStageModalSubtitle,
+      isSelectionUpdateContext,
+      activeUpdateStageLabel,
+      importStudentsActionTitle,
+      importStudentsActionDescription,
+      individualRegistrationActionDescription,
+      importStudentsModalTitle,
+      importStudentsModalDescription,
+      updatePeopleTemplateFileName,
       openUpdateSelectionModal,
       openIndividualRegistration,
       newCandidateForm,
       newStage,
       nextStageLabel,
       openEditStageModal,
+      openFullTimeline,
+      openOverviewStageDetails,
       overviewCurrentCycleIndex,
       overviewCycle,
+      overviewCycleHasStudents,
       overviewProgressPct,
       overviewStageCards,
       overviewTimeline,
       overviewTopCards,
       overviewUpdates,
+      programContractItems,
       paginatedClassPeople,
-      partnerLabel,
+      executorLabel,
       peopleCityOptions,
       peopleError,
       peopleFilterCity,
@@ -3171,6 +4520,7 @@ export default {
       peopleFilterStage,
       peopleFilterStatus,
       peopleGenderOptions,
+      hasPeopleFilters,
       peopleLoading,
       peopleQuotaOptions,
       peopleSearch,
@@ -3193,6 +4543,8 @@ export default {
       selectionProcessTotalPages,
       selectionProcessVisiblePages,
       selectionQuotaCards,
+      selectionApprovedCount,
+      selectionAvailableVacancies,
       selectionWaitlistCount,
       paginatedSelectionProcessRows,
       toggleSelectionConflicts,
@@ -3208,7 +4560,12 @@ export default {
       showSubmitNotasImersaoModal,
       showAtualizarPresencaImersaoModal,
       tipoAvaliacaoImersao,
+      sendMessageRecipients,
+      sendMessageSubject,
+      sendMessageBody,
       showSendMessageModal,
+      openSendMessageModal,
+      openCoursePendingMessage,
       showCourseDetailsModal,
       selectedCourseItem,
       showGroupCreateModal,
@@ -3220,12 +4577,57 @@ export default {
       tabs,
       etapasSubTab,
       lastEmailInfo,
+      levelingCutoffScore,
       totalCandidates,
+      selectionCandidatesLoading,
       updateStage,
       updatingStage,
       selectedUpdateAction,
       waitlistForm,
+      convokingWaitlist,
+      waitlistError,
+      waitlistSuccess,
+      convokeWaitlistCandidates,
+      importInscricoesFile,
+      importingInscricoes,
+      importInscricoesError,
+      importInscricoesResult,
+      handleInscricoesFileChange,
+      importSelectionCandidates,
+      importAprovadosFile,
+      importingAprovados,
+      importAprovadosError,
+      importAprovadosResult,
+      handleAprovadosFileChange,
+      importApprovedCandidates,
+      submitCoursesFile,
+      submittingCourses,
+      submitCoursesError,
+      submitCoursesSuccess,
+      handleSubmitCoursesFileChange,
+      submitCoursesSpreadsheet,
+      submitProvaFile,
+      submittingProva,
+      submitProvaError,
+      submitProvaSuccess,
+      handleSubmitProvaFileChange,
+      submitExamSpreadsheet,
+      importImersaoFile,
+      importingImersao,
+      importImersaoError,
+      importImersaoSuccess,
+      handleImportImersaoFileChange,
+      importImersaoStudents,
+      examSummaryData,
+      examRespondentProfileData,
+      approvedRankingData,
+      approvedRankingForm,
+      approvedRankingLoading,
+      recalculateApprovedRanking,
+      examInsightsLoading,
+      examInsightsError,
       imersaoMetricsCards,
+      imersaoStageStudents,
       imersaoGroups,
       imersaoExpandedGroupId,
       toggleImersaoGroup,
@@ -3241,15 +4643,16 @@ export default {
       courses,
       courseItems,
       courseStats,
+      requiredPendingStudentsCount,
       getNivelamentoStudents,
       getCompletionColor,
       loadingNivelamento,
       loadNivelamentoData,
       assignCourse,
       removeCourse,
-      goToCourse,
       openCourseDetails,
       closeCourseDetailsModal,
+      openClassCourses,
       onGroupCreated,
     };
   },
@@ -3455,7 +4858,7 @@ export default {
   border-top: 1px solid var(--slate-200);
   padding: 0 32px;
   display: flex;
-  gap: 2px;
+  gap: 8px;
   overflow-x: auto;
 }
 
@@ -3463,17 +4866,28 @@ export default {
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
-  padding: 13px 12px;
+  padding: 13px 10px;
   font-size: 14px;
   font-weight: 600;
   color: var(--slate-600);
   cursor: pointer;
   white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.tab:hover {
+  color: var(--brand-900);
+}
+
+.tab:focus-visible {
+  outline: 3px solid rgba(20, 184, 166, 0.22);
+  outline-offset: -3px;
 }
 
 .tab.active {
   color: var(--teal-600);
   border-bottom-color: var(--teal-500);
+  font-weight: 700;
 }
 
 .content {
@@ -3600,6 +5014,46 @@ export default {
   font-size: 15px;
 }
 
+.contract-panel {
+  padding-bottom: 12px;
+}
+
+.contract-link {
+  margin-top: 0;
+}
+
+.contract-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.contract-item {
+  min-width: 0;
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  background: var(--slate-100);
+  padding: 10px 12px;
+}
+
+.contract-item span {
+  display: block;
+  color: var(--slate-600);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.contract-item strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--brand-900);
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .panel-progress {
   font-size: 13px;
   color: var(--slate-600);
@@ -3674,7 +5128,7 @@ export default {
 .overview-title {
   margin: 0;
   color: var(--brand-900);
-  font-size: 28px;
+  font-size: 20px;
   line-height: 1.1;
   font-weight: 700;
 }
@@ -3690,6 +5144,8 @@ export default {
   border: 1px solid var(--brand-300);
   border-radius: 12px;
   padding: 14px;
+  max-height: 260px;
+  overflow-y: auto;
 }
 
 .summary-card-head {
@@ -3701,7 +5157,7 @@ export default {
 
 .summary-card-head h4 {
   margin: 0;
-  font-size: 30px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--brand-900);
   line-height: 1.1;
@@ -3728,7 +5184,7 @@ export default {
 
 .summary-card-list strong {
   color: var(--brand-900);
-  font-size: 30px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -3749,13 +5205,16 @@ export default {
 .section-subtitle {
   margin: 0;
   color: var(--brand-900);
-  font-size: 28px;
+  font-size: 20px;
   line-height: 1.1;
   font-weight: 700;
 }
 
 .timeline-list {
   margin-top: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .timeline-row {
@@ -3788,7 +5247,7 @@ export default {
 
 .timeline-label {
   color: var(--brand-900);
-  font-size: 30px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 1.1;
 }
@@ -3817,7 +5276,7 @@ export default {
 
 .distribution-panel h4 {
   margin: 0;
-  font-size: 30px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.1;
 }
@@ -3827,6 +5286,9 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .quota-row {
@@ -3892,6 +5354,9 @@ export default {
 
 .simple-list {
   margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .simple-list div {
@@ -3919,6 +5384,9 @@ export default {
 
 .updates-list {
   margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .update-row {
@@ -4029,6 +5497,9 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 12px;
+  max-height: min(68vh, 640px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .stage-card {
@@ -4038,6 +5509,8 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 170px;
+  max-height: 260px;
+  overflow-y: auto;
 }
 
 .stage-top {
@@ -4069,6 +5542,9 @@ export default {
   color: var(--slate-600);
   font-size: 14px;
   flex-grow: 1;
+  max-height: 92px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
 }
 
 .stage-actions {
@@ -4122,13 +5598,14 @@ export default {
 }
 
 .btn-danger {
-  color: var(--danger-700);
-  border-color: #fecdd3;
-  background: #fff;
+  color: #fff;
+  border-color: var(--danger-700);
+  background: var(--danger-700);
 }
 
 .btn-danger:hover {
-  background: var(--danger-100);
+  background: var(--danger-800);
+  border-color: var(--danger-800);
 }
 
 .state-box {
@@ -4144,6 +5621,19 @@ export default {
   color: var(--danger-700);
 }
 
+.state-success {
+  color: #047857;
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.selected-file-name {
+  margin-top: 10px;
+  color: var(--brand-900);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -4153,6 +5643,10 @@ export default {
   align-items: center;
   z-index: 1000;
   padding: 16px;
+}
+
+.modal-overlay.modal-overlay-top {
+  z-index: 1100;
 }
 
 .modal {
@@ -4190,6 +5684,12 @@ export default {
   font-size: 14px;
   color: var(--brand-900);
   font-family: inherit;
+}
+
+textarea.field {
+  max-height: 220px;
+  overflow-y: auto;
+  resize: vertical;
 }
 
 .field:focus {
@@ -4286,7 +5786,8 @@ export default {
   box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
 }
 
-.people-search-btn {
+.people-search-btn,
+.people-clear-btn {
   border: 1px solid var(--brand-300);
   background: #fff;
   color: var(--brand-900);
@@ -4300,6 +5801,15 @@ export default {
 
 .people-search-btn:hover {
   background: var(--slate-100);
+}
+
+.people-clear-btn {
+  color: var(--slate-600);
+}
+
+.people-clear-btn:hover {
+  background: var(--slate-100);
+  color: var(--brand-900);
 }
 
 .people-select-row {
@@ -4524,7 +6034,7 @@ export default {
 .metric-card strong {
   display: block;
   color: var(--brand-900);
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 600;
 }
 
@@ -4998,20 +6508,20 @@ export default {
 }
 
 .submit-imersao-type-btn {
-  height: 40px;
-  border: 1px solid var(--slate-200);
-  background: #fff;
-  color: var(--slate-700);
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
+   height: 40px;
+   border: 1px solid var(--slate-200);
+   background: #fff;
+   color: var(--slate-600);
+   border-radius: 10px;
+   font-size: 14px;
+   font-weight: 600;
+   cursor: pointer;
 }
 
 .submit-imersao-type-btn.active {
-  border-color: var(--teal-500);
-  color: #0f766e;
-  background: #ecfeff;
+   border-color: var(--teal-600);
+   color: var(--teal-600);
+   background: #ecfeff;
 }
 
 .submit-imersao-notas-modal .file-upload-area {
@@ -5250,6 +6760,8 @@ export default {
   font-family: inherit;
   resize: vertical;
   min-height: 120px;
+  max-height: 240px;
+  overflow-y: auto;
 }
 
 .textarea-input:focus {
@@ -5490,6 +7002,10 @@ export default {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .contract-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .summary-grid {
     grid-template-columns: 1fr;
   }
@@ -5568,6 +7084,7 @@ export default {
   }
 
   .status-grid,
+  .contract-grid,
   .metrics {
     grid-template-columns: 1fr;
   }
@@ -5646,7 +7163,7 @@ export default {
 
 /* Scoped styles for Nivelamento additions */
 .nivelamento-tabs { padding: 0 24px; }
-.tab-btn { background: transparent; border: none; padding: 10px 14px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; }
+.tab-btn { background: transparent; border: none; padding: 12px 16px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; }
 .tab-btn.active { color:var(--teal-600); border-bottom-color:var(--teal-600); }
 .nivelamento-cards { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap:12px; padding: 12px 24px; }
 .n-card { background:#fff; border:1px solid var(--slate-200); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; justify-content:center; min-height:64px; box-sizing:border-box; }
@@ -5656,6 +7173,25 @@ export default {
 .n-card.amber .value { color:#d97706; }
 .n-card.red .value { color:#dc2626; }
 .email-banner { background:#f0f9ff; border:1px solid #dbeafe; border-radius:8px; padding:12px 16px; margin:0 24px; }
+.email-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  width: 100%;
+}
+.email-banner-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.email-banner-label {
+  color: #075985;
+  font-weight: 600;
+}
+.email-banner-value {
+  color: #0c4a6e;
+}
 .email-banner-status {
   color: #2563eb;
   font-size: 13px;
@@ -5722,7 +7258,7 @@ export default {
   display: block;
   margin-top: 6px;
   color: var(--brand-900);
-  font-size: 34px;
+  font-size: 24px;
   line-height: 1;
   font-weight: 700;
 }
@@ -5761,6 +7297,9 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: min(68vh, 660px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .imersao-group-item {
@@ -5879,6 +7418,8 @@ export default {
 .imersao-group-expanded {
   border-top: 1px solid var(--slate-200);
   padding: 12px 16px 14px;
+  max-height: 430px;
+  overflow: auto;
 }
 
 .imersao-group-tabs {
@@ -5890,20 +7431,19 @@ export default {
 }
 
 .imersao-group-tab-btn {
-  border: none;
-  background: transparent;
-  color: var(--slate-700);
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 10px;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
+   border: none;
+   background: transparent;
+   color: var(--slate-600);
+   font-size: 14px;
+   font-weight: 600;
+   padding: 12px 16px;
+   border-bottom: 2px solid transparent;
+   cursor: pointer;
 }
 
 .imersao-group-tab-btn.active {
-  color: var(--teal-600);
-  border-bottom-color: var(--teal-500);
-  font-weight: 600;
+   color: var(--teal-600);
+   border-bottom-color: var(--teal-600);
 }
 
 .imersao-group-meta p {
@@ -5971,7 +7511,114 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 17px;
+  max-height: min(62vh, 620px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
+
+.class-status-report {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #dbe4ef;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.class-status-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.class-status-head h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.class-status-head p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.class-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #dffcf5;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.class-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.class-status-summary {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.class-status-summary span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.class-status-summary strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.class-status-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.class-status-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.class-status-row-head strong {
+  color: #0f172a;
+}
+
+.class-status-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.class-status-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #14b8a6 0%, #0ea5e9 100%);
+}
+
 .course-card-new {
   width: 100%;
   display: flex;
@@ -6174,6 +7821,126 @@ export default {
   line-height: 1.5;
 }
 
+.exam-insights-grid,
+.exam-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.exam-insight-card {
+  padding: 14px;
+}
+
+.exam-insight-card h4 {
+  margin: 0 0 12px;
+  color: var(--brand-900);
+  font-size: 15px;
+}
+
+.exam-ranking-config {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--brand-300);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.exam-ranking-config-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.exam-ranking-config-head h4 {
+  margin: 0;
+  color: var(--brand-900);
+  font-size: 15px;
+}
+
+.compact-btn {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
+.ranking-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ranking-quota-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.ranking-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ranking-field-wide {
+  grid-column: span 1;
+}
+
+.ranking-field span {
+  color: var(--slate-600);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ranking-field input,
+.ranking-field textarea {
+  width: 100%;
+  border: 1px solid var(--brand-300);
+  border-radius: 8px;
+  padding: 9px 10px;
+  color: var(--brand-900);
+  font-size: 14px;
+  line-height: 1.25;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.ranking-field textarea {
+  resize: vertical;
+  min-height: 40px;
+  max-height: 96px;
+}
+
+.exam-ranking-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.exam-ranking-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.exam-ranking-card span {
+  color: var(--slate-600);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.exam-ranking-card strong {
+  color: var(--brand-900);
+  font-size: 26px;
+  line-height: 1;
+}
+
 /* Students table styling */
 .students-table table {
   width: 100%;
@@ -6239,7 +8006,7 @@ export default {
 /* Tabs background stripe */
 .tabs-bg { display:inline-flex !important; background: #ffffff !important; padding:8px 10px !important; border-radius:8px; align-items:center; gap:6px; z-index:2; border:1px solid var(--slate-100) !important; box-shadow: 0 1px 2px rgba(2,6,23,0.04); }
 .tabs-bg .tab-btn { background: transparent !important; border: none !important; }
-.tab-btn { padding: 8px 12px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; background: transparent; }
+.tab-btn { padding: 12px 16px; cursor: pointer; font-weight:600; color:var(--slate-600); border-bottom:2px solid transparent; background: transparent; }
 .tab-btn.active { color:var(--teal-600); border-bottom-color:var(--teal-600); }
 
 /* ensure the tabs-bg doesn't stretch full width */
@@ -6248,16 +8015,23 @@ export default {
 @media (max-width: 1200px) {
   .nivelamento-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .imersao-metrics-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ranking-form-grid,
+  .ranking-quota-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .imersao-group-card { grid-template-columns: 1fr; gap: 8px; }
   .imersao-group-arrow { display: none; }
 }
 @media (max-width: 760px) {
   .nivelamento-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .imersao-metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ranking-form-grid,
+  .ranking-quota-grid { grid-template-columns: 1fr; }
   .presenca-filters-grid { grid-template-columns: 1fr; }
   .presenca-row { flex-direction: column; align-items: flex-start; }
   .imersao-group-tabs { overflow-x: auto; white-space: nowrap; }
   .imersao-group-table { display: block; overflow-x: auto; }
+  .exam-insights-grid,
+  .exam-profile-grid,
+  .exam-ranking-grid { grid-template-columns: 1fr; }
 }
 
 </style>

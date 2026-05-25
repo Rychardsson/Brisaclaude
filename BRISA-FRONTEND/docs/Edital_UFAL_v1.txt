@@ -334,10 +334,10 @@ l. Introdução à Engenharia de Requisitos;
 m. Introdução ao Treinamento de IA; 
 n. Introdução à UI/UX. 
 5.2.2. Durante a etapa de Nivelamento em Computação Básica, os alunos terão 
-apoio de Professor de EaD (Instrutor) e Monitor de EaD. 
+apoio de Orientador de EaD (Instrutor) e Monitor de EaD. 
 5.2.3. Os(as) alunos(as) contarão com sistema de mensagens (WhatsApp, Discord 
 etc.) a ser escolhido pelo EASY/UFAL para apoiar o processo de 
-aprendizagem durante esta etapa, interagindo entre si e com o professor. 
+aprendizagem durante esta etapa, interagindo entre si e com o orientador. 
 5.2.4. Os cursos a, b, c, d, e e f são obrigatórios e, caso não realizados, implicam 
 na desclassificação do(a) aluno(a). 
 5.2.5. Os conteúdos estarão organizados em formato de verbetes a utocontidos, 
@@ -517,11 +517,11 @@ perfil dos(as) alunos(as) e expectativa da empresa que irá propor o projeto.
 6.1.7. Cada grupo deverá realizar reuniões diárias online entre os seus membros, 
 em plataforma de comunicação escolhida pelo EASY/UFAL, e 
 semanalmente reunião presencial na sede do EASY/UFAL, em Maceió, com 
-o Professor Orientador de Projetos, em dia e horário a ser estabelecido pela 
+o Orientador de Projetos, em dia e horário a ser estabelecido pela 
 coordenação do projeto (se a reunião cair em feriados nacionais, estaduais 
 de Alagoas ou municipal de Maceió, ela deverá ser reagendada). 
 6.1.8. É obrigatória a presença de todos os(as) alunos(as) do grupo  nos 
-encontros presenciais agendados com o professor orientador de projeto. 
+encontros presenciais agendados com o orientador de projeto. 
 6.1.8.1. Na segunda falta não justificada  o(a) aluno(a) receberá uma 
 advertência. 
 6.1.8.2. Na terceira falta não justificada o(a) aluno(a) será excluído do 
@@ -531,7 +531,7 @@ programa.
 6.1.8.4. As justificativas por ausência serão avaliadas p elo coordenador 
 local, conforme as evidências apresentadas pelo(a) aluno(a). 
 6.1.9. Durante a etapa de Imersão em Computação Avançada, os(as) alunos(as) 
-terão apoio de Professor Orientador de Projetos e Monitor Técnico. 
+terão apoio de Orientador de Projetos e Monitor Técnico. 
 6.1.10. Todos os cursos estudados na etapa de Nivel amento em Computação 
 Básica estarão disponíveis para que os(as) alunos(as), se necessário, 
 revejam conceitos e técnicas durante a etapa de Imersão em Computação 
@@ -580,7 +580,7 @@ descritos no Anexo VIII;
 definidas no cronog rama neste Edital e serão realizadas de forma 
 presencial, Campus A. C. Simões da UFAL, situado em Maceió  - AL, em  
 horário a ser estabelecido pela coordenação do programa. 
-6.2.3. A critério dos professores e da equipe pedagógica do projeto, e em função 
+6.2.3. A critério dos orientadores e da equipe pedagógica do projeto, e em função 
 das características dos projetos desenvolvidos, poderá ser agendada mais 
 de uma apresentação para o mesmo grupo. 
 6.2.4. O não comparecimento a qualquer uma dessas apresentações de avaliação 
@@ -996,7 +996,7 @@ Critérios de Avaliação da fase de Imersão em Computação Avançada
  
 Durante a etapa de Imersão em Computação Avançada, haverá duas avaliações (parcial e final) 
 com três componentes, conforme os seguintes critérios: 
-1. Nota do Grupo do Projeto (NG) realizado – a banca, formada pelo professor orientador, o 
+1. Nota do Grupo do Projeto (NG) realizado – a banca, formada pelo orientador, o 
 coordenador local e um representante do cliente que sugeriu o tema e eventuais 
 convidados, assistirá à apresentação do grupo sobre o projeto e fa rá uma avaliação dos 
 seguintes critérios (com total máximo de 60 pontos): 
@@ -1013,7 +1013,7 @@ a. Colaboração
 b. Empatia 
 c. Respeito  
 d. Liberdade 
-3. Nota de Comportamento e Desempenho (NC) desenvolvidos no curso, feita pelo professor-
+3. Nota de Comportamento e Desempenho (NC) desenvolvidos no curso, feita pelo orientador-
 orientador da turma, de acordo com os seguintes indicadores (total máximo de 70 pontos): 
 a. Produção técnica: quantidade de código publicado no GitHub ou similar; 
 b. Produção técnica: qualidade do código publicado no GitHub ou similar; 
@@ -1023,7 +1023,7 @@ dos outros;
 e. Responsabilidade: cumprimento de prazos e de compromissos assumidos 
 ante terceiros; 
 f. Autoestudo: capacidade de aprender conteúdos novos sem a necessidade de 
-explicações detalhadas do professor ou tutor; 
+explicações detalhadas do orientador ou tutor; 
 g. Trabalho em equipe:  habilidade de trabalho com várias pessoas em um 
 projeto conjunto. 
 4. Em cada avaliação, a nota do(a) aluno(a) será a soma dos pontos obtidos nas três dimensões 

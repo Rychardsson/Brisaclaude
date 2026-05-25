@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <div class="step-container">
     
     <div class="step-header">
-       <h2>Revisão Final</h2>
-       <p>Revise todas as configurações antes de publicar o edital</p>
+      <h2>Revisão Final</h2>
+      <p>Revise todas as configurações antes de publicar o edital</p>
     </div>
 
     <div class="card-section validation-card" :class="{ 'success-card': progressPercentage === 100 }">
@@ -18,14 +18,14 @@
                    </svg>
                 </span>
                 <div>
-                   <h3 class="validation-title" :class="{ 'success-title': progressPercentage === 100 }">
-                      Validações Automáticas
-                   </h3>
+                            <h3 class="validation-title" :class="{ 'success-title': progressPercentage === 100 }">
+                                 Validações Automáticas
+                            </h3>
                    <p class="validation-subtitle" v-if="progressPercentage < 100">
-                     ⚠️ Você possui {{ validationData.totalErrors }} pendência(s) antes de publicar.
+                               Você possui {{ validationData.totalErrors }} pendência(s) antes de publicar.
                    </p>
                    <p class="validation-subtitle success-text" v-else>
-                     Tudo certo! Edital validado e pronto para publicação.
+                               Tudo certo! Edital validado e pronto para publicação.
                    </p>
                 </div>
              </div>
@@ -54,9 +54,7 @@
                    <div :class="['pending-list-wrapper', { 'is-open': isExpanded(group.stepNumber) }]">
                       <div class="pending-list-inner">
                          <ul class="pending-list">
-                            <li v-for="(error, i) in group.errors" :key="i">
-                               • {{ error }}
-                            </li>
+                            <li v-for="(error, i) in group.errors" :key="i">{{ error }}</li>
                          </ul>
                       </div>
                    </div>
@@ -99,6 +97,18 @@
              <span>{{ formData.executor || 'Não informado' }}</span>
           </div>
           <div class="review-item">
+             <small>Entidade de Fomento</small>
+             <span>{{ formData.fundingEntity || 'Não informado' }}</span>
+          </div>
+          <div class="review-item">
+             <small>Coordenador Geral</small>
+             <span>{{ formData.generalCoordinator || 'Não informado' }}</span>
+          </div>
+          <div class="review-item">
+             <small>Valor do Programa</small>
+             <span>{{ formData.programValue || 'Não informado' }}</span>
+          </div>
+          <div class="review-item">
              <small>Status</small>
              <span v-if="isProgramDataComplete" :class="['status-badge', formData.status === 'Publicado' ? 'badge-saved' : 'outline-badge']">
                {{ formData.status }}
@@ -119,14 +129,14 @@
              <div class="timeline-point">0</div>
              <div class="timeline-info">
                 <strong>Período de Inscrições</strong>
-                <p>Data de início: {{ displayDates.startDate || 'Não definido' }} • Data de encerramento: {{ displayDates.endDate || 'Não definido' }}</p>
+                <p>Data de início: {{ displayDates.startDate || 'Não definido' }} - Data de encerramento: {{ displayDates.endDate || 'Não definido' }}</p>
              </div>
           </div>
           <div v-for="stage in stageList" :key="stage.id" class="timeline-step">
              <div class="timeline-point">{{ stage.id + 1 }}</div>
              <div class="timeline-info">
                 <strong>{{ stage.title }}</strong>
-                <p>Modalidade: {{ stage.modality }} • Duração prevista: {{ stage.duration || 'Não definida' }}</p>
+                <p>Modalidade: {{ stage.modality }} - Duração prevista: {{ stage.duration || 'Não definida' }}</p>
              </div>
           </div>
        </div>
@@ -169,6 +179,7 @@
           <div class="quota-review-item"><span>Ampla concorrência</span><strong>{{ inscriptionForm.quotas.ampla }}%</strong></div>
           <div class="quota-review-item"><span>PCD / Neurodivergentes</span><strong>{{ inscriptionForm.quotas.pcd }}%</strong></div>
           <div class="quota-review-item"><span>Negros e pardos</span><strong>{{ inscriptionForm.quotas.negros }}%</strong></div>
+          <div class="quota-review-item"><span>Mulheres</span><strong>{{ inscriptionForm.quotas.mulheres }}%</strong></div>
           <div class="quota-review-item"><span>45+</span><strong>{{ inscriptionForm.quotas.age45 }}%</strong></div>
        </div>
     </div>
@@ -180,11 +191,11 @@
        </div>
        <div class="rules-review-box">
           <div class="rule-review-item">
-             <strong>Etapa Inscrição — Nivelamento</strong>
+             <strong>Etapa Inscrição → Nivelamento</strong>
              <p>{{ inscriptionForm.classification.count }} candidatos classificados por {{ inscriptionForm.classification.criteria.toLowerCase() }}</p>
           </div>
           <div class="rule-review-item">
-             <strong>Etapa Nivelamento — Imersão</strong>
+             <strong>Etapa Nivelamento → Imersão</strong>
              <p>{{ nivelamentoForm.grading.approvedCount }} aprovados com base em: Nota de prova ({{ nivelamentoForm.grading.examWeight }}%) + Cursos opcionais ({{ nivelamentoForm.grading.optionalWeight }}%)</p>
           </div>
           <div class="rule-review-item">
@@ -219,7 +230,7 @@
              <i class="fa-solid fa-floppy-disk"></i> Salvar Rascunho
           </button>
           <button class="btn-publish" @click="$emit('publish-program')" :disabled="progressPercentage !== 100" :style="progressPercentage !== 100 ? 'opacity: 0.5; cursor: not-allowed;' : ''">
-             <i class="fa-solid fa-paper-plane"></i> Publicar Edital
+             <i class="fa-solid fa-paper-plane"></i> {{ isEditMode ? 'Atualizar programa' : 'Cadastrar programa' }}
           </button>
        </div>
     </div>
@@ -237,7 +248,8 @@ export default {
     nivelamentoForm: { type: Object, required: true },
     imersaoForm: { type: Object, required: true },
     displayDates: { type: Object, required: true },
-    currentStep: { type: Number, required: true }
+    currentStep: { type: Number, required: true },
+    isEditMode: { type: Boolean, default: false }
   },
   data() {
     return {
@@ -267,7 +279,7 @@ export default {
   },
   computed: {
     isProgramDataComplete() {
-      return !!(this.formData.programName && this.formData.executor && this.formData.supportEmail);
+      return !!(this.formData.programName && this.formData.executor && this.formData.fundingEntity && this.formData.generalCoordinator && this.formData.programValue && this.formData.supportEmail);
     },
 
     // LÓGICA MESTRA: Varre absolutamente todos os campos de todas as abas
@@ -290,6 +302,9 @@ export default {
       checkField(this.formData.programName, 'Nome do programa não preenchido.', step1Errors);
       checkField(this.formData.batchName, 'Turma/Edição não preenchida.', step1Errors);
       checkField(this.formData.executor, 'Executora do programa não definida.', step1Errors);
+      checkField(this.formData.fundingEntity, 'Entidade de fomento não definida.', step1Errors);
+      checkField(this.formData.generalCoordinator, 'Coordenador geral não definido.', step1Errors);
+      checkField(this.formData.programValue, 'Valor do programa não informado.', step1Errors);
       checkField(this.formData.objective, 'Objetivo do programa não preenchido.', step1Errors);
       checkField(this.formData.location, 'Local de realização não definido.', step1Errors);
       checkField(this.formData.supportEmail, 'E-mail de suporte não configurado.', step1Errors);
@@ -320,7 +335,7 @@ export default {
       checkField(this.displayDates.inscEnd, 'Data de fim das inscrições não definida.', step3Errors);
       
       const q = this.inscriptionForm.quotas;
-      const totalQuotas = Number(q.ampla) + Number(q.pcd) + Number(q.negros) + Number(q.age45);
+      const totalQuotas = Number(q.ampla) + Number(q.pcd) + Number(q.negros) + Number(q.mulheres) + Number(q.age45);
       checkField(totalQuotas === 100, `Distribuição de cotas inválida (${totalQuotas}% em vez de 100%).`, step3Errors);
       
       if (step3Errors.length > 0) {
@@ -739,3 +754,4 @@ export default {
 
 .btn-publish:hover { opacity: 0.9; }
 </style>
+

@@ -43,8 +43,11 @@ public class ProjectGroupModel {
     
     @ManyToOne
     @JoinColumn(name = "project_company_id")
-    private InstitutionModel projectCompany; // empresa do projeto
+    private InstitutionModel projectCompany; // empresa/instituição parceira (patrocinadora do grupo)
     
+    @Column(name = "sponsor_company", nullable = false)
+    private String sponsorCompany; // nome da empresa/instituição parceira selecionada
+
     @ManyToOne
     @JoinColumn(name = "leader_id")
     private PeopleModel leader; // orientador do grupo
@@ -56,7 +59,7 @@ public class ProjectGroupModel {
     private Set<PeopleProjectGroupModel> members = new HashSet<>(); // membros do grupo de projeto
 
     @Column(name = "weekly_meeting_day")
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
     private DayOfWeek weeklyMeetingDay; // dia da semana para reuniões (MONDAY, TUESDAY, etc)
 
     @Column(name = "first_meeting_date")

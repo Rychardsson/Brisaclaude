@@ -67,7 +67,7 @@
           :class="{ active: activeTab === 'imports' }"
           @click="activeTab = 'imports'"
         >
-          Importação de Planilhas
+          Importação de planilhas
         </button>
         <button
           type="button"
@@ -266,15 +266,20 @@
             <section class="section-card">
               <div class="section-header">
                 <div>
-                  <h2>Histórico de submissões</h2>
+                  <h2>Histórico operacional</h2>
                   <p class="section-copy">
-                    {{ historySourceLabel }} para manter rastreabilidade das últimas cargas e reprocessamentos.
+                    {{ historySourceLabel }}. Para auditoria completa do sistema, use a página de logs.
                   </p>
                 </div>
 
+                <div class="section-actions">
                 <button type="button" class="ghost-btn" @click="loadImportHistory">
                   Atualizar histórico
                 </button>
+                <button type="button" class="ghost-btn" @click="openLogsModule">
+                  Ver logs completos
+                </button>
+                </div>
               </div>
 
               <div v-if="importHistoryLoading" class="empty-shell">
@@ -305,7 +310,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="item in historyRows" :key="item.id">
+                    <tr v-for="item in historyPreviewRows" :key="item.id">
                       <td>{{ item.sourceLabel }}</td>
                       <td>{{ item.typeLabel }}</td>
                       <td>{{ item.fileName }}</td>
@@ -379,6 +384,10 @@
                 <button type="button" class="shortcut-card" @click="openPeopleModule">
                   <strong>Pessoas</strong>
                   <span>Consultar base completa e cadastros detalhados.</span>
+                </button>
+                <button v-if="isAdmin" type="button" class="shortcut-card" @click="openAcademicStaffModule">
+                  <strong>Equipe acadêmica</strong>
+                  <span>Gerenciar orientadores e gestores em uma base dedicada.</span>
                 </button>
                 <button type="button" class="shortcut-card" @click="openProgramsModule">
                   <strong>Programas e Turmas</strong>
@@ -753,6 +762,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import * as XLSX from 'xlsx';
 import api from '@/services/api';
+import { authService } from '@/services/authService';
 import { courseService } from '@/services/courseService';
 import { logService } from '@/services/logService';
 import { peopleService } from '@/services/peopleService';
@@ -821,6 +831,8 @@ const dropzoneClass = computed(() => ({
   warning: uploadState.value === 'error'
 }));
 
+const isAdmin = computed(() => String(authService.getUser()?.role || '').toUpperCase() === 'ADMIN');
+
 const canSubmitImport = computed(() => Boolean(selectedFile.value) && !isUploadBusy.value);
 
 const uploadStatusText = computed(() => {
@@ -840,10 +852,12 @@ const historyRows = computed(() => (
   sessionImportHistory.value.length > 0 ? sessionImportHistory.value : remoteImportHistory.value
 ));
 
+const historyPreviewRows = computed(() => historyRows.value.slice(0, 8));
+
 const historySourceLabel = computed(() => (
   sessionImportHistory.value.length > 0
     ? 'Exibindo o histórico salvo neste navegador para a operação do backoffice'
-    : 'Exibindo os últimos registros de importação encontrados nos logs do sistema'
+    : 'Exibindo as últimas importações encontradas na auditoria do sistema'
 ));
 
 const courseStats = computed(() => ({
@@ -1020,6 +1034,10 @@ function openProgramsModule() {
 
 function openPeopleModule() {
   router.push('/people');
+}
+
+function openAcademicStaffModule() {
+  router.push('/academic-staff');
 }
 
 function openLogsModule() {
@@ -1753,7 +1771,19 @@ function closeUserDetails() {
 
 .table-card {
   border-radius: 20px;
-  overflow: hidden;
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+
+.table-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-card::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 
 .tabs-bar {
@@ -1766,28 +1796,27 @@ function closeUserDetails() {
 }
 
 .tab-item {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 0;
-  background: transparent;
-  color: #5f728d;
-  font: inherit;
-  font-weight: 600;
-  padding: 12px 2px 14px;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  white-space: nowrap;
+   display: inline-flex;
+   align-items: center;
+   padding: 12px 16px;
+   border: none;
+   background: transparent;
+   color: var(--slate-600);
+   font-size: 14px;
+   font-weight: 600;
+   line-height: 1.25;
+   border-bottom: 2px solid transparent;
+   cursor: pointer;
+   white-space: nowrap;
 }
 
 .tab-item:hover {
-  color: #2a3566;
+   color: var(--color-text);
 }
 
 .tab-item.active {
-  color: var(--teal);
-  border-bottom-color: #14b8a6;
+   color: var(--teal-600);
+   border-bottom-color: var(--teal-600);
 }
 
 .tab-label {
@@ -1796,17 +1825,16 @@ function closeUserDetails() {
 }
 
 .tab-count {
-  background: #eef2f7;
-  color: #8a98ab;
-  border-radius: 999px;
-  padding: 2px 7px;
-  font-size: 11px;
-  font-weight: 700;
+   background: #eef2f7;
+   color: #8a98ab;
+   border-radius: 999px;
+   padding: 2px 7px;
+   font-size: 11px;
+   font-weight: 600;
 }
 
 .tab-item.active .tab-count {
-  color: #14b8a6;
-  background: #e7f8f5;
+   color: var(--teal-600);
 }
 
 .workspace-body {
@@ -1837,6 +1865,13 @@ function closeUserDetails() {
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+.section-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .section-header.tight {
@@ -2557,6 +2592,9 @@ function closeUserDetails() {
 }
 
 .field textarea {
+  min-height: 118px;
+  max-height: 220px;
+  overflow-y: auto;
   resize: vertical;
 }
 

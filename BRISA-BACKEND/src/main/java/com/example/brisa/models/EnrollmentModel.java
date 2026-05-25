@@ -19,7 +19,7 @@ public class EnrollmentModel {
 
     @ManyToOne
     @JoinColumn(name = "people_id", nullable = false)
-    private PeopleModel people; // A pessoa (aluno, professor, etc.)
+    private PeopleModel people; // A pessoa (aluno, orientador, etc.)
 
     @ManyToOne
     @JoinColumn(name = "class_id", nullable = false)
@@ -27,7 +27,7 @@ public class EnrollmentModel {
 
     @ManyToOne
     @JoinColumn(name = "academic_role_id", nullable = false)
-    private AcademicRoleModel academicRole; // Papel na turma: Aluno, Professor, Orientador, Coordenador, etc.
+    private AcademicRoleModel academicRole; // Papel na turma: Aluno, Orientador, Coordenador, etc.
 
     @Column(name = "enrollment_date")
     private LocalDate enrollmentDate; // Data de matrícula
@@ -41,4 +41,6 @@ public class EnrollmentModel {
     @Column(name = "grade")
     private Double grade; // Nota final 
 
+    @Column(name = "frequency")
+    private Double frequency; // Frequência percentual do aluno
 }

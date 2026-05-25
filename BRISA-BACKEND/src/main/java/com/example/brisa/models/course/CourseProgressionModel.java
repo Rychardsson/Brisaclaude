@@ -2,6 +2,7 @@ package com.example.brisa.models.course;
 
 import java.time.LocalDate;
 
+import com.example.brisa.models.ClassModel;
 import com.example.brisa.models.PeopleModel;
 
 import jakarta.persistence.Column;
@@ -31,8 +32,18 @@ public class CourseProgressionModel {
     @JoinColumn(name = "people_id")
     private PeopleModel people;
 
+    @ManyToOne
+    @JoinColumn(name = "class_id")
+    private ClassModel classModel;
+
     @Column(name = "date")
     private LocalDate date;
+
+    @Column(name = "grade")
+    private Double grade;
+
+    @Column(name = "frequency")
+    private Double frequency;
 
     @Column(name = "completion_percentage")
     private double completionPercentage;

@@ -16,10 +16,12 @@ import com.example.brisa.services.SystemLogService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("api/logs")
 @CrossOrigin(origins = "*")
+@Slf4j
 public class SystemLogController {
 
     @Autowired
@@ -30,6 +32,7 @@ public class SystemLogController {
             @RequestParam(required = false) LogAction action,
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String entityId,
             @RequestParam(required = false) LocalDateTime startDate,
             @RequestParam(required = false) LocalDateTime endDate,
             @RequestParam(defaultValue = "0") Integer page,
@@ -42,6 +45,7 @@ public class SystemLogController {
             filter.setAction(action);
             filter.setUserId(userId);
             filter.setEntityType(entityType);
+            filter.setEntityId(entityId);
             filter.setStartDate(startDate);
             filter.setEndDate(endDate);
             filter.setPage(page);
@@ -52,6 +56,7 @@ public class SystemLogController {
             Page<SystemLogDTO> logs = logService.findLogs(filter);
             return ResponseEntity.ok(logs);
         } catch (Exception e) {
+            log.error("Erro ao buscar logs com filtros", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

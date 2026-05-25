@@ -7,6 +7,11 @@ BRISA-BACKEND/src/main/resources/application.properties
 Brisa ONE/
 Brisa-ONE/
 .playwright-mcp
-*.md
 *.png
 backend-career-run*.log
+
+# Docker – variáveis de ambiente (contém segredos)
+.env
+
+# Planilhas locais (dados de teste/importação)
+planilhas/

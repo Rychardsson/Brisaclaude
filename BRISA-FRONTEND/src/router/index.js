@@ -2,143 +2,147 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { authService } from '@/services/authService';
 import LoginView from '@/views/LoginView.vue';
 import ResetPasswordView from '@/views/ResetPasswordView.vue';
-import HomeView from '@/views/HomeView.vue';
-import DashboardsView from '@/views/DashboardView.vue';
+import DashboardView from '@/views/DashboardView.vue';
 import PeopleView from '@/views/PeopleView.vue';
 import PessoaPerfilView from '@/views/PessoaPerfilView.vue';
 import ProgramsView from '@/views/ProgramsView.vue';
-
-// 👇 ESTA FOI A ÚNICA LINHA ALTERADA 👇
-// O router agora procura o Arquivo Pai dentro da nova pasta que você criou.
+import ProgramDetailsView from '@/views/ProgramDetailsView.vue';
 import ProgramRegistrationView from '@/views/ProgramRegistration/ProgramRegistrationView.vue';
-
 import ClassDetailsView from '@/views/ClassDetailsView.vue';
+import ClassCoursesView from '@/views/ClassCoursesView.vue';
 import StageDetailsView from '@/views/StageDetailsView.vue';
 import InstitutionsView from '@/views/InstitutionsView.vue';
 import LogsView from '@/views/LogsView.vue';
 import CoursesView from '@/views/CoursesView.vue';
 import AdminPanelView from '@/views/AdminPanelView.vue';
 import CareerView from '@/views/CareerView.vue';
+import CareerPublicAccessView from '@/views/CareerPublicAccessView.vue';
+import ClassesView from '@/views/ClassesView.vue';
+import EnrollmentsView from '@/views/EnrollmentsView.vue';
+import AcademicStaffView from '@/views/AcademicStaffView.vue';
+
+const APP_TITLE = 'BRISA One';
 
 const routes = [
   {
     path: '/',
     name: 'Login',
-    component: LoginView
+    component: LoginView,
+    meta: { title: 'Entrar' }
   },
   {
     path: '/reset-password',
     name: 'ResetPassword',
-    component: ResetPasswordView
+    component: ResetPasswordView,
+    meta: { title: 'Redefinir Senha' }
   },
   {
     path: '/dashboard',
-    name: 'Dashboards',
-    component: DashboardsView,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/home',
-    name: 'Home',
-    component: HomeView,
-    meta: { requiresAuth: true }
+    name: 'Dashboard',
+    component: DashboardView,
+    meta: { requiresAuth: true, title: 'Dashboard' }
   },
   {
     path: '/people',
     name: 'People',
     component: PeopleView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Pessoas' }
+  },
+  {
+    path: '/academic-staff',
+    name: 'AcademicStaff',
+    component: AcademicStaffView,
+    meta: { requiresAuth: true, requiresAdmin: true, title: 'Equipe Acadêmica' }
   },
   {
     path: '/people/:id',
     name: 'PersonDetails',
     component: PessoaPerfilView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Perfil da Pessoa' }
   },
   {
     path: '/institutions',
     name: 'Institutions',
     component: InstitutionsView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Instituições' }
   },
   {
     path: '/programs',
     name: 'Programs',
     component: ProgramsView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Programas' }
   },
-  // 👇 A ROTA CONTINUA A MESMA, APONTANDO SÓ PARA O PAI 👇
   {
     path: '/programs/register',
     name: 'ProgramRegistration',
     component: ProgramRegistrationView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Cadastro de Programa' }
   },
   {
     path: '/courses',
     name: 'Courses',
     component: CoursesView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Cursos' }
+  },
+  {
+    path: '/classes',
+    name: 'Classes',
+    component: ClassesView,
+    meta: { requiresAuth: true, title: 'Turmas' }
+  },
+  {
+    path: '/enrollments',
+    name: 'Enrollments',
+    component: EnrollmentsView,
+    meta: { requiresAuth: true, title: 'Matrículas' }
   },
   {
     path: '/admin-panel',
     name: 'AdminPanel',
     component: AdminPanelView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Painel Administrativo' }
   },
   {
     path: '/carreira',
     name: 'Career',
     component: CareerView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Carreira' }
+  },
+  {
+    path: '/carreira/acompanhamento',
+    name: 'CareerPublicAccess',
+    component: CareerPublicAccessView,
+    meta: { title: 'Formulario de Carreira' }
   },
   {
     path: '/programs/:id',
     name: 'ProgramDetails',
-    redirect: to => ({
-      path: '/programs',
-      query: { programId: String(to.params.id) }
-    })
+    component: ProgramDetailsView,
+    meta: { requiresAuth: true, title: 'Detalhes do Programa' }
   },
   {
     path: '/programs/:programId/classes/:classId',
     name: 'ClassDetails',
     component: ClassDetailsView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Detalhes da Turma' }
   },
   {
     path: '/programs/:programId/classes/:classId/courses',
     name: 'ClassCourses',
-    redirect: to => ({
-      name: 'ClassDetails',
-      params: {
-        programId: to.params.programId,
-        classId: to.params.classId
-      },
-      query: {
-        tab: 'etapas',
-        subTab: 'nivelamento'
-      }
-    })
-  },
-  // ✅ Tela 4 — Detalhes de um Curso
-  {
-    path: '/programs/:programId/classes/:classId/courses/:courseId',
-    name: 'CourseDetails',
-    component: () => import('@/views/CourseDetailsView.vue'),
-    meta: { requiresAuth: true }
+    component: ClassCoursesView,
+    meta: { requiresAuth: true, title: 'Cursos da Turma' }
   },
   {
     path: '/programs/:programId/classes/:classId/stages/:stageId',
     name: 'StageDetails',
     component: StageDetailsView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Detalhes da Etapa' }
   },
   {
     path: '/logs',
     name: 'Logs',
     component: LogsView,
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, title: 'Logs' }
   }
 ];
 
@@ -148,13 +152,23 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
+  const currentUser = authService.getUser();
+  const currentRole = String(currentUser?.role || '').toUpperCase();
+
   if (to.meta.requiresAuth && !authService.isAuthenticated()) {
     next('/');
+  } else if (to.meta.requiresAdmin && currentRole !== 'ADMIN') {
+    next('/dashboard');
   } else if (to.path === '/' && authService.isAuthenticated()) {
-    next('/home');
+    next('/dashboard');
   } else {
     next();
   }
+});
+
+router.afterEach((to) => {
+  const routeTitle = typeof to.meta.title === 'string' ? to.meta.title.trim() : '';
+  document.title = routeTitle ? `${routeTitle} | ${APP_TITLE}` : APP_TITLE;
 });
 
 export default router;

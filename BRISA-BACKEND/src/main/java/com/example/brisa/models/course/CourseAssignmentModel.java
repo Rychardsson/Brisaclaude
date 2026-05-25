@@ -1,6 +1,7 @@
 package com.example.brisa.models.course;
 
 import com.example.brisa.models.ClassModel;
+import com.example.brisa.models.AdvisorModel;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -35,4 +36,8 @@ public class CourseAssignmentModel {
 
     @Column(name = "required", nullable = false)
     private boolean required = true;
+
+    @ManyToOne
+    @JoinColumn(name = "advisor_id")
+    private AdvisorModel advisor;
 }

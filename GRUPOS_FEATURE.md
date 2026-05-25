@@ -416,7 +416,7 @@ GET /api/classes/3/immersion-students
    - Frequência: Uma por semana no `weeklyMeetingDay`
 
 2. **Filtro de Alunos**:
-   - Frontend carrega automáticamente alunos da imersão
+   - Frontend carrega automaticamente alunos da imersão
    - Backend valida que selecionados estão realmente na imersão
    - Usa `StageCandidateModel` com `stage.name = "imersao"`
 
@@ -426,10 +426,10 @@ GET /api/classes/3/immersion-students
      - `people_project_groups` (todos os membros)
    - O grupo em si é deletado
 
-4. **Conventions**:
-   - Use `groupService` para todas as chamadas API no frontend
-   - Frontend passa `classId` em todas as chamadas
-   - Backend valida `classId` antes de processar
+4. **Convenções**:
+   - Use `groupService` para todas as chamadas de API no frontend
+   - O frontend passa `classId` em todas as chamadas
+   - O backend valida `classId` antes de processar
    - Respostas sempre incluem `message` + `data`
 
 ---
@@ -489,3 +489,40 @@ Para continuar a Fase 2, comece pela **Listagem de Grupos na UI** (prioridade 1)
 **Status**: Fase 1: Concluída. Fase 2: Em progresso (Listagem de grupos - frontend implementada).
 
 
+---
+
+## ✅ Progresso (2026-05-16)
+
+Hoje foram feitas ações focadas no frontend e integração de UI relacionadas ao perfil de pessoas e aos fluxos que interagem com grupos:
+
+- O que foi implementado:
+  - Melhorias em `PessoaPerfilView.vue`: correção da rota "Voltar", acessibilidade (ARIA) para abas, padronização de botões (altura e espaçamento) e remoção de comportamentos que cortavam menus.
+  - Criação e integração de 3 modais reutilizáveis no frontend:
+    - `EditPersonModal.vue` — edição direta de pessoa (usa `peopleService.update`).
+    - `EnrollmentModal.vue` — registrar vínculo (usa `enrollmentService.create`).
+    - `FollowUpModal.vue` — registrar acompanhamento de carreira (usa `careerService.createFollowUp`).
+  - Testes automatizados de interface com Playwright: aberturas de modal, preenchimento de campos e cliques em salvar. Capturas: `person-596-*.png` e `people-new-person-modal.png`.
+  - Commits realizados e arquivos adicionados/alterados no repositório (frontend).
+
+- Onde paramos (pendências detectadas):
+  - As chamadas de salvamento falharam em ambiente local devido a erros 500 do backend (ex.: /api/people/596). A UI está pronta, mas a persistência depende do backend ou de mocks API.
+  - `EnrollmentModal` ainda não carrega opções de programas/turmas; o formulário aceita IDs manuais. Precisamos popular selects a partir de `peopleService`/`programService`/`classService`.
+  - Feedback visual para sucesso/erro (toasts) nos modais não foi implementado — hoje apenas logs e emit events.
+  - A tela de pessoa (ex.: http://localhost:5173/people/596) ainda não está concluída: muitos botões ainda não estão ligados a ações, grande parte dos controles carece de estilos/CSS e a UI geral permanece incompleta. Requer revisão visual, padronização de botões e ligação das ações aos modais/rotas implementados.
+
+- Próximos passos recomendados (curto prazo):
+  1. Implementar carregamento de opções (programas e turmas) em `EnrollmentModal` e validação de formulário.
+  2. Adicionar toasts/alertas de sucesso e erro nos modais (centralizar em `ui/toast` ou usar serviço existente).
+  3. Levantar backend (ou criar mocks HTTP) e revalidar salvamentos com Playwright — capturar evidências de sucesso.
+  4. Criar modal de edição detalhada do grupo (PUT /groups/{id}) e integrá-lo ao fluxo de listagem de grupos.
+  5. Remover/aposentar `PersonDetailsView.vue` quando o fluxo por `PessoaPerfilView.vue` estiver 100% validado.
+
+Status atual: Em progresso — UI e fluxos frontend implementados; integração persistência pendente por erro no backend.
+
+Referências e evidências:
+- Screenshots gerados durante testes: `person-596-*.png`, `people-new-person-modal.png`.
+- Commits: alterações em `BRISA-FRONTEND/src/views/PessoaPerfilView.vue` e novos componentes em `BRISA-FRONTEND/src/components/`.
+
+---
+
+*Atualizado em: 2026-05-16*

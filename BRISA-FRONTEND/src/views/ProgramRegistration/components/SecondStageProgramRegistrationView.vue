@@ -275,8 +275,9 @@
            <div style="display: flex; align-items: center; gap: 6px;">
              <input 
                type="number" 
-               v-model="nivelamentoForm.grading.examWeight" 
+               v-model.number="nivelamentoForm.grading.examWeight" 
                @keydown.enter="$event.target.blur()"
+               @input="validateWeights"
                class="quota-input" 
                style="color: #1a233a; font-weight: 500; padding: 4px 8px; width: 60px; text-align: center;" 
                min="0" max="100" 
@@ -286,7 +287,8 @@
          </div>
          <input 
            type="range" 
-           v-model="nivelamentoForm.grading.examWeight" 
+           v-model.number="nivelamentoForm.grading.examWeight" 
+           @input="validateWeights"
            class="form-range" 
            min="0" max="100"
            :style="{ background: `linear-gradient(to right, #1e1b4b ${nivelamentoForm.grading.examWeight}%, #e5e7eb ${nivelamentoForm.grading.examWeight}%)` }"
@@ -299,8 +301,9 @@
            <div style="display: flex; align-items: center; gap: 6px;">
              <input 
                type="number" 
-               v-model="nivelamentoForm.grading.optionalWeight" 
+               v-model.number="nivelamentoForm.grading.optionalWeight" 
                @keydown.enter="$event.target.blur()"
+               @input="validateWeights"
                class="quota-input" 
                style="color: #1a233a; font-weight: 500; padding: 4px 8px; width: 60px; text-align: center;" 
                min="0" max="100" 
@@ -310,11 +313,19 @@
          </div>
          <input 
            type="range" 
-           v-model="nivelamentoForm.grading.optionalWeight" 
+           v-model.number="nivelamentoForm.grading.optionalWeight" 
+           @input="validateWeights"
            class="form-range" 
            min="0" max="100"
            :style="{ background: `linear-gradient(to right, #1e1b4b ${nivelamentoForm.grading.optionalWeight}%, #e5e7eb ${nivelamentoForm.grading.optionalWeight}%)` }"
          >
+       </div>
+
+       <div v-if="isTotalWeightExceeded" style="padding: 12px; background-color: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; margin-bottom: 24px;">
+         <p style="margin: 0; color: #991b1b; font-size: 13px; font-weight: 500;">
+           ⚠️ A soma da Pontuação da Prova + Cursos Não Obrigatórios não pode ultrapassar 100%<br/>
+           <span style="font-size: 12px;">Total atual: <strong>{{ totalGradingWeight }}%</strong></span>
+         </p>
        </div>
 
        <div class="form-group">
@@ -446,6 +457,31 @@ export default {
     // Funções vindas do Pai usadas pelos v-for do calendário para descobrir e pintar o botão/dia correto
     isSelectedDay: { type: Function, required: true },
     isToday: { type: Function, required: true }
+  },
+
+  data() {
+    return {
+      isTotalWeightExceeded: false
+    }
+  },
+
+  computed: {
+    totalGradingWeight() {
+      const exam = Number(this.nivelamentoForm.grading.examWeight) || 0;
+      const optional = Number(this.nivelamentoForm.grading.optionalWeight) || 0;
+      return exam + optional;
+    }
+  },
+
+  methods: {
+    validateWeights() {
+      this.isTotalWeightExceeded = this.totalGradingWeight > 100;
+      if (this.isTotalWeightExceeded) {
+        this.$emit('weights-invalid');
+      } else {
+        this.$emit('weights-valid');
+      }
+    }
   }
 }
 </script>
