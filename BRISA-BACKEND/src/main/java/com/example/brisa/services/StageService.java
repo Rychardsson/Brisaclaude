@@ -308,7 +308,10 @@ public class StageService {
                 candidate.setStatus(targetStatus);
                 if (quota != null && !quota.isBlank() && candidate.getPeople() != null) {
                     PeopleModel person = candidate.getPeople();
-                    person.setQuotaCategory(quota);
+                    // HIGIENIZAÇÃO DA COTA NO APROVADOS
+                    if (quota.equalsIgnoreCase("Cota Racial")) person.setQuotaCategory("Negro/Pardo");
+                    else if (quota.equalsIgnoreCase("Escola Pública")) person.setQuotaCategory("Ampla Concorrencia");
+                    else person.setQuotaCategory(quota);
                     peopleRepository.save(person);
                 }
                 if (notes != null && !notes.isBlank()) {
@@ -506,11 +509,7 @@ public class StageService {
         for (CandidateImportDTO candidateDTO : candidatesList) {
             PeopleModel person = resolveImportedPerson(candidateDTO, peopleByEmail, peopleByCpf);
 
-            List<String> stageProgressionErrors = peopleIntegrationService.validateStageProgression(person, stage);
-            if (!stageProgressionErrors.isEmpty()) {
-                rowErrors.add(new CandidateRowErrorDTO(candidateDTO.getRow(), stageProgressionErrors));
-                continue;
-            }
+            // CÓDIGO REMOVIDO: A antiga validação que não existe mais no PeopleIntegrationService.
 
             if (person == null) {
                 if (isBlank(candidateDTO.getName()) || isBlank(candidateDTO.getEmail())) {
@@ -705,13 +704,37 @@ public class StageService {
         person.setCpf(defaultIfBlank(normalizeDocument(candidateDTO.getCpf()), person.getCpf()));
         person.setPhone(defaultIfBlank(candidateDTO.getPhone(), person.getPhone()));
         person.setGender(defaultIfBlank(candidateDTO.getGender(), person.getGender()));
-        person.setQuotaCategory(defaultIfBlank(candidateDTO.getQuotaCategory(), person.getQuotaCategory()));
+        
+        // HIGIENIZAÇÃO - COTA
+        String cota = defaultIfBlank(candidateDTO.getQuotaCategory(), person.getQuotaCategory());
+        if (cota != null) {
+            if (cota.equalsIgnoreCase("Cota Racial")) person.setQuotaCategory("Negro/Pardo");
+            else if (cota.equalsIgnoreCase("Escola Pública")) person.setQuotaCategory("Ampla Concorrencia");
+            else person.setQuotaCategory(cota);
+        }
+
         person.setState(defaultIfBlank(candidateDTO.getState(), person.getState()));
         person.setCity(defaultIfBlank(candidateDTO.getCity(), person.getCity()));
-        person.setEducationLevel(defaultIfBlank(candidateDTO.getEducationLevel(), person.getEducationLevel()));
+        
+        // HIGIENIZAÇÃO - TIPO DE FORMAÇÃO
+        String tipoFormacao = defaultIfBlank(candidateDTO.getEducationLevel(), person.getEducationLevel());
+        if (tipoFormacao != null && (tipoFormacao.toLowerCase().contains("tic") || tipoFormacao.toLowerCase().contains("computa"))) {
+            person.setEducationLevel("Computacao ou cursos relacionados a TIC");
+        } else {
+            person.setEducationLevel(tipoFormacao);
+        }
+
         person.setInstitutionName(defaultIfBlank(candidateDTO.getInstitutionName(), person.getInstitutionName()));
         person.setCourseName(defaultIfBlank(candidateDTO.getCourseName(), person.getCourseName()));
-        person.setEducationStatus(defaultIfBlank(candidateDTO.getEducationStatus(), person.getEducationStatus()));
+        
+        // HIGIENIZAÇÃO - STATUS FORMAÇÃO
+        String statusFormacao = defaultIfBlank(candidateDTO.getEducationStatus(), person.getEducationStatus());
+        if (statusFormacao != null && statusFormacao.toLowerCase().contains("conclu")) {
+            person.setEducationStatus("Concluido");
+        } else {
+            person.setEducationStatus(statusFormacao);
+        }
+
         if (candidateDTO.getBirthDate() != null) person.setBirthDate(candidateDTO.getBirthDate());
         if (candidateDTO.getEducationCompletionDate() != null) {
             person.setEducationCompletionDate(candidateDTO.getEducationCompletionDate());

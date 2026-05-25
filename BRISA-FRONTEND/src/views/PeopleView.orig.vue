@@ -146,7 +146,6 @@
         </div>
       </div>
 
-      <!-- Paginação -->
       <div class="pagination" v-if="totalPages > 1">
         <button @click="goToPage(1)" :disabled="currentPage === 1" class="pagination-btn pagination-btn-icon"
           title="Primeira página">
@@ -196,7 +195,6 @@
       </div>
     </div>
 
-    <!-- Modal de Upload -->
     <div v-if="showUploadModal" class="modal-overlay" @click="closeUploadModal">
       <div class="modal-content" @click.stop>
         <h2>Importar Pessoas via Excel</h2>
@@ -263,7 +261,7 @@
           {{ uploadSuccess }}
         </div>
 
-        <div v-if="uploadResult && uploadResult.alreadyExists > 0" class="alert alert-warning">
+        <div v-if="uploadResult && (uploadResult.alreadyExists > 0 || (uploadResult.duplicatePersons && uploadResult.duplicatePersons.length > 0))" class="alert alert-warning">
           <div class="alert-header">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2">
@@ -272,34 +270,28 @@
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
             <div>
-              <strong>{{ uploadResult.alreadyExists }} pessoa(s) já existente(s)</strong>
-              <p>As seguintes pessoas já estão cadastradas no sistema:</p>
+              <strong>Atenção: {{ uploadResult.duplicatePersons.length }} registro(s) com problema ou duplicados</strong>
+              <p>As seguintes pessoas falharam na validação ou já estão cadastradas:</p>
             </div>
           </div>
-          <div class="duplicate-list">
-            <div v-for="(person, index) in uploadResult.duplicatePersons" :key="index" class="duplicate-item">
+          <div class="duplicate-list" style="max-height: 150px; overflow-y: auto; margin-top: 10px;">
+            <div v-for="(person, index) in uploadResult.duplicatePersons" :key="index" class="duplicate-item" style="padding: 4px 0; border-bottom: 1px solid #eee;">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
+                stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: middle;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
-              {{ person }}
+              <span style="vertical-align: middle;">{{ person }}</span>
             </div>
           </div>
-          <div class="alert-footer">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-            Estas pessoas não foram importadas novamente.
+          <div class="alert-footer" style="margin-top: 10px; font-size: 0.85em; color: #666;">
+            Verifique as mensagens de erro e corrija os dados na planilha se necessário.
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Modal de Criar Pessoa -->
     <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
       <div class="modal-content modal-large" @click.stop>
         <h2>Nova Pessoa</h2>
@@ -420,7 +412,6 @@ export default {
       return digits.length === 11;
     };
 
-
     const filteredPeople = computed(() => {
       if (!searchTerm.value) return people.value;
 
@@ -447,12 +438,10 @@ export default {
       const maxVisible = 5;
 
       if (totalPages.value <= maxVisible) {
-        // Mostra todas as páginas se forem poucas
         for (let i = 1; i <= totalPages.value; i++) {
           pages.push(i);
         }
       } else {
-        // Lógica para mostrar páginas com ... quando houver muitas
         if (currentPage.value <= 3) {
           for (let i = 1; i <= 4; i++) pages.push(i);
           pages.push('...');
@@ -545,7 +534,7 @@ export default {
       try {
         await peopleService.create({
           ...createForm.value,
-          cpf: cpfDigits // envia só números pro backend (recomendado)
+          cpf: cpfDigits
         });
 
         closeCreateModal();
@@ -556,7 +545,6 @@ export default {
         creating.value = false;
       }
     };
-
 
     const closeCreateModal = () => {
       showCreateModal.value = false;
@@ -615,14 +603,18 @@ export default {
           uploadSuccess.value = `${response.successfullyInserted} pessoa(s) importada(s) com sucesso!`;
         }
 
-        // Recarrega a lista após 3 segundos se houver duplicados (para usuário ver o alerta)
-        const delay = response.alreadyExists > 0 ? 3000 : 2000;
-        setTimeout(() => {
-          if (response.alreadyExists === 0 || response.successfullyInserted > 0) {
+        const hasErrors = response.duplicatePersons && response.duplicatePersons.length > 0;
+
+        // MUDANÇA AQUI: Só fecha o modal automaticamente se tudo deu certo e não teve erros
+        if (response.successfullyInserted > 0 && !hasErrors) {
+          setTimeout(() => {
             closeUploadModal();
-          }
+            loadPeople();
+          }, 2000);
+        } else {
+          // Recarrega a lista silenciosamente por trás, mas deixa o modal aberto para o usuário ver o erro
           loadPeople();
-        }, delay);
+        }
       } catch (err) {
         uploadError.value = 'Erro ao importar arquivo: ' + (err.response?.data?.message || err.message);
       } finally {
@@ -641,7 +633,6 @@ export default {
       }
     };
 
-    // Reseta para página 1 quando a busca muda
     watch(searchTerm, () => {
       currentPage.value = 1;
     });

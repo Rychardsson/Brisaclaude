@@ -488,7 +488,7 @@
                 <label>Turma de destino *</label>
                 <select v-model="uploadForm.turmaId">
                   <option value="" disabled>Selecione</option>
-                  <option v-for="turma in classOptions" :key="turma.id" :value="turma.id">{{ turma.label }}</option>
+                  <option v-for="turma in filteredClassOptionsForUpload" :key="turma.id" :value="turma.id">{{ turma.label }}</option>
                 </select>
               </div>
 
@@ -749,7 +749,7 @@
                   <label>Turma</label>
                   <select v-model="createForm.turmaId">
                     <option value="" disabled>Selecione</option>
-                    <option v-for="turma in classOptions" :key="turma.id" :value="turma.id">{{ turma.label }}</option>
+                    <option v-for="turma in filteredClassOptionsForCreate" :key="turma.id" :value="turma.id">{{ turma.label }}</option>
                   </select>
                 </div>
 
@@ -840,9 +840,17 @@
             <div class="form-grid">
               <div class="form-group">
                 <label>Programa</label>
+                <select v-model="linkForm.programaId">
+                  <option value="" disabled>Selecione</option>
+                  <option v-for="programa in programOptions" :key="programa.id" :value="programa.id">{{ programa.label }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Turma</label>
                 <select v-model="linkForm.turmaId">
                   <option value="" disabled>Selecione</option>
-                  <option v-for="turma in classOptions" :key="turma.id" :value="turma.id">{{ turma.label }}</option>
+                  <option v-for="turma in filteredClassOptionsForLink" :key="turma.id" :value="turma.id">{{ turma.label }}</option>
                 </select>
               </div>
 
@@ -1065,6 +1073,7 @@ const createError = ref(null);
 
 const linkForm = ref({
   peopleId: '',
+  programaId: '',
   turmaId: '',
   etapaId: '',
   statusInicial: ''
@@ -1078,6 +1087,21 @@ const availablePeople = computed(() => people.value || []);
 
 const programOptions = computed(() => referenceData.value?.programas || []);
 const classOptions = computed(() => referenceData.value?.turmas || []);
+const filteredClassOptionsForCreate = computed(() => {
+  if (!createForm.value.programaId) return classOptions.value;
+  const selectedProgramaId = Number(createForm.value.programaId);
+  return classOptions.value.filter(turma => Number(turma.programaId) === selectedProgramaId);
+});
+const filteredClassOptionsForUpload = computed(() => {
+  if (!uploadForm.value.programaId) return classOptions.value;
+  const selectedProgramaId = Number(uploadForm.value.programaId);
+  return classOptions.value.filter(turma => Number(turma.programaId) === selectedProgramaId);
+});
+const filteredClassOptionsForLink = computed(() => {
+  if (!linkForm.value.programaId) return classOptions.value;
+  const selectedProgramaId = Number(linkForm.value.programaId);
+  return classOptions.value.filter(turma => Number(turma.programaId) === selectedProgramaId);
+});
 const stageOptions = computed(() => classStageOptions.value);
 const statusOptions = computed(() => {
   const options = referenceData.value?.statusOptions || [];
@@ -1713,7 +1737,11 @@ const parseUploadFile = async (file) => {
 };
 
 const buildUploadPreview = (rows, result) => {
-  const duplicates = new Set((result?.duplicatePersons || []).map((name) => normalize(name)));
+  const duplicates = new Set((result?.duplicatePersons || []).map((entry) => {
+    // Se a entrada tem erro (formato "Nome: Erro"), extrai apenas o nome
+    const namePart = entry.includes(':') ? entry.split(':')[0] : entry;
+    return normalize(namePart);
+  }));
   const newRows = [];
   const existingRows = [];
   const alertRows = [];
@@ -1734,7 +1762,7 @@ const buildUploadPreview = (rows, result) => {
     });
 
     const isDuplicate = duplicates.has(normalize(row.name));
-    if (isDuplicate) issues.unshift('Pessoa já cadastrada');
+    if (isDuplicate) issues.unshift('Falha ao processar no servidor');
 
     if (issues.length) {
       const entry = { ...row, issue: issues.join(', ') };
@@ -1859,6 +1887,7 @@ const closeLinkModal = () => {
   linkStageOptions.value = [];
   linkForm.value = {
     peopleId: '',
+    programaId: '',
     turmaId: '',
     etapaId: '',
     statusInicial: ''
@@ -1989,6 +2018,27 @@ watch(filteredPeople, () => {
   if (currentPage.value > totalPages.value && totalPages.value > 0) {
     currentPage.value = totalPages.value;
   }
+});
+
+watch(() => createForm.value.programaId, () => {
+  createForm.value.turmaId = '';
+  classStageOptions.value = [];
+  createForm.value.etapaId = '';
+  stageError.value = null;
+});
+
+watch(() => uploadForm.value.programaId, () => {
+  uploadForm.value.turmaId = '';
+  uploadStageOptions.value = [];
+  uploadForm.value.etapaId = '';
+  uploadStageError.value = null;
+});
+
+watch(() => linkForm.value.programaId, () => {
+  linkForm.value.turmaId = '';
+  linkStageOptions.value = [];
+  linkForm.value.etapaId = '';
+  linkStageError.value = null;
 });
 
 watch(() => createForm.value.turmaId, async (turmaId) => {

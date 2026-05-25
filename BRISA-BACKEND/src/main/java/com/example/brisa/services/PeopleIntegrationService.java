@@ -30,6 +30,7 @@ import com.example.brisa.repositories.StageCandidateRepository;
 import com.example.brisa.repositories.StageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -176,7 +177,11 @@ public class PeopleIntegrationService {
 
         List<PeopleFilterOptionDTO> classOptions = classes.stream()
                 .sorted(Comparator.comparing(ClassModel::getCode, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
-                .map(classModel -> new PeopleFilterOptionDTO(classModel.getId(), classModel.getCode()))
+                .map(classModel -> new PeopleFilterOptionDTO(
+                        classModel.getId(), 
+                        classModel.getCode(),
+                        classModel.getProgram() != null ? classModel.getProgram().getId() : null
+                ))
                 .toList();
 
         List<PeopleFilterOptionDTO> stageOptions = stages.stream()
@@ -199,7 +204,7 @@ public class PeopleIntegrationService {
         );
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public PeopleCreateLinkResponseDTO createOnly(PeopleCreateLinkRequestDTO request) {
         List<String> errors = new ArrayList<>();
         if (isBlank(request.getNome())) {
@@ -251,7 +256,7 @@ public class PeopleIntegrationService {
         );
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public PeopleCreateLinkResponseDTO linkExistingPerson(PeopleLinkExistingRequestDTO request) {
         List<String> errors = new ArrayList<>();
         if (request.getPeopleId() == null) {
@@ -279,10 +284,8 @@ public class PeopleIntegrationService {
         StageModel stage = stageRepository.findById(request.getEtapaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Etapa não encontrada."));
 
-        List<String> stageProgressionErrors = validateStageProgression(person, stage);
-        if (!stageProgressionErrors.isEmpty()) {
-            throw new ValidationException(stageProgressionErrors);
-        }
+        // INSCRIÇÃO AUTOMÁTICA NAS ETAPAS ANTERIORES SE NECESSÁRIO
+        autoEnrollMissingStages(person, stage);
 
         Optional<EnrollmentModel> existingEnrollment = enrollmentRepository.findAllWithRelations().stream()
                 .filter(e -> Objects.equals(e.getPeople().getId(), request.getPeopleId()) &&
@@ -313,7 +316,8 @@ public class PeopleIntegrationService {
         Long personId = person.getId();
 
         List<String> alerts = detectActiveConflicts(personId, classModel.getId());
-        // Bloquear se houver conflito de nivelamento
+        
+        // Bloquear se houver conflito de nivelamento com outra turma
         boolean hasNivelamentoConflict = alerts.stream().anyMatch(a -> normalize(a).contains("nivelament"));
         if (hasNivelamentoConflict) {
             throw new ValidationException(alerts);
@@ -336,8 +340,11 @@ public class PeopleIntegrationService {
         );
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public PeopleCreateLinkResponseDTO createOrLink(PeopleCreateLinkRequestDTO request) {
+        System.out.println("DEBUG createOrLink - Iniciando validação para: " + request.getNome());
+        System.out.println("DEBUG createOrLink - turmaId: " + request.getTurmaId() + ", etapaId: " + request.getEtapaId());
+        
         List<String> errors = new ArrayList<>();
         if (isBlank(request.getNome())) {
             errors.add("Nome é obrigatório.");
@@ -358,6 +365,7 @@ public class PeopleIntegrationService {
             errors.add("Etapa inicial é obrigatória.");
         }
         if (!errors.isEmpty()) {
+            System.out.println("DEBUG createOrLink - Validação falhou com erros: " + errors);
             throw new ValidationException(errors);
         }
 
@@ -365,26 +373,30 @@ public class PeopleIntegrationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + request.getTurmaId()));
         StageModel stage = stageRepository.findById(request.getEtapaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Etapa não encontrada com id: " + request.getEtapaId()));
+        
+        System.out.println("DEBUG createOrLink - Stage classId: " + stage.getClassModel().getId() + ", classModel id: " + classModel.getId());
+        
         if (!Objects.equals(stage.getClassModel().getId(), classModel.getId())) {
+            System.out.println("DEBUG createOrLink - Etapa não pertence à turma!");
             throw new ValidationException(List.of("A etapa selecionada não pertence à turma informada."));
         }
 
         PeopleModel person = findExistingPerson(request.getCpf(), request.getEmail()).orElse(null);
         boolean personCreated = false;
 
-        List<String> stageProgressionErrors = validateStageProgression(person, stage);
-        if (!stageProgressionErrors.isEmpty()) {
-            throw new ValidationException(stageProgressionErrors);
-        }
-
         if (person == null) {
             person = new PeopleModel();
             personCreated = true;
         }
 
+        // Salvar a pessoa PRIMEIRO para garantir que ela tem um ID no banco
         mergePersonData(person, request);
         reactivateIfSoftDeleted(person);
         person = peopleRepository.save(person);
+
+        // INSCRIÇÃO AUTOMÁTICA NAS ETAPAS ANTERIORES SE NECESSÁRIO
+        // Substitui a antiga validação que travava o processo
+        autoEnrollMissingStages(person, stage);
 
         AcademicRoleModel alunoRole = academicRoleRepository.findByName("ALUNO")
                 .orElseGet(() -> academicRoleRepository.save(new AcademicRoleModel("ALUNO", "Aluno")));
@@ -421,7 +433,7 @@ public class PeopleIntegrationService {
         Long personId = person.getId();
         List<String> alerts = detectActiveConflicts(personId, classModel.getId());
 
-        // Se houver conflito de nivelamento, bloquear a operação e retornar erro de validação
+        // Se houver conflito de nivelamento com outra turma, bloquear a operação
         boolean hasNivelamentoConflict = alerts.stream().anyMatch(a -> normalize(a).contains("nivelament"));
         if (hasNivelamentoConflict) {
             throw new ValidationException(alerts);
@@ -444,48 +456,64 @@ public class PeopleIntegrationService {
         );
     }
 
-    public List<String> validateStageProgression(PeopleModel person, StageModel targetStage) {
-        if (targetStage == null || targetStage.getClassModel() == null || targetStage.getClassModel().getId() == null) {
-            return List.of();
+    /**
+     * NOVA REGRA: Preenche o funil automaticamente.
+     * Se a pessoa está entrando no Nivelamento, ela é aprovada na Seleção.
+     * Se está entrando na Imersão, ela é aprovada na Seleção e no Nivelamento.
+     */
+    private void autoEnrollMissingStages(PeopleModel person, StageModel targetStage) {
+        if (person == null || person.getId() == null || targetStage == null || targetStage.getClassModel() == null) {
+            return;
         }
 
         String targetStageName = normalize(targetStage.getName());
-        String requiredStageToken;
-        String requiredStageLabel;
-        String targetStageLabel;
+        Long classId = targetStage.getClassModel().getId();
 
-        if (targetStageName.contains("nivel")) {
-            requiredStageToken = "selec";
-            requiredStageLabel = "processo seletivo";
-            targetStageLabel = "nivelamento";
-        } else if (targetStageName.contains("imers")) {
-            requiredStageToken = "nivel";
-            requiredStageLabel = "nivelamento";
-            targetStageLabel = "imersão";
-        } else {
-            return List.of();
-        }
-
-        if (person == null || person.getId() == null) {
-            return List.of("Pessoa precisa estar no " + requiredStageLabel + " desta turma antes de entrar na etapa de " + targetStageLabel + ".");
-        }
-
-        List<StageCandidateModel> previousCandidates = stageCandidateRepository.findByClassIdWithPeople(targetStage.getClassModel().getId()).stream()
-                .filter(candidate -> candidate.getPeople() != null && Objects.equals(candidate.getPeople().getId(), person.getId()))
-                .filter(candidate -> candidate.getStage() != null && normalize(candidate.getStage().getName()).contains(requiredStageToken))
+        // Pega todas as etapas que existem nesta turma
+        List<StageModel> classStages = stageRepository.findAll().stream()
+                .filter(s -> s.getClassModel() != null && Objects.equals(s.getClassModel().getId(), classId))
                 .toList();
 
-        if (previousCandidates.isEmpty()) {
-            return List.of(person.getName() + " precisa estar no " + requiredStageLabel + " desta turma antes de entrar na etapa de " + targetStageLabel + ".");
-        }
+        String importNote = "Inscrição automática via sistema para acesso à etapa de " + targetStage.getName() + ".";
 
-        boolean hasActivePreviousStage = previousCandidates.stream()
-                .anyMatch(candidate -> candidate.getStatus() != StageStatus.REPROVADO);
-        if (!hasActivePreviousStage) {
-            return List.of(person.getName() + " está como reprovado/desclassificado no " + requiredStageLabel + " desta turma.");
+        if (targetStageName.contains("nivel")) {
+            // Requer seleção ou inscrição
+            ensureStageExists(person, classStages, List.of("selec", "inscric"), importNote);
+        } else if (targetStageName.contains("imers")) {
+            // Requer seleção/inscrição e nivelamento
+            ensureStageExists(person, classStages, List.of("selec", "inscric"), importNote);
+            ensureStageExists(person, classStages, List.of("nivel"), importNote);
         }
+    }
 
-        return List.of();
+    /**
+     * Cria (ou aprova) a candidatura da pessoa em uma etapa específica silenciosamente.
+     */
+    private void ensureStageExists(PeopleModel person, List<StageModel> classStages, List<String> stageTokens, String notes) {
+        // Encontra a etapa que precisa ser preenchida baseada em palavras-chave (ex: "selec")
+        StageModel requiredStage = classStages.stream()
+                .filter(s -> stageTokens.stream().anyMatch(token -> normalize(s.getName()).contains(token)))
+                .findFirst()
+                .orElse(null);
+
+        if (requiredStage != null) {
+            StageCandidateModel existingCandidate = stageCandidateRepository.findByStageIdAndPeopleId(requiredStage.getId(), person.getId()).orElse(null);
+            
+            if (existingCandidate == null) {
+                // Cria a pessoa na etapa anterior e já a aprova para que o fluxo fique coerente
+                StageCandidateModel candidate = new StageCandidateModel();
+                candidate.setStage(requiredStage);
+                candidate.setPeople(person);
+                candidate.setStatus(StageStatus.APROVADO); 
+                candidate.setNotes(notes);
+                stageCandidateRepository.save(candidate);
+            } else if (existingCandidate.getStatus() == StageStatus.REPROVADO) {
+                // Se por acaso estava reprovado lá atrás, nós "limpamos" o histórico dela aprovando
+                existingCandidate.setStatus(StageStatus.APROVADO);
+                existingCandidate.setNotes((existingCandidate.getNotes() != null ? existingCandidate.getNotes() + " | " : "") + notes + " (Status alterado de Reprovado para Aprovado)");
+                stageCandidateRepository.save(existingCandidate);
+            }
+        }
     }
 
     private Optional<PeopleModel> findExistingPerson(String cpf, String email) {

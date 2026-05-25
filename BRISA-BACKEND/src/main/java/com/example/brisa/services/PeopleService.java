@@ -138,7 +138,14 @@ public class PeopleService {
                 
                 PeopleImportDTO person = new PeopleImportDTO();
                 person.setName(excelImportHelper.getString(row, idxName));
-                person.setBirthDate(excelImportHelper.getDate(row, idxBirthDate));
+                
+                // Pega a data pelo Helper. Se falhar, tentamos o método manual da própria classe.
+                LocalDate birthDate = excelImportHelper.getDate(row, idxBirthDate);
+                if (birthDate == null && idxBirthDate != null) {
+                     birthDate = parseDateFromCell(row.getCell(idxBirthDate));
+                }
+                person.setBirthDate(birthDate);
+
                 person.setGender(excelImportHelper.getString(row, idxGender));
                 person.setQuotaCategory(excelImportHelper.getString(row, idxQuota));
                 person.setCpf(onlyDigits(excelImportHelper.getString(row, idxCpf)));
@@ -150,7 +157,13 @@ public class PeopleService {
                 person.setInstitutionName(excelImportHelper.getString(row, idxInstitution));
                 person.setCourseName(excelImportHelper.getString(row, idxCourse));
                 person.setEducationStatus(excelImportHelper.getString(row, idxEducationStatus));
-                person.setEducationCompletionDate(excelImportHelper.getDate(row, idxCompletionDate));
+                
+                LocalDate completionDate = excelImportHelper.getDate(row, idxCompletionDate);
+                if (completionDate == null && idxCompletionDate != null) {
+                     completionDate = parseDateFromCell(row.getCell(idxCompletionDate));
+                }
+                person.setEducationCompletionDate(completionDate);
+
                 person.setProgramaId(parseLong(excelImportHelper.getString(row, idxProgram)));
                 person.setTurmaId(parseLong(excelImportHelper.getString(row, idxClass)));
                 person.setEtapaId(parseLong(excelImportHelper.getString(row, idxStage)));
@@ -233,11 +246,11 @@ public class PeopleService {
                         successfullyInserted++;
                     } else {
                         alreadyExists++;
-                        duplicatePersons.add(personDTO.getName());
+                        duplicatePersons.add(personDTO.getName() + " (Já vinculado)");
                     }
                 } catch (ValidationException ex) {
-                    alreadyExists++;
-                    duplicatePersons.add(personDTO.getName() + ": " + String.join(" ", ex.getErrors()));
+                    // CORREÇÃO: Erros de validação agora são relatados corretamente sem incrementar "alreadyExists"
+                    duplicatePersons.add(personDTO.getName() + " (Erro: " + String.join(", ", ex.getErrors()) + ")");
                 }
                 continue;
             }
@@ -247,7 +260,7 @@ public class PeopleService {
                 mergePerson(existing, personDTO);
                 peopleRepository.save(existing);
                 alreadyExists++;
-                duplicatePersons.add(personDTO.getName());
+                duplicatePersons.add(personDTO.getName() + " (Atualizado sem vínculo de turma)");
             } else {
                 peopleToInsert.add(toPeopleModel(personDTO));
 
@@ -284,7 +297,6 @@ public class PeopleService {
         request.setNome(personDTO.getName());
         request.setDataNascimento(personDTO.getBirthDate());
         request.setGenero(personDTO.getGender());
-        request.setCota(personDTO.getQuotaCategory());
         request.setCpf(personDTO.getCpf());
         request.setEmail(personDTO.getEmail());
         request.setTelefone(personDTO.getPhone());
@@ -294,11 +306,38 @@ public class PeopleService {
         request.setCidade(personDTO.getCity());
         request.setCep(personDTO.getZipCode());
         request.setComplementoEndereco(personDTO.getAddressExtra());
-        request.setTipoFormacao(personDTO.getEducationLevel());
         request.setInstituicao(personDTO.getInstitutionName());
         request.setCurso(personDTO.getCourseName());
-        request.setStatusFormacao(personDTO.getEducationStatus());
         request.setDataConclusao(personDTO.getEducationCompletionDate());
+
+        // --- HIGIENIZAÇÃO DOS DADOS PARA BATER COM OS ENUMS DO SISTEMA ---
+        
+        // Trata Status Formação
+        String statusFormacao = defaultIfBlank(personDTO.getEducationStatus(), "");
+        if (statusFormacao.toLowerCase().contains("conclu")) {
+            request.setStatusFormacao("Concluido"); // Removendo o acento para bater com STATUS_FORMACAO_OPTIONS
+        } else {
+            request.setStatusFormacao(statusFormacao);
+        }
+
+        // Trata Tipo de Formação
+        String tipoFormacao = defaultIfBlank(personDTO.getEducationLevel(), "");
+        if (tipoFormacao.toLowerCase().contains("tic") || tipoFormacao.toLowerCase().contains("computa")) {
+            request.setTipoFormacao("Computacao ou cursos relacionados a TIC");
+        } else {
+            request.setTipoFormacao(tipoFormacao);
+        }
+
+        // Trata Cota
+        String cota = defaultIfBlank(personDTO.getQuotaCategory(), "");
+        if (cota.equalsIgnoreCase("Cota Racial")) {
+            request.setCota("Negro/Pardo");
+        } else if (cota.equalsIgnoreCase("Escola Pública")) {
+            request.setCota("Ampla Concorrencia"); // "Escola Pública" não existe no Enum, caindo para Ampla Concorrência (pode ser ajustado)
+        } else {
+            request.setCota(cota);
+        }
+
         return request;
     }
 
