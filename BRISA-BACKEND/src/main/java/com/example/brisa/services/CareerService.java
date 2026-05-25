@@ -4,6 +4,9 @@ import com.example.brisa.dtos.career.CareerAutomationSettingsRequestDTO;
 import com.example.brisa.dtos.career.CareerAutomationSettingsResponseDTO;
 import com.example.brisa.dtos.career.CareerFollowUpRequestDTO;
 import com.example.brisa.dtos.career.CareerFollowUpResponseDTO;
+import com.example.brisa.dtos.career.CareerPublicAccessResponseDTO;
+import com.example.brisa.dtos.career.CareerPublicAccessValidationRequestDTO;
+import com.example.brisa.dtos.career.CareerPublicFollowUpSubmissionRequestDTO;
 import com.example.brisa.enums.LogAction;
 import com.example.brisa.exceptions.ResourceNotFoundException;
 import com.example.brisa.exceptions.ValidationException;
@@ -24,9 +27,11 @@ import com.example.brisa.repositories.ProgramRepository;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.HtmlUtils;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.text.Normalizer;
 import java.time.LocalDate;
@@ -54,6 +59,7 @@ public class CareerService {
     private static final String AUTOMATION_ENTITY_TYPE = "CareerAutomation";
     private static final String DISPATCH_STATUS_SENT = "SENT";
     private static final String DISPATCH_STATUS_FAILED = "FAILED";
+    private static final String DISPATCH_STATUS_RESPONDED = "RESPONDED";
 
     private final CareerProgressionRepository careerProgressionRepository;
     private final CareerAutomationSettingsRepository careerAutomationSettingsRepository;
@@ -64,6 +70,9 @@ public class CareerService {
     private final ProgramRepository programRepository;
     private final SystemLogService systemLogService;
     private final EmailService emailService;
+
+    @Value("${frontend.url:http://localhost:4300}")
+    private String frontendUrl;
 
     @Transactional(readOnly = true)
     public List<CareerFollowUpResponseDTO> getFollowUps(Long peopleId, Long classId, Long programId) {
@@ -152,6 +161,67 @@ public class CareerService {
         return toFollowUpResponse(saved);
     }
 
+    @Transactional(readOnly = true)
+    public CareerPublicAccessResponseDTO validatePublicAccess(CareerPublicAccessValidationRequestDTO request) {
+        CareerAutomationDispatchModel dispatch = resolvePublicDispatch(
+                request != null ? request.getEmail() : null,
+                request != null ? request.getToken() : null,
+                false
+        );
+        return buildPublicAccessResponse(dispatch);
+    }
+
+    @Transactional
+    public CareerFollowUpResponseDTO createPublicFollowUp(
+            CareerPublicFollowUpSubmissionRequestDTO request,
+            HttpServletRequest httpRequest
+    ) {
+        CareerAutomationDispatchModel dispatch = resolvePublicDispatch(
+                request != null ? request.getEmail() : null,
+                request != null ? request.getToken() : null,
+                true
+        );
+
+        CareerFollowUpRequestDTO internalRequest = new CareerFollowUpRequestDTO();
+        internalRequest.setPeopleId(dispatch.getPeople() != null ? dispatch.getPeople().getId() : null);
+        internalRequest.setEnrollmentId(dispatch.getEnrollment() != null ? dispatch.getEnrollment().getId() : null);
+        internalRequest.setClassId(dispatch.getClassModel() != null ? dispatch.getClassModel().getId() : null);
+        internalRequest.setProgramId(dispatch.getProgram() != null ? dispatch.getProgram().getId() : null);
+        internalRequest.setSurveyDate(defaultIfBlank(trimToNull(request.getSurveyDate()), LocalDate.now().toString()));
+        internalRequest.setStatus(request.getStatus());
+        internalRequest.setCompany(request.getCompany());
+        internalRequest.setPosition(request.getPosition());
+        internalRequest.setNotes(request.getNotes());
+
+        CareerFollowUpResponseDTO response = createFollowUp(internalRequest, null, httpRequest);
+
+        dispatch.setStatus(DISPATCH_STATUS_RESPONDED);
+        dispatch.setRespondedAt(LocalDateTime.now());
+        careerAutomationDispatchRepository.save(dispatch);
+
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("operation", "PUBLIC_SUBMISSION");
+        details.put("dispatchId", dispatch.getId());
+        details.put("enrollmentId", dispatch.getEnrollment() != null ? dispatch.getEnrollment().getId() : null);
+        details.put("checkpointMonths", dispatch.getCheckpointMonths());
+        details.put("recipientEmail", dispatch.getRecipientEmail());
+
+        systemLogService.createLog(
+                LogAction.SYSTEM_INFO,
+                "Formulario publico de carreira respondido por " + defaultIfBlank(
+                        dispatch.getPeople() != null ? dispatch.getPeople().getName() : null,
+                        "egresso"
+                ),
+                "CareerPublicForm",
+                dispatch.getId() != null ? dispatch.getId().toString() : null,
+                null,
+                httpRequest,
+                details
+        );
+
+        return response;
+    }
+
     @Transactional
     public CareerAutomationSettingsResponseDTO getAutomationSettings() {
         return toAutomationResponse(loadOrCreateAutomationSettings());
@@ -200,7 +270,7 @@ public class CareerService {
         }
 
         String subject = buildAutomationSubject(savedSettings, true, null);
-        String htmlContent = buildAutomationEmailHtml(savedSettings, "Equipe BRISA", null, null, null, true);
+        String htmlContent = buildAutomationEmailHtml(savedSettings, "Equipe BRISA", null, null, null, true, null, null);
 
         try {
             emailService.sendEmailSync(recipientEmail, subject, htmlContent);
@@ -301,6 +371,8 @@ public class CareerService {
             dispatch.setSubjectSnapshot(buildAutomationSubject(settings, false, candidate.checkpointMonths()));
             dispatch.setAttemptCount((dispatch.getAttemptCount() == null ? 0 : dispatch.getAttemptCount()) + 1);
             dispatch.setLastAttemptAt(attemptTime);
+            String responseToken = ensureDispatchResponseToken(dispatch, attemptTime);
+            String responseLink = buildPublicCareerLink(responseToken);
 
             try {
                 emailService.sendEmailSync(
@@ -312,7 +384,9 @@ public class CareerService {
                                 candidate.program(),
                                 candidate.classModel(),
                                 candidate.checkpointMonths(),
-                                false
+                                false,
+                                responseLink,
+                                responseToken
                         )
                 );
 
@@ -395,7 +469,8 @@ public class CareerService {
                 }
 
                 CareerAutomationDispatchModel dispatch = dispatchMap.get(checkpoint);
-                if (dispatch != null && DISPATCH_STATUS_SENT.equalsIgnoreCase(String.valueOf(dispatch.getStatus()))) {
+                if (dispatch != null && (DISPATCH_STATUS_SENT.equalsIgnoreCase(String.valueOf(dispatch.getStatus()))
+                        || DISPATCH_STATUS_RESPONDED.equalsIgnoreCase(String.valueOf(dispatch.getStatus())))) {
                     continue;
                 }
 
@@ -475,13 +550,17 @@ public class CareerService {
             ProgramModel program,
             ClassModel classModel,
             Integer checkpointMonths,
-            boolean testMessage
+            boolean testMessage,
+            String responseLink,
+            String responseToken
     ) {
         String safeRecipientName = HtmlUtils.htmlEscape(defaultIfBlank(recipientName, "participante"));
         String safeProgramName = HtmlUtils.htmlEscape(program != null && !isBlank(program.getName()) ? program.getName() : "BRISA");
         String safeClassCode = HtmlUtils.htmlEscape(classModel != null && !isBlank(classModel.getCode()) ? classModel.getCode() : "turma em acompanhamento");
         String safeBaseMessage = HtmlUtils.htmlEscape(defaultIfBlank(settings.getMessage(), DEFAULT_AUTOMATION_MESSAGE))
                 .replace("\n", "<br>");
+        String safeResponseLink = HtmlUtils.htmlEscape(defaultIfBlank(responseLink, ""));
+        String safeResponseToken = HtmlUtils.htmlEscape(defaultIfBlank(responseToken, ""));
 
         String checkpointCopy = testMessage
                 ? "Este é um e-mail de teste da automação de acompanhamento da carreira."
@@ -492,6 +571,29 @@ public class CareerService {
                 );
 
         String safeCheckpointCopy = HtmlUtils.htmlEscape(checkpointCopy);
+        String accessSection = testMessage || isBlank(responseLink)
+                ? """
+                        <div style="margin:18px 0;padding:16px 18px;border:1px solid #d8e7f0;border-radius:16px;background:#f8fbff;">
+                          <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.12em;color:#64748b;font-weight:700;">Fluxo do formulario</p>
+                          <p style="margin:0;font-size:14px;line-height:1.6;">Nos envios reais, cada egresso recebe um link seguro para validar e-mail e token antes de preencher o formulario de carreira.</p>
+                        </div>
+                        """
+                : """
+                        <div style="margin:24px 0 18px;">
+                          <a href="%s" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#0f766e;color:#ffffff;text-decoration:none;font-weight:700;">Abrir formulario de carreira</a>
+                        </div>
+                        <div style="margin:0 0 16px;padding:16px 18px;border:1px solid #d8e7f0;border-radius:16px;background:#f8fbff;">
+                          <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.12em;color:#64748b;font-weight:700;">Validacao</p>
+                          <p style="margin:0 0 6px;font-size:14px;line-height:1.6;">Ao abrir o link, confirme seu e-mail e o token abaixo para liberar o formulario.</p>
+                          <p style="margin:0;font-size:15px;line-height:1.6;font-weight:700;word-break:break-all;">%s</p>
+                        </div>
+                        <p style="margin:0 0 14px;font-size:13px;line-height:1.7;color:#526078;">Se preferir, copie o link completo: <a href="%s" style="color:#0f766e;word-break:break-all;">%s</a></p>
+                        """.formatted(
+                        safeResponseLink,
+                        safeResponseToken,
+                        safeResponseLink,
+                        safeResponseLink
+                );
 
         return """
                 <html>
@@ -510,6 +612,8 @@ public class CareerService {
                           <p style="margin:0;font-size:14px;line-height:1.6;"><strong>Programa:</strong> %s<br><strong>Turma:</strong> %s</p>
                         </div>
                         <p style="margin:0 0 14px;font-size:15px;line-height:1.6;">Se possível, responda este e-mail com sua situação profissional atual. Seu retorno ajuda o BRISA a acompanhar o impacto real da formação.</p>
+                        %s
+                        <p style="margin:0 0 14px;font-size:15px;line-height:1.6;">Seu retorno ajuda o BRISA a acompanhar o impacto real da formacao e orientar novas turmas.</p>
                         <p style="margin:24px 0 0;font-size:14px;line-height:1.6;">Abracos,<br><strong>Equipe BRISA</strong></p>
                       </div>
                     </div>
@@ -520,7 +624,8 @@ public class CareerService {
                 safeBaseMessage,
                 safeCheckpointCopy,
                 safeProgramName,
-                safeClassCode
+                safeClassCode,
+                accessSection
         );
     }
 
@@ -577,6 +682,94 @@ public class CareerService {
                 .lastTestAt(model.getLastTestAt())
                 .updatedAt(model.getUpdatedAt())
                 .build();
+    }
+
+    private CareerPublicAccessResponseDTO buildPublicAccessResponse(CareerAutomationDispatchModel dispatch) {
+        CareerFollowUpResponseDTO latestFollowUp = loadLatestFollowUpByEnrollment(
+                dispatch.getEnrollment() != null ? dispatch.getEnrollment().getId() : null
+        );
+
+        return CareerPublicAccessResponseDTO.builder()
+                .email(dispatch.getRecipientEmail())
+                .token(dispatch.getResponseToken())
+                .personName(dispatch.getPeople() != null ? dispatch.getPeople().getName() : null)
+                .programName(dispatch.getProgram() != null ? dispatch.getProgram().getName() : null)
+                .classCode(dispatch.getClassModel() != null ? dispatch.getClassModel().getCode() : null)
+                .checkpointMonths(dispatch.getCheckpointMonths())
+                .completionDate(dispatch.getEnrollment() != null ? dispatch.getEnrollment().getCompletionDate() : null)
+                .dueDate(dispatch.getDueDate())
+                .alreadySubmitted(dispatch.getRespondedAt() != null)
+                .respondedAt(dispatch.getRespondedAt())
+                .latestFollowUp(latestFollowUp)
+                .build();
+    }
+
+    private CareerFollowUpResponseDTO loadLatestFollowUpByEnrollment(Long enrollmentId) {
+        if (enrollmentId == null) {
+            return null;
+        }
+
+        return careerProgressionRepository.findAllByEnrollmentIdWithRelations(enrollmentId).stream()
+                .findFirst()
+                .map(this::toFollowUpResponse)
+                .orElse(null);
+    }
+
+    private CareerAutomationDispatchModel resolvePublicDispatch(String email, String token, boolean requireFreshResponse) {
+        List<String> errors = new ArrayList<>();
+        String normalizedEmail = normalizeEmail(email);
+        String normalizedToken = trimToNull(token);
+
+        if (normalizedEmail == null) {
+            errors.add("Informe o e-mail para validar o acesso.");
+        }
+        if (normalizedToken == null) {
+            errors.add("Informe o token recebido no e-mail.");
+        }
+        if (!errors.isEmpty()) {
+            throw new ValidationException(errors);
+        }
+
+        CareerAutomationDispatchModel dispatch = careerAutomationDispatchRepository.findByResponseToken(normalizedToken)
+                .orElseThrow(() -> new ValidationException(List.of("Token invalido ou nao encontrado.")));
+
+        if (!normalizedEmail.equals(normalizeEmail(dispatch.getRecipientEmail()))) {
+            throw new ValidationException(List.of("O e-mail informado nao corresponde ao token enviado."));
+        }
+
+        if (dispatch.getEnrollment() == null || dispatch.getPeople() == null) {
+            throw new ValidationException(List.of("Este link de carreira nao possui um egresso associado."));
+        }
+
+        if (requireFreshResponse && dispatch.getRespondedAt() != null) {
+            throw new ValidationException(List.of("Este formulario de carreira ja foi respondido."));
+        }
+
+        return dispatch;
+    }
+
+    private String ensureDispatchResponseToken(CareerAutomationDispatchModel dispatch, LocalDateTime referenceTime) {
+        if (isBlank(dispatch.getResponseToken())) {
+            dispatch.setResponseToken(UUID.randomUUID().toString());
+        }
+        if (dispatch.getTokenGeneratedAt() == null) {
+            dispatch.setTokenGeneratedAt(referenceTime != null ? referenceTime : LocalDateTime.now());
+        }
+        return dispatch.getResponseToken();
+    }
+
+    private String buildPublicCareerLink(String responseToken) {
+        String normalizedToken = trimToNull(responseToken);
+        if (normalizedToken == null) {
+            return null;
+        }
+
+        String baseUrl = defaultIfBlank(trimToNull(frontendUrl), "http://localhost:4300");
+        return UriComponentsBuilder.fromUriString(baseUrl)
+                .path("/carreira/acompanhamento")
+                .queryParam("token", normalizedToken)
+                .build()
+                .toUriString();
     }
 
     private CareerAutomationSettingsModel loadOrCreateAutomationSettings() {
@@ -779,6 +972,11 @@ public class CareerService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeEmail(String value) {
+        String trimmed = trimToNull(value);
+        return trimmed == null ? null : trimmed.toLowerCase(Locale.ROOT);
     }
 
     private String defaultIfBlank(String value, String fallback) {

@@ -10,5 +10,5 @@ public interface ExamRepository extends JpaRepository<ExamModel, Long> {
     List<ExamModel> findByClassModelIdOrderByExamDateDescIdDesc(Long classId);
     Optional<ExamModel> findFirstByClassModelIdOrderByExamDateDescIdDesc(Long classId);
     Optional<ExamModel> findByClassModelIdAndNameIgnoreCase(Long classId, String name);
+    Optional<ExamModel> findByClassModelIdAndCodeIgnoreCase(Long classId, String code);
 }
-

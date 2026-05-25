@@ -355,7 +355,7 @@ export default {
   width: 100%; box-sizing: border-box; height: 42px; border-radius: 12px; border: 1px solid #d7e1eb; padding: 0 12px; color: #13233f; background: #fff; outline: none;
 }
 
-.form-group textarea { height: auto; min-height: 84px; padding: 10px 12px; }
+.form-group textarea { height: auto; min-height: 84px; max-height: 220px; overflow-y: auto; padding: 10px 12px; resize: vertical; }
 .form-group input:focus, .form-group select:focus, textarea:focus { border-color: #14b8a6; box-shadow: 0 0 0 4px rgba(20,184,166,0.1); }
 
 /* multi-select specific */

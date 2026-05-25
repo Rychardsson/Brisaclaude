@@ -1,4 +1,5 @@
 import api from './api';
+import publicApi from './publicApi';
 
 export const careerService = {
   async getFollowUps(params = {}) {
@@ -40,6 +41,24 @@ export const careerService = {
   async sendAutomationTest(payload) {
     try {
       const response = await api.post('/career/automation/test', payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async validatePublicAccess(payload) {
+    try {
+      const response = await publicApi.post('/public/career/validate', payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async submitPublicFollowUp(payload) {
+    try {
+      const response = await publicApi.post('/public/career/follow-ups', payload);
       return response.data;
     } catch (error) {
       throw error;

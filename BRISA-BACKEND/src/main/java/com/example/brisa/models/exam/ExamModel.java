@@ -28,6 +28,9 @@ public class ExamModel {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "code")
+    private String code;
+
     @Column(name = "exam_date")
     private LocalDate examDate;
 

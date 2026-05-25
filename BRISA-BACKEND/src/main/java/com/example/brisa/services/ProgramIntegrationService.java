@@ -383,6 +383,7 @@ public class ProgramIntegrationService {
             );
             if (existing != null) {
                 existing.setRequired(assignment.isRequired());
+                existing.setAdvisor(assignment.getAdvisor());
                 courseAssignmentRepository.save(existing);
                 continue;
             }
@@ -391,6 +392,7 @@ public class ProgramIntegrationService {
             clonedAssignment.setClassModel(targetClass);
             clonedAssignment.setCourse(assignment.getCourse());
             clonedAssignment.setRequired(assignment.isRequired());
+            clonedAssignment.setAdvisor(assignment.getAdvisor());
             courseAssignmentRepository.save(clonedAssignment);
         }
     }

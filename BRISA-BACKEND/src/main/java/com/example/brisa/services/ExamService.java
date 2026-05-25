@@ -27,6 +27,7 @@ import com.example.brisa.repositories.KnowledgeAreaRepository;
 import com.example.brisa.repositories.PeopleRepository;
 import com.example.brisa.repositories.StageCandidateRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -45,6 +46,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -56,6 +58,7 @@ import java.util.stream.Collectors;
 public class ExamService {
 
     private static final Pattern QUESTION_PATTERN = Pattern.compile("^(?:q|questao|question)(\\d+)$");
+    private static final Pattern QUESTION_WITH_POINTS_PATTERN = Pattern.compile("^\\s*(?:q|questao|questão|question)\\.?\\s*(\\d+)\\s*(?:/\\s*([\\d,.]+))?.*$", Pattern.CASE_INSENSITIVE);
     private static final Pattern SUBJECT_PATTERN = Pattern.compile("^(?:q|questao|question)(\\d+)(?:assunto|area|tema|subject)$");
     private static final Pattern SUBJECT_PREFIX_PATTERN = Pattern.compile("^(?:assunto|area|tema|subject)(\\d+)$");
 
@@ -85,14 +88,42 @@ public class ExamService {
             Row headerRow = sheet.getRow(0);
             Map<String, Integer> headers = excelImportHelper.mapHeaders(headerRow);
             Integer cpfIndex = excelImportHelper.findColumn(headers, List.of("cpf", "cpfaluno"), null);
-            Integer nameIndex = excelImportHelper.findColumn(headers, List.of("nome", "nomecompleto", "name"), null);
+            Integer emailIndex = excelImportHelper.findColumn(headers, List.of("email", "e-mail", "endereco de email", "endereço de e-mail"), null);
+            Integer nameIndex = excelImportHelper.findColumn(headers, List.of("nome", "nomecompleto", "nome completo", "name"), null);
+            Integer surnameIndex = excelImportHelper.findColumn(headers, List.of("sobrenome", "ultimo nome", "lastname"), null);
             Integer totalScoreIndex = excelImportHelper.findColumn(headers, List.of("notafinal", "nota", "totalscore", "score"), null);
-            Integer durationIndex = excelImportHelper.findColumn(headers, List.of("tempodeconclusao", "duracao", "durationminutes", "duration"), null);
-            Integer examDateIndex = excelImportHelper.findColumn(headers, List.of("dataprova", "examdate"), null);
-            Integer examNameIndex = excelImportHelper.findColumn(headers, List.of("codprova", "nomeprova", "examcode", "examname"), null);
+            if (totalScoreIndex == null) {
+                totalScoreIndex = findFirstHeaderStartingWith(headers, "avaliar");
+            }
+            Integer durationIndex = excelImportHelper.findColumn(headers, List.of("tempoutilizado", "tempo utilizado", "tempodeconclusao", "duracao", "durationminutes", "duration"), null);
+            Integer examDateIndex = excelImportHelper.findColumn(headers, List.of("dataprova", "examdate", "completo", "iniciado em"), null);
+            Integer examCodeIndex = excelImportHelper.findColumn(headers, List.of("codprova", "codigo prova", "cÃ³digo prova", "codigo_prova", "examcode"), null);
+            Integer examNameIndex = excelImportHelper.findColumn(headers, List.of("nomeprova", "nome prova", "examname"), null);
 
             Map<Integer, Integer> questionColumns = new LinkedHashMap<>();
             Map<Integer, Integer> questionSubjectColumns = new LinkedHashMap<>();
+            Map<Integer, Double> questionMaxPoints = new HashMap<>();
+            if (headerRow != null) {
+                for (Cell cell : headerRow) {
+                    int columnIndex = cell.getColumnIndex();
+                    String rawHeader = excelImportHelper.getString(headerRow, columnIndex);
+                    String normalizedHeader = excelImportHelper.normalizeHeader(rawHeader);
+                    Integer questionNumber = extractQuestionNumber(rawHeader);
+                    if (questionNumber != null) {
+                        questionColumns.putIfAbsent(questionNumber, columnIndex);
+                        Double maxPoints = extractQuestionMaxPoints(rawHeader);
+                        if (maxPoints != null) {
+                            questionMaxPoints.putIfAbsent(questionNumber, maxPoints);
+                        }
+                        continue;
+                    }
+
+                    Integer subjectQuestionNumber = extractSubjectQuestionNumber(normalizedHeader);
+                    if (subjectQuestionNumber != null) {
+                        questionSubjectColumns.putIfAbsent(subjectQuestionNumber, columnIndex);
+                    }
+                }
+            }
             for (Map.Entry<String, Integer> entry : headers.entrySet()) {
                 Integer questionNumber = extractQuestionNumber(entry.getKey());
                 if (questionNumber != null) {
@@ -110,8 +141,13 @@ public class ExamService {
             String examName = firstDataRow != null && examNameIndex != null
                     ? excelImportHelper.getString(firstDataRow, examNameIndex)
                     : null;
+            String examCode = firstDataRow != null && examCodeIndex != null
+                    ? excelImportHelper.getString(firstDataRow, examCodeIndex)
+                    : null;
             if (examName == null || examName.isBlank()) {
-                examName = "Prova Final - " + (classModel.getCode() == null ? "Turma" : classModel.getCode());
+                examName = examCode == null || examCode.isBlank()
+                        ? "Prova Final - " + (classModel.getCode() == null ? "Turma" : classModel.getCode())
+                        : examCode;
             }
 
             LocalDate examDate = firstDataRow != null && examDateIndex != null
@@ -124,10 +160,11 @@ public class ExamService {
                 examDate = LocalDate.now();
             }
 
-            ExamModel exam = examRepository.findByClassModelIdAndNameIgnoreCase(classId, examName)
+            ExamModel exam = resolveExam(classId, examCode, examName)
                     .orElseGet(ExamModel::new);
             exam.setClassModel(classModel);
             exam.setName(examName);
+            exam.setCode(trimToNull(examCode));
             exam.setExamDate(examDate);
             exam = examRepository.save(exam);
 
@@ -140,6 +177,9 @@ public class ExamService {
                     question = new ExamQuestionModel();
                     question.setExam(exam);
                     question.setQuestionNumber(questionNumber);
+                }
+                if (questionMaxPoints.containsKey(questionNumber)) {
+                    question.setPoints(questionMaxPoints.get(questionNumber));
                 }
 
                 Integer subjectIndex = questionSubjectColumns.get(questionNumber);
@@ -154,6 +194,7 @@ public class ExamService {
             }
 
             Map<String, PeopleModel> peopleByCpf = buildPeopleByCpf(classId);
+            Map<String, PeopleModel> peopleByEmail = buildPeopleByEmail(classId);
             Map<String, PeopleModel> peopleByName = buildPeopleByName(classId);
             List<String> warnings = new ArrayList<>();
             int participantsProcessed = 0;
@@ -165,8 +206,12 @@ public class ExamService {
                 }
 
                 String cpf = cpfIndex == null ? null : excelImportHelper.getString(row, cpfIndex);
-                String name = nameIndex == null ? null : excelImportHelper.getString(row, nameIndex);
-                PeopleModel people = resolvePeople(peopleByCpf, peopleByName, cpf, name);
+                String email = emailIndex == null ? null : excelImportHelper.getString(row, emailIndex);
+                String name = buildFullName(
+                        nameIndex == null ? null : excelImportHelper.getString(row, nameIndex),
+                        surnameIndex == null ? null : excelImportHelper.getString(row, surnameIndex)
+                );
+                PeopleModel people = resolvePeople(peopleByCpf, peopleByEmail, peopleByName, cpf, email, name);
                 if (people == null) {
                     warnings.add("Linha " + (rowIndex + 1) + ": participante não encontrado.");
                     continue;
@@ -179,7 +224,7 @@ public class ExamService {
                 result.setPeople(people);
 
                 Double totalScore = totalScoreIndex == null ? null : excelImportHelper.getDouble(row, totalScoreIndex);
-                Integer durationMinutes = durationIndex == null ? null : excelImportHelper.getInteger(row, durationIndex);
+                Integer durationMinutes = parseDurationMinutes(durationIndex == null ? null : excelImportHelper.getString(row, durationIndex));
                 double computedScore = 0.0;
                 boolean hasQuestionScore = false;
 
@@ -267,12 +312,13 @@ public class ExamService {
         List<ExamSummaryDTO.QuestionPerformanceDTO> questionPerformance = buildQuestionPerformance(answers);
 
         return new ExamSummaryDTO(
-                exam.getName(),
+                exam.getCode() == null ? exam.getName() : exam.getCode(),
                 exam.getExamDate() == null ? "-" : exam.getExamDate().toString(),
                 questionPerformance.size(),
                 totalParticipants,
                 results.stream().filter(result -> isFemale(result.getPeople())).count(),
                 results.stream().filter(result -> isMale(result.getPeople())).count(),
+                buildQuotaParticipants(results),
                 results.stream().filter(result -> result.getTotalScore() != null && result.getTotalScore() <= 0.0).count(),
                 results.stream().filter(result -> result.getTotalScore() != null && Double.compare(result.getTotalScore(), highestScore) == 0).count(),
                 highestScore,
@@ -314,7 +360,14 @@ public class ExamService {
                 .filter(progression -> isCompletedStatus(progression.getStatus()))
                 .collect(Collectors.groupingBy(progression -> progression.getPeople().getId(), Collectors.counting()));
 
-        List<CandidateRankingData> rankedCandidates = results.stream()
+        double highestScore = results.stream()
+                .map(ExamResultModel::getTotalScore)
+                .filter(Objects::nonNull)
+                .max(Double::compareTo)
+                .orElse(0.0);
+        double minimumEligibleScore = highestScore <= 0.0 ? 0.0 : highestScore * 0.5;
+
+        List<CandidateRankingData> allRankedCandidates = results.stream()
                 .map(result -> buildRankingData(result, completedCoursesByPeopleId.getOrDefault(result.getPeople().getId(), 0L), request))
                 .sorted(Comparator
                         .comparing(CandidateRankingData::totalPoints).reversed()
@@ -322,6 +375,9 @@ public class ExamService {
                         .thenComparing(CandidateRankingData::completedCourses).reversed()
                         .thenComparing(CandidateRankingData::age, Comparator.nullsLast(Comparator.reverseOrder()))
                         .thenComparing(CandidateRankingData::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        List<CandidateRankingData> rankedCandidates = allRankedCandidates.stream()
+                .filter(candidate -> candidate.examScore() >= minimumEligibleScore)
                 .toList();
 
         List<CandidateRankingData> approvedData = new ArrayList<>();
@@ -340,6 +396,18 @@ public class ExamService {
                 .toList();
         int waitlistSize = Math.min(totalVacancies, remaining.size());
 
+        Set<Long> eligiblePeopleIds = rankedCandidates.stream()
+                .map(CandidateRankingData::peopleId)
+                .collect(Collectors.toSet());
+        List<CandidateRankingData> rejectedData = new ArrayList<>(remaining.subList(waitlistSize, remaining.size()));
+        rejectedData.addAll(allRankedCandidates.stream()
+                .filter(candidate -> !eligiblePeopleIds.contains(candidate.peopleId()))
+                .toList());
+        List<CandidateRankingData> waitlistData = new ArrayList<>(remaining.subList(0, waitlistSize));
+        remaining = new ArrayList<>(waitlistData);
+        remaining.addAll(rejectedData);
+        rankedCandidates = allRankedCandidates;
+
         List<ApprovedRankingResponseDTO.ApprovedCandidateDTO> approved = toRankingDtos(approvedData, "Aprovado");
         List<ApprovedRankingResponseDTO.ApprovedCandidateDTO> waitlist = toRankingDtos(remaining.subList(0, waitlistSize), "Lista de espera");
         List<ApprovedRankingResponseDTO.ApprovedCandidateDTO> rejected = toRankingDtos(remaining.subList(waitlistSize, remaining.size()), "Não classificado");
@@ -354,7 +422,7 @@ public class ExamService {
     }
 
     private ExamSummaryDTO emptySummary() {
-        return new ExamSummaryDTO("-", "-", 0, 0, 0, 0, 0, 0, 0.0, 0.0, List.of(), List.of(), List.of());
+        return new ExamSummaryDTO("-", "-", 0, 0, 0, 0, List.of(), 0, 0, 0.0, 0.0, List.of(), List.of(), List.of());
     }
 
     private Row findFirstDataRow(Sheet sheet) {
@@ -368,11 +436,35 @@ public class ExamService {
     }
 
     private Integer extractQuestionNumber(String normalizedHeader) {
+        if (normalizedHeader == null) {
+            return null;
+        }
+        String originalHeader = normalizedHeader;
+        Matcher rawMatcher = QUESTION_WITH_POINTS_PATTERN.matcher(originalHeader);
+        if (originalHeader.matches(".*[\\s./].*") && rawMatcher.matches()) {
+            return Integer.parseInt(rawMatcher.group(1));
+        }
+
+        normalizedHeader = excelImportHelper.normalizeHeader(originalHeader);
+        if (normalizedHeader.matches("^q\\d{3,}$")) {
+            return null;
+        }
         Matcher matcher = QUESTION_PATTERN.matcher(normalizedHeader);
         if (matcher.matches()) {
             return Integer.parseInt(matcher.group(1));
         }
         return null;
+    }
+
+    private Double extractQuestionMaxPoints(String rawHeader) {
+        if (rawHeader == null) {
+            return null;
+        }
+        Matcher matcher = QUESTION_WITH_POINTS_PATTERN.matcher(rawHeader);
+        if (!matcher.matches() || matcher.group(2) == null) {
+            return null;
+        }
+        return parseDecimal(matcher.group(2));
     }
 
     private Integer extractSubjectQuestionNumber(String normalizedHeader) {
@@ -413,6 +505,32 @@ public class ExamService {
         return peopleByCpf;
     }
 
+    private Map<String, PeopleModel> buildPeopleByEmail(Long classId) {
+        Map<String, PeopleModel> peopleByEmail = new LinkedHashMap<>();
+
+        for (EnrollmentModel enrollment : enrollmentRepository.findByClassIdWithRelations(classId)) {
+            PeopleModel people = enrollment.getPeople();
+            if (people != null && people.getEmail() != null) {
+                peopleByEmail.putIfAbsent(normalizeEmail(people.getEmail()), people);
+            }
+        }
+
+        for (StageCandidateModel candidate : stageCandidateRepository.findByClassIdWithPeople(classId)) {
+            PeopleModel people = candidate.getPeople();
+            if (people != null && people.getEmail() != null) {
+                peopleByEmail.putIfAbsent(normalizeEmail(people.getEmail()), people);
+            }
+        }
+
+        for (PeopleModel people : peopleRepository.findAll()) {
+            if (people.getEmail() != null) {
+                peopleByEmail.putIfAbsent(normalizeEmail(people.getEmail()), people);
+            }
+        }
+
+        return peopleByEmail;
+    }
+
     private Map<String, PeopleModel> buildPeopleByName(Long classId) {
         Map<String, PeopleModel> peopleByName = new LinkedHashMap<>();
 
@@ -433,10 +551,15 @@ public class ExamService {
         return peopleByName;
     }
 
-    private PeopleModel resolvePeople(Map<String, PeopleModel> peopleByCpf, Map<String, PeopleModel> peopleByName, String cpf, String name) {
+    private PeopleModel resolvePeople(Map<String, PeopleModel> peopleByCpf, Map<String, PeopleModel> peopleByEmail, Map<String, PeopleModel> peopleByName, String cpf, String email, String name) {
         String normalizedCpf = normalizeDocument(cpf);
         if (!normalizedCpf.isBlank() && peopleByCpf.containsKey(normalizedCpf)) {
             return peopleByCpf.get(normalizedCpf);
+        }
+
+        String normalizedEmail = normalizeEmail(email);
+        if (!normalizedEmail.isBlank() && peopleByEmail.containsKey(normalizedEmail)) {
+            return peopleByEmail.get(normalizedEmail);
         }
 
         String normalizedName = normalizeText(name);
@@ -523,6 +646,21 @@ public class ExamService {
                 .toList();
     }
 
+    private List<ExamSummaryDTO.QuotaParticipantDTO> buildQuotaParticipants(List<ExamResultModel> results) {
+        if (results.isEmpty()) {
+            return List.of();
+        }
+
+        return results.stream()
+                .map(result -> normalizeQuotaLabel(result.getPeople() == null ? null : result.getPeople().getQuotaCategory()))
+                .collect(Collectors.groupingBy(label -> label, LinkedHashMap::new, Collectors.counting()))
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .map(entry -> new ExamSummaryDTO.QuotaParticipantDTO(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
     private List<ExamRespondentProfileDTO.MetricDTO> buildCountMetrics(
             List<ExamResultModel> results,
             java.util.function.Function<ExamResultModel, String> groupResolver
@@ -576,7 +714,7 @@ public class ExamService {
         int cityBonus = calculateCityBonus(people, request);
         Integer age = calculateAge(people);
         double examScore = result.getTotalScore() == null ? 0.0 : result.getTotalScore();
-        double totalPoints = examScore + (completedCourses * request.getPointsPerCompletedCourse()) + cityBonus;
+        double totalPoints = examScore + (completedCourses * safeDouble(request.getPointsPerCompletedCourse())) + cityBonus;
 
         return new CandidateRankingData(
                 people.getId(),
@@ -673,7 +811,7 @@ public class ExamService {
 
     private boolean isCompletedStatus(String status) {
         String normalized = normalizeText(status);
-        return normalized.contains("concluido") || normalized.contains("concluido") || normalized.contains("finalizado");
+        return normalized.contains("concluido") || normalized.contains("realizado") || normalized.contains("finalizado");
     }
 
     private boolean isFemale(PeopleModel people) {
@@ -717,8 +855,79 @@ public class ExamService {
         return value.replaceAll("\\D", "");
     }
 
+    private String normalizeEmail(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
+    }
+
     private String normalizeText(String value) {
         return excelImportHelper.normalize(value).replace(" ", "");
+    }
+
+    private Integer findFirstHeaderStartingWith(Map<String, Integer> headers, String prefix) {
+        String normalizedPrefix = excelImportHelper.normalizeHeader(prefix);
+        return headers.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(normalizedPrefix))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String buildFullName(String name, String surname) {
+        String first = trimToNull(name);
+        String last = trimToNull(surname);
+        if (first == null) {
+            return last;
+        }
+        if (last == null) {
+            return first;
+        }
+        return first + " " + last;
+    }
+
+    private Integer parseDurationMinutes(String rawDuration) {
+        if (rawDuration == null || rawDuration.isBlank()) {
+            return null;
+        }
+
+        String normalized = excelImportHelper.normalize(rawDuration);
+        int totalSeconds = 0;
+
+        Matcher hourMatcher = Pattern.compile("(\\d+)\\s*hora").matcher(normalized);
+        if (hourMatcher.find()) {
+            totalSeconds += Integer.parseInt(hourMatcher.group(1)) * 3600;
+        }
+
+        Matcher minuteMatcher = Pattern.compile("(\\d+)\\s*min").matcher(normalized);
+        if (minuteMatcher.find()) {
+            totalSeconds += Integer.parseInt(minuteMatcher.group(1)) * 60;
+        }
+
+        Matcher secondMatcher = Pattern.compile("(\\d+)\\s*seg").matcher(normalized);
+        if (secondMatcher.find()) {
+            totalSeconds += Integer.parseInt(secondMatcher.group(1));
+        }
+
+        if (totalSeconds > 0) {
+            return Math.max(1, (int) Math.ceil(totalSeconds / 60.0));
+        }
+
+        Double numeric = parseDecimal(rawDuration);
+        return numeric == null ? null : numeric.intValue();
+    }
+
+    private Double parseDecimal(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            String normalized = value.trim();
+            if (normalized.contains(",")) {
+                normalized = normalized.replace(".", "").replace(",", ".");
+            }
+            return Double.parseDouble(normalized);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     private String safeLabel(String value, String fallback) {
@@ -766,8 +975,33 @@ public class ExamService {
         return value == null ? "-" : value;
     }
 
+    private Optional<ExamModel> resolveExam(Long classId, String examCode, String examName) {
+        String code = trimToNull(examCode);
+        if (code != null) {
+            Optional<ExamModel> byCode = examRepository.findByClassModelIdAndCodeIgnoreCase(classId, code);
+            if (byCode.isPresent()) {
+                return byCode;
+            }
+        }
+
+        String name = trimToNull(examName);
+        return name == null ? Optional.empty() : examRepository.findByClassModelIdAndNameIgnoreCase(classId, name);
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     private int safeInt(Integer value) {
         return value == null ? 0 : value;
+    }
+
+    private double safeDouble(Double value) {
+        return value == null ? 0.0 : value;
     }
 
     private record QuestionValue(Boolean correct, Double pointsEarned, String rawValue) {

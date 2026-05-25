@@ -6,6 +6,7 @@ import com.example.brisa.dtos.course.CourseClassImportResponseDTO;
 import com.example.brisa.dtos.course.CourseProgressionImportResponseDTO;
 import com.example.brisa.exceptions.ResourceNotFoundException;
 import com.example.brisa.models.EnrollmentModel;
+import com.example.brisa.models.AdvisorModel;
 import com.example.brisa.models.PeopleModel;
 import com.example.brisa.models.StageCandidateModel;
 import com.example.brisa.models.course.CourseAssignmentModel;
@@ -13,6 +14,7 @@ import com.example.brisa.models.course.CourseModel;
 import com.example.brisa.models.course.CourseProgressionModel;
 import com.example.brisa.models.roles.AcademicRoleModel;
 import com.example.brisa.repositories.AcademicRoleRepository;
+import com.example.brisa.repositories.AdvisorRepository;
 import com.example.brisa.repositories.ClassRepository;
 import com.example.brisa.repositories.CourseAssignmentRepository;
 import com.example.brisa.repositories.CourseProgressionRepository;
@@ -60,6 +62,8 @@ public class CourseService {
     private final KnowledgeAreaRepository knowledgeAreaRepository;
     private final StageCandidateRepository stageCandidateRepository;
     private final AcademicRoleRepository academicRoleRepository;
+    private final AdvisorRepository advisorRepository;
+    private final ExcelImportHelper excelImportHelper;
 
     public List<CourseModel> findAll() {
         return courseRepository.findAll();
@@ -90,7 +94,7 @@ public class CourseService {
                             return knowledgeAreaRepository.save(newKa);
                         });
                 course.setKnowledgeArea(ka);
-            }
+                }
         }
         return courseRepository.save(course);
     }
@@ -101,14 +105,25 @@ public class CourseService {
         java.util.List<com.example.brisa.models.course.CourseModel> created = new java.util.ArrayList<>();
         for (com.example.brisa.dtos.course.CourseImportDTO dto : dtos) {
             if (dto.name() == null || dto.name().trim().isEmpty()) continue;
-            com.example.brisa.models.course.CourseModel c = new com.example.brisa.models.course.CourseModel();
+            com.example.brisa.models.course.CourseModel c = resolveCourse(dto.code(), dto.name().trim()).orElseGet(com.example.brisa.models.course.CourseModel::new);
             c.setName(dto.name().trim());
+            String courseCode = trimToNull(dto.code());
+            if (courseCode != null) {
+                c.setCode(courseCode);
+            }
             c.setDescription(dto.description());
-            if (dto.competencia() != null && !dto.competencia().trim().isEmpty()) {
-                String kaName = dto.competencia().trim();
-                com.example.brisa.models.KnowledgeAreaModel ka = knowledgeAreaRepository.findByNameIgnoreCase(kaName)
-                        .orElseGet(() -> knowledgeAreaRepository.save(new com.example.brisa.models.KnowledgeAreaModel(null, kaName)));
-                c.setKnowledgeArea(ka);
+            if (dto.workload() != null) {
+                c.setWorkload(dto.workload());
+            }
+            if (dto.inclusionDate() != null) {
+                c.setInclusionDate(dto.inclusionDate());
+            }
+            String knowledgeAreaName = firstNonBlank(dto.knowledgeArea(), dto.competencia());
+            if (knowledgeAreaName != null) {
+                c.setKnowledgeArea(getOrCreateKnowledgeArea(knowledgeAreaName));
+            }
+            if (dto.subArea() != null && !dto.subArea().trim().isEmpty()) {
+                c.setSubArea(getOrCreateKnowledgeArea(dto.subArea()));
             }
             created.add(courseRepository.save(c));
         }
@@ -133,13 +148,31 @@ public class CourseService {
                 return new CourseClassImportResponseDTO(0, 0, 0, 0, 0, createdCourseNames);
             }
 
+            Map<String, Integer> headers = excelImportHelper.mapHeaders(sheet.getRow(0));
+            Integer codeIndex = excelImportHelper.findColumn(headers, List.of("codigo curso", "código curso", "codigocurso", "codigo_curso", "code"), null);
+            Integer nameIndex = excelImportHelper.findColumn(headers, List.of("nome curso", "nome_curso", "curso", "name", "nome"), 0);
+            Integer workloadIndex = excelImportHelper.findColumn(headers, List.of("carga horaria", "carga_horaria", "workload", "horas"), null);
+            Integer areaIndex = excelImportHelper.findColumn(headers, List.of("area conhecimento", "área conhecimento", "area_conhecimento", "competencia", "knowledgearea"), 1);
+            Integer subAreaIndex = excelImportHelper.findColumn(headers, List.of("sub area", "sub_area", "subárea", "subarea"), null);
+            Integer inclusionDateIndex = excelImportHelper.findColumn(headers, List.of("data inclusao", "data_inclusao", "data inclusão", "inclusiondate"), null);
+            Integer descriptionIndex = excelImportHelper.findColumn(headers, List.of("descricao", "descrição", "description"), 2);
+
+            Integer advisorIndex = excelImportHelper.findColumn(headers, List.of("orientador", "nome orientador", "nome_orientador", "prof orientador", "gestor", "advisor"), null);
+            Integer advisorCpfIndex = excelImportHelper.findColumn(headers, List.of("cpf orientador", "cpf_orientador", "advisorcpf"), null);
+
             for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
                 Row row = sheet.getRow(rowNum);
                 if (row == null) continue;
 
-                String courseName = getCellValueAsString(row.getCell(0));
-                String competencia = getCellValueAsString(row.getCell(1));
-                String description = getCellValueAsString(row.getCell(2));
+                String courseCode = codeIndex == null ? null : excelImportHelper.getString(row, codeIndex);
+                String courseName = excelImportHelper.getString(row, nameIndex);
+                String competencia = areaIndex == null ? null : excelImportHelper.getString(row, areaIndex);
+                String subArea = subAreaIndex == null ? null : excelImportHelper.getString(row, subAreaIndex);
+                String description = descriptionIndex == null ? null : excelImportHelper.getString(row, descriptionIndex);
+                Double workload = workloadIndex == null ? null : excelImportHelper.getDouble(row, workloadIndex);
+                LocalDate inclusionDate = inclusionDateIndex == null ? null : excelImportHelper.getDate(row, inclusionDateIndex);
+                String advisorName = advisorIndex == null ? null : excelImportHelper.getString(row, advisorIndex);
+                String advisorCpf = advisorCpfIndex == null ? null : excelImportHelper.getString(row, advisorCpfIndex);
 
                 if (courseName == null || courseName.isBlank()) {
                     skippedRows++;
@@ -149,30 +182,49 @@ public class CourseService {
                 totalProcessed++;
                 String normalizedName = courseName.trim();
 
-                CourseModel course = courseRepository.findByNameIgnoreCase(normalizedName).orElse(null);
+                CourseModel course = resolveCourse(courseCode, normalizedName).orElse(null);
                 if (course == null) {
                     course = new CourseModel();
                     course.setName(normalizedName);
-                    course.setDescription(description);
-                    if (competencia != null && !competencia.isBlank()) {
-                        course.setKnowledgeArea(getOrCreateKnowledgeArea(competencia));
-                    }
-                    course = courseRepository.save(course);
                     createdCourses++;
                     createdCourseNames.add(course.getName());
                 }
+                String normalizedCode = trimToNull(courseCode);
+                if (normalizedCode != null) {
+                    course.setCode(normalizedCode);
+                }
+                course.setDescription(description);
+                if (workload != null) {
+                    course.setWorkload(workload);
+                }
+                if (inclusionDate != null) {
+                    course.setInclusionDate(inclusionDate);
+                }
+                if (competencia != null && !competencia.isBlank()) {
+                    course.setKnowledgeArea(getOrCreateKnowledgeArea(competencia));
+                }
+                if (subArea != null && !subArea.isBlank()) {
+                    course.setSubArea(getOrCreateKnowledgeArea(subArea));
+                }
+                course = courseRepository.save(course);
 
                 CourseAssignmentModel assignment = courseAssignmentRepository
                         .findByCourseIdAndClassId(course.getId(), classId);
+                AdvisorModel advisor = resolveAdvisor(advisorCpf, advisorName).orElse(null);
                 if (assignment == null) {
                     CourseAssignmentModel newAssignment = new CourseAssignmentModel();
                     newAssignment.setCourse(course);
                     newAssignment.setClassModel(classModel);
                     newAssignment.setRequired(true);
+                    newAssignment.setAdvisor(advisor);
                     courseAssignmentRepository.save(newAssignment);
                     backfillProgressionsForAssignedCourse(course, classId);
                     assignedCourses++;
                 } else {
+                    if (advisor != null) {
+                        assignment.setAdvisor(advisor);
+                        courseAssignmentRepository.save(assignment);
+                    }
                     alreadyAssigned++;
                 }
             }
@@ -203,18 +255,31 @@ public class CourseService {
         Set<String> peopleNotInClassCpfs = new HashSet<>();
 
         List<EnrollmentModel> enrollments = enrollmentRepository.findByClassModelId(classId);
-        Map<String, EnrollmentModel> enrollmentByCpf = enrollments.stream()
-                .filter(e -> e.getPeople() != null && e.getPeople().getCpf() != null)
-                .collect(Collectors.toMap(
-                        e -> normalizeCpf(e.getPeople().getCpf()),
-                        e -> e,
-                        (a, b) -> a
-                ));
+        Map<String, EnrollmentModel> enrollmentByCpf = new HashMap<>();
+        Map<String, EnrollmentModel> enrollmentByEmail = new HashMap<>();
+        Map<String, EnrollmentModel> enrollmentByName = new HashMap<>();
+        for (EnrollmentModel enrollment : enrollments) {
+            cacheEnrollment(enrollment, enrollmentByCpf, enrollmentByEmail, enrollmentByName);
+        }
 
         Map<String, PeopleModel> stagePeopleByCpf = stageCandidateRepository.findByClassIdWithPeople(classId).stream()
             .filter(sc -> sc.getPeople() != null && sc.getPeople().getCpf() != null)
             .collect(Collectors.toMap(
                 sc -> normalizeCpf(sc.getPeople().getCpf()),
+                StageCandidateModel::getPeople,
+                (a, b) -> a
+            ));
+        Map<String, PeopleModel> stagePeopleByEmail = stageCandidateRepository.findByClassIdWithPeople(classId).stream()
+            .filter(sc -> sc.getPeople() != null && sc.getPeople().getEmail() != null)
+            .collect(Collectors.toMap(
+                sc -> normalizeEmail(sc.getPeople().getEmail()),
+                StageCandidateModel::getPeople,
+                (a, b) -> a
+            ));
+        Map<String, PeopleModel> stagePeopleByName = stageCandidateRepository.findByClassIdWithPeople(classId).stream()
+            .filter(sc -> sc.getPeople() != null && sc.getPeople().getName() != null)
+            .collect(Collectors.toMap(
+                sc -> normalizeName(sc.getPeople().getName()),
                 StageCandidateModel::getPeople,
                 (a, b) -> a
             ));
@@ -225,38 +290,53 @@ public class CourseService {
         Map<Long, EnrollmentModel> enrollmentsToUpdate = new HashMap<>();
 
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
-            Sheet sheet = workbook.getSheetAt(0);
-            if (sheet == null) {
-                return new CourseProgressionImportResponseDTO(0, 0, 0, 0, 0, new ArrayList<>(), new ArrayList<>());
-            }
+            for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+                Sheet sheet = workbook.getSheetAt(sheetIndex);
+                if (sheet == null || sheet.getPhysicalNumberOfRows() == 0 || isCompletionSummarySheet(sheet.getSheetName())) {
+                    continue;
+                }
 
-            for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
-                Row row = sheet.getRow(rowNum);
-                if (row == null) continue;
+                for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
+                    Row row = sheet.getRow(rowNum);
+                    if (row == null || excelImportHelper.isRowEmpty(row)) continue;
 
-                String courseName = getCellValueAsString(row.getCell(0));
-                String cpf = getCellValueAsString(row.getCell(1));
-                Double grade = getCellValueAsDouble(row.getCell(2));
-                Double progress = getCellValueAsDouble(row.getCell(3));
+                Map<String, Integer> headers = excelImportHelper.mapHeaders(sheet.getRow(0));
+                Integer courseIndex = excelImportHelper.findColumn(headers, List.of("codigo curso", "código curso", "codigo_curso", "curso", "nome curso", "nome_curso", "course"), null);
+                Integer cpfIndex = excelImportHelper.findColumn(headers, List.of("cpf", "cpf_aluno"), null);
+                Integer emailIndex = excelImportHelper.findColumn(headers, List.of("email", "e-mail", "endereco de email", "endereço de e-mail"), null);
+                Integer nameIndex = excelImportHelper.findColumn(headers, List.of("nome completo", "nome do aluno", "aluno", "nome", "name"), null);
+                Integer gradeIndex = excelImportHelper.findColumn(headers, List.of("nota", "grade"), null);
+                Integer progressIndex = excelImportHelper.findColumn(headers, List.of("progresso", "percentual", "completion", "completion_percentage"), null);
+                Integer frequencyIndex = excelImportHelper.findColumn(headers, List.of("frequencia", "frequência", "frequency"), null);
+                Integer statusIndex = excelImportHelper.findColumn(headers, List.of("status", "situacao", "situação"), null);
+                Integer dateIndex = excelImportHelper.findColumn(headers, List.of("data realizacao", "data_realizacao", "data", "date"), null);
 
-                if (courseName == null || courseName.isBlank() || cpf == null || cpf.isBlank()) {
+                String courseName = courseIndex == null ? sheet.getSheetName() : excelImportHelper.getString(row, courseIndex);
+                String cpf = cpfIndex == null ? null : excelImportHelper.getString(row, cpfIndex);
+                String email = emailIndex == null ? null : excelImportHelper.getString(row, emailIndex);
+                String studentName = nameIndex == null ? null : excelImportHelper.getString(row, nameIndex);
+                Double grade = gradeIndex == null ? null : excelImportHelper.getDouble(row, gradeIndex);
+                Double progress = readPercentage(row, progressIndex);
+                Double frequency = readPercentage(row, frequencyIndex);
+                String importedStatus = statusIndex == null ? null : excelImportHelper.getString(row, statusIndex);
+                LocalDate realizationDate = dateIndex == null ? null : excelImportHelper.getDate(row, dateIndex);
+
+                if (courseName == null || courseName.isBlank() || allBlank(cpf, email, studentName)) {
                     skippedRows++;
                     continue;
                 }
 
                 totalProcessed++;
 
-                Optional<CourseModel> courseOpt = courseRepository.findByNameIgnoreCase(courseName.trim());
-                if (courseOpt.isEmpty()) {
-                    unknownCourses.add(courseName.trim());
-                    skippedRows++;
-                    continue;
-                }
-
-                CourseModel course = courseOpt.get();
-                EnrollmentModel enrollment = enrollmentByCpf.get(normalizeCpf(cpf));
+                CourseModel course = resolveCourse(courseName, courseName.trim())
+                        .orElseGet(() -> {
+                            CourseModel newCourse = new CourseModel();
+                            newCourse.setName(courseName.trim());
+                            return courseRepository.save(newCourse);
+                        });
+                EnrollmentModel enrollment = resolveEnrollment(enrollmentByCpf, enrollmentByEmail, enrollmentByName, cpf, email, studentName);
                 if (enrollment == null || enrollment.getPeople() == null) {
-                    PeopleModel candidatePerson = stagePeopleByCpf.get(normalizeCpf(cpf));
+                    PeopleModel candidatePerson = resolveStagePerson(stagePeopleByCpf, stagePeopleByEmail, stagePeopleByName, cpf, email, studentName);
                     if (candidatePerson != null) {
                         EnrollmentModel newEnrollment = new EnrollmentModel();
                         newEnrollment.setPeople(candidatePerson);
@@ -265,9 +345,9 @@ public class CourseService {
                         newEnrollment.setEnrollmentDate(LocalDate.now());
                         newEnrollment.setStatus("MATRICULADO");
                         enrollment = enrollmentRepository.save(newEnrollment);
-                        enrollmentByCpf.put(normalizeCpf(cpf), enrollment);
+                        cacheEnrollment(enrollment, enrollmentByCpf, enrollmentByEmail, enrollmentByName);
                     } else {
-                        peopleNotInClassCpfs.add(cpf);
+                        peopleNotInClassCpfs.add(firstNonBlank(cpf, email, studentName, "linha " + (rowNum + 1)));
                         skippedRows++;
                         continue;
                     }
@@ -285,22 +365,29 @@ public class CourseService {
 
                 Long peopleId = enrollment.getPeople().getId();
                 CourseProgressionModel progression = courseProgressionRepository
-                        .findByCourseIdAndPeopleId(course.getId(), peopleId)
+                        .findByCourseIdAndPeopleIdAndClassModelId(course.getId(), peopleId, classId)
                         .orElse(null);
 
                 if (progression == null) {
                     progression = new CourseProgressionModel();
                     progression.setCourse(course);
                     progression.setPeople(enrollment.getPeople());
-                    progression.setDate(LocalDate.now());
+                    progression.setClassModel(classModel);
+                    progression.setDate(realizationDate == null ? LocalDate.now() : realizationDate);
                     createdProgressions++;
                 } else {
                     updatedProgressions++;
                 }
+                progression.setClassModel(classModel);
 
                 double completion = progress == null ? 0.0 : Math.max(0.0, Math.min(100.0, progress));
                 progression.setCompletionPercentage(completion);
-                progression.setStatus(statusFromCompletion(completion));
+                progression.setGrade(grade);
+                progression.setFrequency(frequency);
+                if (realizationDate != null) {
+                    progression.setDate(realizationDate);
+                }
+                progression.setStatus(normalizeProgressionStatus(importedStatus, completion));
                 progression.setLastAccess(completion > 0 ? LocalDate.now() : null);
                 courseProgressionRepository.save(progression);
 
@@ -309,6 +396,11 @@ public class CourseService {
                     enrollmentsToUpdate.put(enrollment.getId(), enrollment);
                     updatedGrades++;
                 }
+                if (frequency != null) {
+                    enrollment.setFrequency(frequency);
+                    enrollmentsToUpdate.put(enrollment.getId(), enrollment);
+                }
+            }
             }
         }
 
@@ -334,7 +426,9 @@ public class CourseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com id: " + id));
 
         if (input.getName() != null) existing.setName(input.getName());
+        if (input.getCode() != null) existing.setCode(trimToNull(input.getCode()));
         if (input.getDescription() != null) existing.setDescription(input.getDescription());
+        if (input.getInclusionDate() != null) existing.setInclusionDate(input.getInclusionDate());
         // update workload if provided (non-zero)
         if (input.getWorkload() != 0) existing.setWorkload(input.getWorkload());
 
@@ -344,6 +438,12 @@ public class CourseService {
                 com.example.brisa.models.KnowledgeAreaModel ka = knowledgeAreaRepository.findByNameIgnoreCase(kaName)
                         .orElseGet(() -> knowledgeAreaRepository.save(new com.example.brisa.models.KnowledgeAreaModel(null, kaName)));
                 existing.setKnowledgeArea(ka);
+            }
+        }
+        if (input.getSubArea() != null && input.getSubArea().getName() != null) {
+            String subAreaName = input.getSubArea().getName().trim();
+            if (!subAreaName.isEmpty()) {
+                existing.setSubArea(getOrCreateKnowledgeArea(subAreaName));
             }
         }
 
@@ -453,7 +553,16 @@ public class CourseService {
 
     @Transactional
     public void assignCourseToClass(Long courseId, Long classId, boolean required) {
+        assignCourseToClass(courseId, classId, required, null);
+    }
+
+    @Transactional
+    public void assignCourseToClass(Long courseId, Long classId, boolean required, Long advisorId) {
         CourseModel course = findById(courseId);
+        AdvisorModel advisor = advisorId == null
+                ? null
+                : advisorRepository.findById(advisorId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Orientador não encontrado"));
 
         // Persist assignment if ainda não existe, or update the required flag
         com.example.brisa.models.course.CourseAssignmentModel existingAssignment =
@@ -467,10 +576,14 @@ public class CourseService {
                     .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada"));
             assignment.setClassModel(cls);
             assignment.setRequired(required);
+            assignment.setAdvisor(advisor);
             courseAssignmentRepository.save(assignment);
         } else {
-            if (existingAssignment.isRequired() != required) {
+            if (existingAssignment.isRequired() != required || advisor != null) {
                 existingAssignment.setRequired(required);
+                if (advisor != null) {
+                    existingAssignment.setAdvisor(advisor);
+                }
                 courseAssignmentRepository.save(existingAssignment);
             }
         }
@@ -531,6 +644,7 @@ public class CourseService {
 
         for (EnrollmentModel enrollment : enrollments) {
             if (enrollment.getPeople() == null || enrollment.getPeople().getId() == null) continue;
+            if (!isStudentEnrollment(enrollment) || !isActiveEnrollment(enrollment)) continue;
 
             Long peopleId = enrollment.getPeople().getId();
             if (existingPeopleIds.contains(peopleId)) continue;
@@ -538,6 +652,7 @@ public class CourseService {
             CourseProgressionModel progression = new CourseProgressionModel();
             progression.setCourse(course);
             progression.setPeople(enrollment.getPeople());
+            progression.setClassModel(enrollment.getClassModel());
             progression.setDate(LocalDate.now());
             progression.setCompletionPercentage(0.0);
             progression.setStatus("não iniciado");
@@ -552,11 +667,206 @@ public class CourseService {
         }
     }
 
+    private boolean isStudentEnrollment(EnrollmentModel enrollment) {
+        return enrollment.getAcademicRole() == null
+                || enrollment.getAcademicRole().getName() == null
+                || "ALUNO".equalsIgnoreCase(enrollment.getAcademicRole().getName());
+    }
+
+    private boolean isActiveEnrollment(EnrollmentModel enrollment) {
+        String normalized = enrollment.getStatus() == null ? "" : enrollment.getStatus().trim().toLowerCase();
+        return normalized.isBlank()
+                || normalized.contains("ativa")
+                || normalized.contains("ativo")
+                || normalized.contains("andamento")
+                || normalized.contains("pendente");
+    }
+
     private com.example.brisa.models.KnowledgeAreaModel getOrCreateKnowledgeArea(String name) {
         String kaName = name == null ? "" : name.trim();
         if (kaName.isEmpty()) return null;
         return knowledgeAreaRepository.findByNameIgnoreCase(kaName)
                 .orElseGet(() -> knowledgeAreaRepository.save(new com.example.brisa.models.KnowledgeAreaModel(null, kaName)));
+    }
+
+    private Optional<CourseModel> resolveCourse(String codeOrName, String fallbackName) {
+        String code = trimToNull(codeOrName);
+        if (code != null) {
+            Optional<CourseModel> byCode = courseRepository.findByCodeIgnoreCase(code);
+            if (byCode.isPresent()) {
+                return byCode;
+            }
+        }
+
+        String name = trimToNull(fallbackName);
+        return name == null ? Optional.empty() : courseRepository.findByNameIgnoreCase(name);
+    }
+
+    private Optional<AdvisorModel> resolveAdvisor(String cpf, String name) {
+        String normalizedCpf = normalizeCpf(cpf);
+        if (!normalizedCpf.isBlank()) {
+            Optional<AdvisorModel> byCpf = advisorRepository.findAll().stream()
+                    .filter(advisor -> normalizedCpf.equals(normalizeCpf(advisor.getCpf())))
+                    .findFirst();
+            if (byCpf.isPresent()) {
+                return byCpf;
+            }
+        }
+
+        String normalizedName = excelImportHelper.normalize(name).replace(" ", "");
+        if (normalizedName.isBlank()) {
+            return Optional.empty();
+        }
+        return advisorRepository.findAll().stream()
+                .filter(advisor -> excelImportHelper.normalize(advisor.getName()).replace(" ", "").equals(normalizedName))
+                .findFirst();
+    }
+
+    private void cacheEnrollment(
+            EnrollmentModel enrollment,
+            Map<String, EnrollmentModel> byCpf,
+            Map<String, EnrollmentModel> byEmail,
+            Map<String, EnrollmentModel> byName
+    ) {
+        if (enrollment == null || enrollment.getPeople() == null) {
+            return;
+        }
+
+        PeopleModel people = enrollment.getPeople();
+        String cpf = normalizeCpf(people.getCpf());
+        if (!cpf.isBlank()) {
+            byCpf.putIfAbsent(cpf, enrollment);
+        }
+
+        String email = normalizeEmail(people.getEmail());
+        if (!email.isBlank()) {
+            byEmail.putIfAbsent(email, enrollment);
+        }
+
+        String name = normalizeName(people.getName());
+        if (!name.isBlank()) {
+            byName.putIfAbsent(name, enrollment);
+        }
+    }
+
+    private EnrollmentModel resolveEnrollment(
+            Map<String, EnrollmentModel> byCpf,
+            Map<String, EnrollmentModel> byEmail,
+            Map<String, EnrollmentModel> byName,
+            String cpf,
+            String email,
+            String name
+    ) {
+        String normalizedCpf = normalizeCpf(cpf);
+        if (!normalizedCpf.isBlank() && byCpf.containsKey(normalizedCpf)) {
+            return byCpf.get(normalizedCpf);
+        }
+
+        String normalizedEmail = normalizeEmail(email);
+        if (!normalizedEmail.isBlank() && byEmail.containsKey(normalizedEmail)) {
+            return byEmail.get(normalizedEmail);
+        }
+
+        String normalizedName = normalizeName(name);
+        return normalizedName.isBlank() ? null : byName.get(normalizedName);
+    }
+
+    private PeopleModel resolveStagePerson(
+            Map<String, PeopleModel> byCpf,
+            Map<String, PeopleModel> byEmail,
+            Map<String, PeopleModel> byName,
+            String cpf,
+            String email,
+            String name
+    ) {
+        String normalizedCpf = normalizeCpf(cpf);
+        if (!normalizedCpf.isBlank() && byCpf.containsKey(normalizedCpf)) {
+            return byCpf.get(normalizedCpf);
+        }
+
+        String normalizedEmail = normalizeEmail(email);
+        if (!normalizedEmail.isBlank() && byEmail.containsKey(normalizedEmail)) {
+            return byEmail.get(normalizedEmail);
+        }
+
+        String normalizedName = normalizeName(name);
+        return normalizedName.isBlank() ? null : byName.get(normalizedName);
+    }
+
+    private Double readPercentage(Row row, Integer index) {
+        if (row == null || index == null) {
+            return null;
+        }
+
+        String raw = excelImportHelper.getString(row, index);
+        if (raw != null && raw.contains("%")) {
+            try {
+                return Double.parseDouble(raw.replace("%", "").replace(".", "").replace(",", ".").trim());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        Double numeric = excelImportHelper.getDouble(row, index);
+        if (numeric != null && numeric > 0.0 && numeric <= 1.0) {
+            return numeric * 100.0;
+        }
+        return numeric;
+    }
+
+    private boolean isCompletionSummarySheet(String sheetName) {
+        String normalized = normalizeName(sheetName);
+        return normalized.contains("alunosconclusao") || normalized.equals("conclusao");
+    }
+
+    private boolean allBlank(String... values) {
+        for (String value : values) {
+            if (trimToNull(value) != null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase();
+    }
+
+    private String normalizeName(String value) {
+        return excelImportHelper.normalize(value).replaceAll("[^a-z0-9]+", "");
+    }
+
+    private String normalizeProgressionStatus(String importedStatus, double completion) {
+        String normalized = trimToNull(importedStatus);
+        if (normalized == null) {
+            return statusFromCompletion(completion);
+        }
+
+        String status = excelImportHelper.normalize(normalized);
+        if (status.contains("realizado") || status.contains("concluido") || status.contains("finalizado")) {
+            return "realizado";
+        }
+        if (status.contains("nao") || status.contains("pendente") || status.contains("iniciado")) {
+            return "não-realizado";
+        }
+        return normalized;
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            String trimmed = trimToNull(value);
+            if (trimmed != null) {
+                return trimmed;
+            }
+        }
+        return null;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private String getCellValueAsString(Cell cell) {

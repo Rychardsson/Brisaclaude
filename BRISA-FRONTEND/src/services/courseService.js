@@ -64,9 +64,11 @@ export const courseService = {
   },
 
   // Assign a course to a class (creates progressions for enrolled students)
-  async assignCourseToClass(courseId, classId, required = true) {
+  async assignCourseToClass(courseId, classId, required = true, advisorId = null) {
     try {
-      const response = await api.post(`/courses/${courseId}/assign/class/${classId}`, null, { params: { required } });
+      const params = { required };
+      if (advisorId) params.advisorId = advisorId;
+      const response = await api.post(`/courses/${courseId}/assign/class/${classId}`, null, { params });
       return response.data;
     } catch (error) {
       throw error;

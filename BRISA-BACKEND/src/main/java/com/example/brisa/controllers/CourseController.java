@@ -54,8 +54,9 @@ public class CourseController {
     public ResponseEntity<Void> assignCourseToClass(
             @PathVariable Long courseId,
             @PathVariable Long classId,
-            @RequestParam(name = "required", required = false) Boolean required) {
-        courseService.assignCourseToClass(courseId, classId, required == null ? true : required.booleanValue());
+            @RequestParam(name = "required", required = false) Boolean required,
+            @RequestParam(name = "advisorId", required = false) Long advisorId) {
+        courseService.assignCourseToClass(courseId, classId, required == null ? true : required.booleanValue(), advisorId);
         return ResponseEntity.ok().build();
     }
 

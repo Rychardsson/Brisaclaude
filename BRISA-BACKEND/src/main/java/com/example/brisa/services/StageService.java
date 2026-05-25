@@ -245,8 +245,9 @@ public class StageService {
 
             Map<String, Integer> headers = excelImportHelper.mapHeaders(sheet.getRow(0));
             Integer cpfIndex = excelImportHelper.findColumn(headers, List.of("cpf", "cpf_aluno"), 4);
-            Integer statusIndex = excelImportHelper.findColumn(headers, List.of("status inicial", "status", "situacao", "situacao final"), 17);
-            Integer nameIndex = excelImportHelper.findColumn(headers, List.of("nome do aluno", "nome", "nome completo", "name"), 0);
+            Integer statusIndex = excelImportHelper.findColumn(headers, List.of("status inicial", "status", "situacao", "situacao final", "classificacao", "classificação", "resultado"), 17);
+            Integer nameIndex = excelImportHelper.findColumn(headers, List.of("nome do aluno", "nome", "nome completo", "aluno", "aluno a", "name"), 0);
+            Integer quotaIndex = excelImportHelper.findColumn(headers, List.of("optou por cota", "cota", "quota"), null);
             Integer notesIndex = excelImportHelper.findColumn(headers, List.of("observacoes", "observacoes internas", "notes"), null);
 
             List<StageCandidateModel> existingCandidates = stageCandidateRepository.findByStageId(stageId);
@@ -285,6 +286,7 @@ public class StageService {
                 String cpf = excelImportHelper.getString(row, cpfIndex);
                 String name = excelImportHelper.getString(row, nameIndex);
                 String statusRaw = excelImportHelper.getString(row, statusIndex);
+                String quota = excelImportHelper.getString(row, quotaIndex);
                 String notes = excelImportHelper.getString(row, notesIndex);
 
                 StageCandidateModel candidate = resolveCandidate(candidatesByCpf, candidatesByName, cpf, name);
@@ -304,6 +306,11 @@ public class StageService {
                 }
 
                 candidate.setStatus(targetStatus);
+                if (quota != null && !quota.isBlank() && candidate.getPeople() != null) {
+                    PeopleModel person = candidate.getPeople();
+                    person.setQuotaCategory(quota);
+                    peopleRepository.save(person);
+                }
                 if (notes != null && !notes.isBlank()) {
                     candidate.setNotes(notes);
                 }
@@ -392,7 +399,7 @@ public class StageService {
             Integer idxGender = excelImportHelper.findColumn(headers, List.of("genero", "gênero", "gender"), 2);
             Integer idxQuota = excelImportHelper.findColumn(headers, List.of("cota", "quota"), 3);
             Integer idxCpf = excelImportHelper.findColumn(headers, List.of("cpf", "cpf_aluno"), 4);
-            Integer idxEmail = excelImportHelper.findColumn(headers, List.of("e-mail", "email"), 5);
+            Integer idxEmail = excelImportHelper.findColumn(headers, List.of("e-mail", "email", "endereco de email", "endereço de e-mail"), 5);
             Integer idxPhone = excelImportHelper.findColumn(headers, List.of("telefone", "phone"), 6);
             Integer idxState = excelImportHelper.findColumn(headers, List.of("estado de residencia", "estado de residência", "estado", "uf", "state"), 7);
             Integer idxCity = excelImportHelper.findColumn(headers, List.of("cidade de residencia", "cidade de residência", "cidade", "city", "cidade/uf"), 8);
@@ -454,7 +461,7 @@ public class StageService {
 
     private StageStatus parseStatus(String statusStr) {
         if (statusStr == null || statusStr.trim().isEmpty()) {
-            return StageStatus.APROVADO;
+            return StageStatus.EM_ANALISE;
         }
 
         String normalized = normalizeText(statusStr);
@@ -464,7 +471,7 @@ public class StageService {
         if (normalized.contains("analise") || normalized.contains("inscrit") || normalized.contains("pendente")) {
             return StageStatus.EM_ANALISE;
         }
-        if (normalized.contains("aprov")) {
+        if (normalized.contains("aprov") || normalized.contains("classific")) {
             return StageStatus.APROVADO;
         }
         if (normalized.contains("reprov") || normalized.contains("naosele") || normalized.contains("nao selecion") || normalized.contains("desclass")) {
@@ -474,7 +481,7 @@ public class StageService {
         try {
             return StageStatus.valueOf(statusStr.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            return StageStatus.APROVADO;
+            return StageStatus.EM_ANALISE;
         }
     }
 

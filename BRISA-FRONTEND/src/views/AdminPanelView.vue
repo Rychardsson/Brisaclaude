@@ -2580,6 +2580,9 @@ function closeUserDetails() {
 }
 
 .field textarea {
+  min-height: 118px;
+  max-height: 220px;
+  overflow-y: auto;
   resize: vertical;
 }
 

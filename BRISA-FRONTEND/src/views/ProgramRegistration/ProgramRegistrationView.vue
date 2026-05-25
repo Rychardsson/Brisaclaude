@@ -1582,7 +1582,7 @@ export default {
 .form-select { appearance: auto; cursor: pointer; padding-left: 8px; } /* Estilo específico para dropdowns (select) */
 .form-input:focus, .form-textarea:focus { outline: none; border-color: #7dd3c7; box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.12); } /* Efeito de foco nos inputs */
 .form-input::placeholder, .form-textarea::placeholder { color: #9ca3af; } /* Cor do texto de placeholder */
-.form-textarea { resize: vertical; } /* Permite redimensionar textarea apenas na vertical */
+.form-textarea { min-height: 84px; max-height: 220px; overflow-y: auto; resize: vertical; } /* Mantém textos longos com rolagem interna */
 .form-input.input-error { background-color: #fef2f2; border-color: #ef4444; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1); } /* Estilo de erro para inputs */
 .error-text { display: block; color: #ef4444; font-size: 11px; margin-top: 6px; font-weight: 500; } /* Mensagem de erro abaixo do input */
 .duration-input-group { display: flex; gap: 8px; width: 100%; } /* Grupo flex para input de duração e unidade */
