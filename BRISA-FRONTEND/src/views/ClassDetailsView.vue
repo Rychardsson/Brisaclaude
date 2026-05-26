@@ -1198,7 +1198,7 @@
                 Nenhum aluno vinculado à etapa de imersão.
               </div>
 
-              <div v-else class="students-table">
+              <div v-else class="students-table students-table-scrollable">
                 <table>
                   <thead>
                     <tr>
@@ -1220,44 +1220,48 @@
               </div>
             </article>
 
-            <div class="imersao-groups-list">
-              <div v-for="group in imersaoGroups" :key="group.id" class="imersao-group-item">
-                <button type="button" class="imersao-group-card" @click="toggleImersaoGroup(group.id)">
-                  <div class="imersao-group-main">
-                    <div class="imersao-group-title">
-                      <strong>{{ group.name }}</strong>
-                      <span class="imersao-group-status" :class="group.statusClass">{{ group.status }}</span>
+            <div class="imersao-groups-grid">
+              <div v-for="group in imersaoGroups" :key="group.id" class="imersao-card-wrapper" :class="{ 'is-expanded': imersaoExpandedGroupId === group.id }">
+                <div class="imersao-card-header" @click="toggleImersaoGroup(group.id)">
+                  
+                  <div class="imersao-card-top">
+                    <span class="imersao-group-status" :class="group.statusClass">{{ group.status }}</span>
+                    <h4 class="imersao-card-title">{{ group.name }}</h4>
+                    <p class="imersao-card-project">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                      {{ group.project }}
+                    </p>
+                  </div>
+
+                  <div class="imersao-card-metrics">
+                    <div class="metric-box">
+                      <span>Alunos</span>
+                      <strong>{{ group.students }}</strong>
                     </div>
-                    <div class="imersao-group-sub">
-                      <span>Orientador:</span>
-                      <strong>{{ group.mentor }}</strong>
+                    <div class="metric-box">
+                      <span>Orientador</span>
+                      <strong class="truncate">{{ group.mentor }}</strong>
+                    </div>
+                    <div class="metric-box">
+                      <span>Média Parcial</span>
+                      <strong class="teal">{{ group.partialAverage }}</strong>
+                    </div>
+                    <div class="metric-box">
+                      <span>Média Final</span>
+                      <strong class="teal">{{ group.finalAverage }}</strong>
                     </div>
                   </div>
 
-                  <div class="imersao-group-project">
-                    <span>Projeto:</span>
-                    <strong>{{ group.project }}</strong>
+                  <div class="imersao-card-action">
+                    <span class="action-text">{{ imersaoExpandedGroupId === group.id ? 'Ocultar detalhes' : 'Ver detalhes' }}</span>
+                    <div class="imersao-card-arrow">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline v-if="imersaoExpandedGroupId === group.id" points="18 15 12 9 6 15" />
+                        <polyline v-else points="6 9 12 15 18 9" />
+                      </svg>
+                    </div>
                   </div>
-
-                  <div class="imersao-group-students">
-                    <span>Alunos:</span>
-                    <strong>{{ group.students }}</strong>
-                  </div>
-
-                  <div class="imersao-group-avg">
-                    <span>Média parcial:</span>
-                    <strong class="teal">{{ group.partialAverage }}</strong>
-                    <span>Final:</span>
-                    <strong class="teal">{{ group.finalAverage }}</strong>
-                  </div>
-
-                  <div class="imersao-group-arrow" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline v-if="imersaoExpandedGroupId === group.id" points="6 9 12 15 18 9" />
-                      <polyline v-else points="9 18 15 12 9 6" />
-                    </svg>
-                  </div>
-                </button>
+                </div>
 
                 <div v-if="imersaoExpandedGroupId === group.id" class="imersao-group-expanded">
                   <div class="imersao-group-tabs">
@@ -5711,7 +5715,6 @@ export default {
 
 .distribution-chart-area {
   height: 220px;
-  margin-top: 12px;
 }
 
 .distribution-panel h4 {
@@ -7750,117 +7753,139 @@ textarea.field {
   overflow: hidden;
 }
 
-.imersao-group-card {
-  width: 100%;
-  border: none;
-  background: transparent;
-  border-radius: 0;
-  padding: 14px 16px;
+.imersao-groups-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1.4fr auto 1.1fr auto;
-  align-items: center;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 16px;
-  text-align: left;
+  max-height: min(68vh, 660px);
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.imersao-card-wrapper {
+  background: #fff;
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.imersao-card-wrapper:hover {
+  border-color: var(--brand-300);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+
+.imersao-card-wrapper.is-expanded {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 1px var(--brand-500);
+}
+
+.imersao-card-header {
+  padding: 16px;
   cursor: pointer;
-}
-
-.imersao-group-card:hover {
-  background: #f8fafc;
-}
-
-.imersao-group-main {
-  min-width: 0;
-}
-
-.imersao-group-title {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.imersao-group-title strong {
-  color: var(--brand-900);
+.imersao-card-top {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.imersao-card-title {
+  margin: 0;
   font-size: 16px;
-  line-height: 1.1;
-}
-
-.imersao-group-status {
-  border-radius: 8px;
-  padding: 3px 10px;
-  font-size: 12px;
-  font-weight: 700;
-  border: 1px solid transparent;
-  white-space: nowrap;
-}
-
-.imersao-group-status.is-ok {
-  background: #d1fae5;
-  color: #047857;
-  border-color: #a7f3d0;
-}
-
-.imersao-group-status.is-warning {
-  background: #fef3c7;
-  color: #b45309;
-  border-color: #fde68a;
-}
-
-.imersao-group-sub {
-  margin-top: 8px;
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.imersao-group-sub span,
-.imersao-group-project span,
-.imersao-group-students span,
-.imersao-group-avg span {
-  color: var(--slate-600);
-  font-size: 14px;
-}
-
-.imersao-group-sub strong,
-.imersao-group-project strong,
-.imersao-group-students strong,
-.imersao-group-avg strong {
+  font-weight: 800;
   color: var(--brand-900);
-  font-size: 14px;
+  line-height: 1.2;
 }
 
-.imersao-group-project,
-.imersao-group-students,
-.imersao-group-avg {
+.imersao-card-project {
+  margin: 0;
+  font-size: 13px;
+  color: var(--slate-600);
   display: flex;
   align-items: center;
-  gap: 5px;
-  min-width: 0;
+  gap: 6px;
+  font-weight: 500;
 }
 
-.imersao-group-project strong {
+.imersao-card-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.metric-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-box span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--slate-500);
+  font-weight: 700;
+}
+
+.metric-box strong {
+  font-size: 13px;
+  color: var(--brand-900);
+  font-weight: 700;
+}
+
+.metric-box strong.teal {
+  color: #0d9488;
+  font-size: 15px;
+}
+
+.metric-box strong.truncate {
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 100%;
 }
 
-.imersao-group-avg strong.teal,
-.imersao-group-students strong {
-  color: var(--teal-600);
+.imersao-card-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed var(--slate-200);
+  padding-top: 12px;
+  margin-top: -4px;
 }
 
-.imersao-group-arrow {
-  color: #94a3b8;
-  display: inline-flex;
+.action-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-600);
+}
+
+.imersao-card-arrow {
+  display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--brand-600);
+  background: #eff6ff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
 }
 
 .imersao-group-expanded {
   border-top: 1px solid var(--slate-200);
-  padding: 12px 16px 14px;
-  max-height: 430px;
-  overflow: auto;
+  padding: 16px;
+  background: #fdfdfd;
 }
 
 .imersao-group-tabs {
