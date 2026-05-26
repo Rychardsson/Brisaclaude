@@ -22,6 +22,7 @@ import com.example.brisa.repositories.CourseRepository;
 import com.example.brisa.repositories.EnrollmentRepository;
 import com.example.brisa.repositories.KnowledgeAreaRepository;
 import com.example.brisa.repositories.StageCandidateRepository;
+import com.example.brisa.repositories.StageRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
@@ -61,6 +62,7 @@ public class CourseService {
     private final ClassRepository classRepository;
     private final KnowledgeAreaRepository knowledgeAreaRepository;
     private final StageCandidateRepository stageCandidateRepository;
+    private final StageRepository stageRepository;
     private final AcademicRoleRepository academicRoleRepository;
     private final AdvisorRepository advisorRepository;
     private final ExcelImportHelper excelImportHelper;
@@ -479,8 +481,19 @@ public class CourseService {
     public CourseAlertResponseDTO sendCourseAlert(Long courseId, Long classId, CourseAlertRequestDTO request) {
         CourseModel course = findById(courseId);
 
-        if (!emailService.isMailConfigured()) {
-            return new CourseAlertResponseDTO(0, 1, List.of("Servidor de e-mail nao configurado. Preencha SPRING_MAIL_USERNAME e SPRING_MAIL_PASSWORD no .env"));
+        // Filtra apenas alunos que estão na etapa de nivelamento
+        Set<Long> nivelamentoPeopleIds = stageRepository
+                .findByNameAndClassModelId("NIVELAMENTO", classId)
+                .map(nivelamentoStage ->
+                    stageCandidateRepository.findByStageId(nivelamentoStage.getId())
+                        .stream()
+                        .map(sc -> sc.getPeople().getId())
+                        .collect(Collectors.toSet())
+                )
+                .orElse(Set.of());
+
+        if (nivelamentoPeopleIds.isEmpty()) {
+            return new CourseAlertResponseDTO(0, 0, List.of());
         }
 
         String subject = hasText(request == null ? null : request.subject())
@@ -493,8 +506,13 @@ public class CourseService {
         List<CourseProgressionModel> pendingProgressions = courseProgressionRepository
                 .findByCourseIdAndClassId(courseId, classId)
                 .stream()
+                .filter(p -> nivelamentoPeopleIds.contains(p.getPeople().getId()))
                 .filter(this::isPendingCourseProgression)
                 .collect(Collectors.toList());
+
+        if (!emailService.isMailConfigured()) {
+            return new CourseAlertResponseDTO(pendingProgressions.size(), 0, List.of());
+        }
 
         int totalSent   = 0;
         int totalFailed = 0;
@@ -660,6 +678,8 @@ public class CourseService {
         }
 
         String normalizedStatus = normalizeStatus(progression.getStatus());
+        if (normalizedStatus.isBlank()) return true;
+        if (normalizedStatus.startsWith("nao")) return true;
         if (normalizedStatus.contains("concluido")
                 || normalizedStatus.contains("realizado")
                 || normalizedStatus.contains("finalizado")
@@ -668,13 +688,7 @@ public class CourseService {
                 || normalizedStatus.contains("inativo")) {
             return false;
         }
-        return normalizedStatus.isBlank()
-                || normalizedStatus.contains("naoiniciado")
-                || normalizedStatus.contains("naorealizado")
-                || normalizedStatus.contains("pendente")
-                || normalizedStatus.contains("emandamento")
-                || normalizedStatus.contains("cursando")
-                || progression.getCompletionPercentage() < 100.0;
+        return true;
     }
 
     private String normalizeStatus(String status) {

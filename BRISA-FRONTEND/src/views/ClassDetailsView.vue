@@ -3572,7 +3572,10 @@ export default {
           });
           totalSent += Number(result?.totalSent || 0);
           totalFailed += Number(result?.totalFailed || 0);
-          if (Number(result?.totalFailed || 0) > 0) failedCourses.push(course.name);
+          if (Number(result?.totalFailed || 0) > 0) {
+            const msg = result?.failedEmails?.[0] || course.name;
+            failedCourses.push(msg);
+          }
         } catch (err) {
           totalFailed += Number(course.pendingCount || 1);
           failedCourses.push(course.name || `Curso ${course.id}`);
@@ -3580,18 +3583,17 @@ export default {
       }
 
       sendingCourseEmail.value = false;
-      if (totalSent > 0) {
+      if (totalFailed > 0) {
+        sendMessageSuccess.value = '';
+        sendMessageError.value = [...new Set(failedCourses)].join('; ');
+      } else if (totalSent > 0) {
         sendMessageSuccess.value = `${totalSent} e-mail(s) enviado(s) em ${targetCourses.length} curso(s).`;
+        sendMessageError.value = '';
         lastCourseEmailSent.value = {
           date: new Date(),
           count: totalSent,
           courses: targetCourses.length,
         };
-      } else {
-        sendMessageSuccess.value = '';
-      }
-      if (totalFailed > 0) {
-        sendMessageError.value = `${totalFailed} envio(s) falharam${failedCourses.length ? `: ${failedCourses.join(', ')}` : '.'}`;
       }
     };
 
