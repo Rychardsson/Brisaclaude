@@ -509,71 +509,76 @@
           </div>
 
           <div v-if="etapasSubTab === 'nivelamento'" class="space-y-4">
-            <div class="nivelamento-cards">
-              <div class="n-card">
-                <div class="label">Alunos no nivelamento</div>
-                <div class="value">{{ getNivelamentoStudents.length }}</div>
+            <article class="panel">
+              <div class="panel-head">
+                <h3>Nivelamento</h3>
               </div>
-               <div class="n-card teal">
-                <div class="label">Ativos</div>
-                <div class="value">{{ courseStats.inProgress + courseStats.completed }}</div>
-              </div>
-              <div class="n-card">
-                <div class="label">Cursos obrigatórios</div>
-                <div class="value">{{ courseItems.filter(c => c.required).length }}</div>
-              </div>
-              <div class="n-card">
-                <div class="label">Cursos não obrigatórios</div>
-                <div class="value">{{ courseItems.filter(c => !c.required).length }}</div>
-              </div>
-               <div class="n-card teal">
-                <div class="label">Conclusão obrigatórios</div>
-                <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '-' }}</div>
-              </div>
-               <div class="n-card amber">
-                <div class="label">Nota de corte prova</div>
-                <div class="value">{{ levelingCutoffScore }}</div>
-              </div>
-               <div class="n-card red">
-                <div class="label">Alertas</div>
-                <div class="value">{{ courseItems.filter(c => c.completionPct < 40).length }}</div>
-              </div>
-            </div>
-
-            <div class="email-banner">
-              <div class="email-banner-content">
-                <div class="email-banner-main">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-                  <div>
-                    <span class="email-banner-label">Último e-mail enviado: </span>
-                    <span class="email-banner-value">{{ lastEmailInfo }}</span>
-                  </div>
+              <div class="nivelamento-cards">
+                <div class="n-card">
+                  <div class="label">Alunos no nivelamento</div>
+                  <div class="value">{{ getNivelamentoStudents.length }}</div>
                 </div>
-                <span class="email-banner-status" v-if="lastEmailInfo && lastEmailInfo !== 'Nenhum e-mail enviado recentemente'">Enviado</span>
+                 <div class="n-card teal">
+                   <div class="label">Ativos</div>
+                   <div class="value">{{ courseStats.inProgress + courseStats.completed }}</div>
+                 </div>
+                <div class="n-card">
+                  <div class="label">Cursos obrigatórios</div>
+                  <div class="value">{{ courseItems.filter(c => c.required).length }}</div>
+                </div>
+                <div class="n-card">
+                  <div class="label">Cursos não obrigatórios</div>
+                  <div class="value">{{ courseItems.filter(c => !c.required).length }}</div>
+                </div>
+                 <div class="n-card teal">
+                   <div class="label">Conclusão obrigatórios</div>
+                   <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '-' }}</div>
+                 </div>
+                 <div class="n-card amber">
+                   <div class="label">Nota de corte prova</div>
+                   <div class="value">{{ levelingCutoffScore }}</div>
+                 </div>
+                 <div class="n-card red">
+                   <div class="label">Alertas</div>
+                   <div class="value">{{ courseItems.filter(c => c.completionPct < 40).length }}</div>
+                 </div>
               </div>
-            </div>
 
-            <div class="nivelamento-actions">
-              <button type="button" class="btn-outline" @click="openUpdateSelectionModal('nivelamento')"><span>Atualizar dados</span></button>
-              <button type="button" class="btn-outline" @click="showSubmitCoursesModal = true">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                <span>Submeter dados dos cursos</span>
-              </button>
-              <button type="button" class="btn-outline" @click="showSubmitProvaNotasModal = true">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                <span>Submeter notas da prova</span>
-              </button>
-              <div class="spacer"></div>
-              <button type="button" class="btn-primary" @click="openSendMessageModal()"><span>Enviar mensagem</span></button>
-            </div>
+              <div class="email-banner">
+                <div class="email-banner-content">
+                  <div class="email-banner-main">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+                    <div>
+                      <span class="email-banner-label">Último e-mail enviado: </span>
+                      <span class="email-banner-value">{{ lastEmailInfo }}</span>
+                    </div>
+                  </div>
+                  <span class="email-banner-status" v-if="lastEmailInfo && lastEmailInfo !== 'Nenhum e-mail enviado recentemente'">Enviado</span>
+                </div>
+              </div>
+
+              <div class="nivelamento-actions">
+                <button type="button" class="btn-outline" @click="openUpdateSelectionModal('nivelamento')"><span>Atualizar dados</span></button>
+                <button type="button" class="btn-outline" @click="showSubmitCoursesModal = true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span>Submeter dados dos cursos</span>
+                </button>
+                <button type="button" class="btn-outline" @click="showSubmitProvaNotasModal = true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span>Submeter notas da prova</span>
+                </button>
+                <div class="spacer"></div>
+                <button type="button" class="btn-primary" @click="openSendMessageModal()"><span>Enviar mensagem</span></button>
+              </div>
+            </article>
           </div>
 
           <template v-if="etapasSubTab === 'nivelamento'">
@@ -729,115 +734,317 @@
           <article class="panel">
            <div class="panel-head">
              <h3>Alunos do Nivelamento</h3>
+             <span class="class-status-pill">{{ getNivelamentoStudents.length }} aluno(s)</span>
+           </div>
+
+           <!-- Gráfico de progresso dos alunos -->
+           <div class="nivelamento-chart-row">
+             <div class="nivelamento-chart-box">
+               <div class="nivelamento-chart-title">Progresso dos alunos</div>
+               <div class="nivelamento-progress-bars">
+                 <div
+                   v-for="student in getNivelamentoStudents.slice(0, 20)"
+                   :key="'chart-' + student.id"
+                   class="nivelamento-bar-row"
+                 >
+                   <div class="nivelamento-bar-name" :title="student.name || student.id">{{ (student.name || student.id || '').split(' ').slice(0, 2).join(' ') }}</div>
+                   <div class="nivelamento-bar-track">
+                     <div
+                       class="nivelamento-bar-fill"
+                       :style="{
+                         width: student.avg + '%',
+                         background: student.avg >= 100 ? '#10b981' : student.avg >= 60 ? '#14b8a6' : student.avg >= 30 ? '#f59e0b' : '#ef4444'
+                       }"
+                     ></div>
+                   </div>
+                   <div class="nivelamento-bar-pct" :class="student.avg >= 100 ? 'pct-done' : student.avg >= 60 ? 'pct-ok' : 'pct-low'">{{ student.avg }}%</div>
+                 </div>
+                 <div v-if="getNivelamentoStudents.length === 0" class="no-data">Nenhum aluno no nivelamento.</div>
+                 <div v-if="getNivelamentoStudents.length > 20" class="nivelamento-chart-more">+{{ getNivelamentoStudents.length - 20 }} alunos na tabela abaixo</div>
+               </div>
+             </div>
+
+             <div class="nivelamento-chart-stats">
+               <div class="nivelamento-stat-block">
+                 <span>Concluídos (100%)</span>
+                 <strong class="text-emerald">{{ getNivelamentoStudents.filter(s => s.avg >= 100).length }}</strong>
+               </div>
+               <div class="nivelamento-stat-block">
+                 <span>Em andamento</span>
+                 <strong class="text-teal">{{ getNivelamentoStudents.filter(s => s.avg > 0 && s.avg < 100).length }}</strong>
+               </div>
+               <div class="nivelamento-stat-block">
+                 <span>Sem progresso</span>
+                 <strong class="text-amber">{{ getNivelamentoStudents.filter(s => s.avg === 0).length }}</strong>
+               </div>
+               <div class="nivelamento-stat-block">
+                 <span>Média geral</span>
+                 <strong class="text-teal">{{ getNivelamentoStudents.length ? Math.round(getNivelamentoStudents.reduce((acc, s) => acc + (s.avg || 0), 0) / getNivelamentoStudents.length) : 0 }}%</strong>
+               </div>
+               <!-- Legend -->
+               <div class="nivelamento-legend">
+                 <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>100%</div>
+                 <div class="legend-item"><span class="legend-dot" style="background:#14b8a6"></span>60–99%</div>
+                 <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>30–59%</div>
+                 <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>&lt;30%</div>
+               </div>
+             </div>
            </div>
 
            <div v-if="examInsightsError" class="state-box state-error" style="margin-bottom: 14px;">{{ examInsightsError }}</div>
 
-           <div v-if="examSummaryData" class="exam-insights-grid">
-             <article class="panel exam-insight-card">
-               <h4>Resumo importado da prova</h4>
-               <div class="simple-list">
-                 <div>
-                   <span>Participantes</span>
-                   <strong>{{ examSummaryData.totalParticipants || 0 }}</strong>
-                 </div>
-                 <div>
-                   <span>Média geral</span>
-                   <strong>{{ examSummaryData.averageScore != null ? Number(examSummaryData.averageScore).toFixed(1) : '--' }}</strong>
-                 </div>
-                 <div>
-                   <span>Maior nota</span>
-                   <strong>{{ examSummaryData.highestScore != null ? Number(examSummaryData.highestScore).toFixed(1) : '--' }}</strong>
-                 </div>
-                 <div>
-                   <span>Notas zero</span>
-                   <strong>{{ examSummaryData.zeroScoreCount || 0 }}</strong>
-                 </div>
+           <template v-if="examSummaryData">
+             <!-- KPI row -->
+             <div class="exam-kpi-row">
+               <div class="exam-kpi-card">
+                 <span class="exam-kpi-label">Participantes</span>
+                 <strong class="exam-kpi-value">{{ examSummaryData.totalParticipants || 0 }}</strong>
                </div>
-             </article>
+               <div class="exam-kpi-card">
+                 <span class="exam-kpi-label">Média geral</span>
+                 <strong class="exam-kpi-value exam-kpi-teal">{{ examSummaryData.averageScore != null ? Number(examSummaryData.averageScore).toFixed(1) : '--' }}</strong>
+               </div>
+               <div class="exam-kpi-card">
+                 <span class="exam-kpi-label">Maior nota</span>
+                 <strong class="exam-kpi-value exam-kpi-emerald">{{ examSummaryData.highestScore != null ? Number(examSummaryData.highestScore).toFixed(1) : '--' }}</strong>
+               </div>
+               <div class="exam-kpi-card">
+                 <span class="exam-kpi-label">Notas zero</span>
+                 <strong class="exam-kpi-value exam-kpi-red">{{ examSummaryData.zeroScoreCount || 0 }}</strong>
+               </div>
+             </div>
 
-              <article class="panel exam-insight-card">
-                <h4>Distribuição de notas</h4>
-                <div class="simple-list">
-                  <div v-for="bucket in examSummaryData.scoreDistribution || []" :key="bucket.label">
-                    <span>{{ bucket.label }}</span>
-                    <strong>{{ bucket.count }}</strong>
+             <!-- Row 1: Distribuição de notas + Participantes por cota -->
+             <div class="exam-charts-row">
+               <article class="panel exam-chart-card">
+                 <div class="exam-chart-header">
+                   <h4>Distribuição de notas</h4>
+                   <span class="exam-chart-sub">Alunos por faixa de pontuação</span>
+                 </div>
+                 <div class="exam-chart-area" style="height:200px">
+                   <Bar
+                     :data="{
+                       labels: (examSummaryData.scoreDistribution || []).map(b => b.label),
+                       datasets: [{
+                         label: 'Alunos',
+                         data: (examSummaryData.scoreDistribution || []).map(b => b.count),
+                         backgroundColor: (examSummaryData.scoreDistribution || []).map((b, i) => {
+                           const colors = ['#e2e8f0','#e2e8f0','#e2e8f0','#14b8a6','#0d9488','#0f766e'];
+                           return colors[i] || '#14b8a6';
+                         }),
+                         borderRadius: 6,
+                         borderSkipped: false,
+                       }]
+                     }"
+                     :options="{
+                       responsive: true,
+                       maintainAspectRatio: false,
+                       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' aluno(s)' } } },
+                       scales: {
+                         x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                         y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f1f5f9' } }
+                       }
+                     }"
+                   />
+                 </div>
+               </article>
+
+               <article class="panel exam-chart-card">
+                 <div class="exam-chart-header">
+                   <h4>Participantes por cota</h4>
+                   <span class="exam-chart-sub">Distribuição de vagas preenchidas</span>
+                 </div>
+                 <div class="exam-chart-area exam-chart-doughnut-wrap">
+                   <div style="max-width:220px; margin:0 auto; height:200px">
+                     <Doughnut
+                       :data="{
+                         labels: (examSummaryData.quotaParticipants || []).map(q => q.label),
+                         datasets: [{
+                           data: (examSummaryData.quotaParticipants || []).map(q => q.count),
+                           backgroundColor: ['#14b8a6','#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#10b981'],
+                           borderWidth: 2,
+                           borderColor: '#fff',
+                         }]
+                       }"
+                       :options="{
+                         responsive: true,
+                         maintainAspectRatio: false,
+                         cutout: '60%',
+                         plugins: {
+                           legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 8 } },
+                           tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed + ' aluno(s)' } }
+                         }
+                       }"
+                     />
+                   </div>
+                 </div>
+               </article>
+             </div>
+
+             <!-- Row 2: Questões com mais acertos + menos acertos -->
+             <div class="exam-charts-row">
+               <article class="panel exam-chart-card">
+                 <div class="exam-chart-header">
+                   <h4>15 questões com mais acertos</h4>
+                   <span class="exam-chart-sub exam-chip-success">Top desempenho</span>
+                 </div>
+                 <div class="exam-hbar-list">
+                   <div
+                     v-for="q in (examSummaryData.bestQuestions || []).slice(0, 15)"
+                     :key="`best-${q.questionNumber}`"
+                     class="exam-hbar-row"
+                   >
+                     <div class="exam-hbar-label">
+                       <span>Q{{ q.questionNumber }}</span>
+                       <small v-if="q.subject">{{ q.subject }}</small>
+                     </div>
+                     <div class="exam-hbar-track">
+                       <div
+                         class="exam-hbar-fill exam-hbar-fill-success"
+                         :style="{ width: Number(q.successRate || 0).toFixed(1) + '%' }"
+                       ></div>
+                     </div>
+                     <span class="exam-hbar-pct exam-hbar-pct-success">{{ Number(q.successRate || 0).toFixed(1) }}%</span>
+                   </div>
+                 </div>
+               </article>
+
+               <article class="panel exam-chart-card">
+                 <div class="exam-chart-header">
+                   <h4>15 questões com menos acertos</h4>
+                   <span class="exam-chart-sub exam-chip-warning">Pontos de atenção</span>
+                 </div>
+                 <div class="exam-hbar-list">
+                   <div
+                     v-for="q in (examSummaryData.worstQuestions || []).slice(0, 15)"
+                     :key="`worst-${q.questionNumber}`"
+                     class="exam-hbar-row"
+                   >
+                     <div class="exam-hbar-label">
+                       <span>Q{{ q.questionNumber }}</span>
+                       <small v-if="q.subject">{{ q.subject }}</small>
+                     </div>
+                     <div class="exam-hbar-track">
+                       <div
+                         class="exam-hbar-fill exam-hbar-fill-danger"
+                         :style="{ width: Math.max(Number(q.successRate || 0).toFixed(1), 2) + '%' }"
+                       ></div>
+                     </div>
+                     <span class="exam-hbar-pct exam-hbar-pct-danger">{{ Number(q.successRate || 0).toFixed(1) }}%</span>
+                   </div>
+                 </div>
+               </article>
+             </div>
+           </template>
+
+            <template v-if="examRespondentProfileData">
+              <!-- Row 3: Cursos de origem + Melhor acerto por curso -->
+              <div class="exam-charts-row">
+                <article class="panel exam-chart-card">
+                  <div class="exam-chart-header">
+                    <h4>Cursos de origem</h4>
+                    <span class="exam-chart-sub">Quantidade por formação</span>
                   </div>
-                </div>
-              </article>
-
-              <article class="panel exam-insight-card">
-                <h4>Participantes por cota</h4>
-                <div class="simple-list">
-                  <div v-for="quota in examSummaryData.quotaParticipants || []" :key="`quota-participant-${quota.label}`">
-                    <span>{{ quota.label }}</span>
-                    <strong>{{ quota.count }}</strong>
+                  <div class="exam-chart-area" style="height:200px">
+                    <Bar
+                      :data="{
+                        labels: (examRespondentProfileData.courseDistribution || []).slice(0, 5).map(i => i.label),
+                        datasets: [{
+                          label: 'Alunos',
+                          data: (examRespondentProfileData.courseDistribution || []).slice(0, 5).map(i => i.count),
+                          backgroundColor: '#818cf8',
+                          borderRadius: 6,
+                          borderSkipped: false,
+                        }]
+                      }"
+                      :options="{
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                          x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f1f5f9' } },
+                          y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+                        }
+                      }"
+                    />
                   </div>
-                </div>
-              </article>
+                </article>
 
-              <article class="panel exam-insight-card">
-                <h4>15 questões com mais acertos</h4>
-                <div class="simple-list">
-                  <div v-for="question in (examSummaryData.bestQuestions || []).slice(0, 15)" :key="`best-${question.questionNumber}`">
-                    <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
-                    <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
+                <article class="panel exam-chart-card">
+                  <div class="exam-chart-header">
+                    <h4>Melhor acerto por curso</h4>
+                    <span class="exam-chart-sub">Taxa de acerto média (%)</span>
                   </div>
-                </div>
-              </article>
-
-              <article class="panel exam-insight-card">
-                <h4>15 questões com menos acertos</h4>
-                <div class="simple-list">
-                  <div v-for="question in (examSummaryData.worstQuestions || []).slice(0, 15)" :key="`worst-${question.questionNumber}`">
-                    <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
-                    <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
+                  <div class="exam-hbar-list">
+                    <div
+                      v-for="item in (examRespondentProfileData.topCourseAccuracy || []).slice(0, 5)"
+                      :key="`accuracy-${item.label}`"
+                      class="exam-hbar-row"
+                    >
+                      <div class="exam-hbar-label"><span>{{ item.label }}</span></div>
+                      <div class="exam-hbar-track">
+                        <div class="exam-hbar-fill exam-hbar-fill-purple" :style="{ width: Number(item.value || 0).toFixed(1) + '%' }"></div>
+                      </div>
+                      <span class="exam-hbar-pct exam-hbar-pct-purple">{{ Number(item.value || 0).toFixed(1) }}%</span>
+                    </div>
                   </div>
-               </div>
-             </article>
-           </div>
+                </article>
+              </div>
 
-            <div v-if="examRespondentProfileData" class="exam-profile-grid">
-              <article class="panel exam-insight-card">
-                <h4>Cursos de origem</h4>
-                <div class="simple-list">
-                  <div v-for="item in (examRespondentProfileData.courseDistribution || []).slice(0, 5)" :key="`course-${item.label}`">
-                   <span>{{ item.label }}</span>
-                   <strong>{{ item.count }}</strong>
-                 </div>
-               </div>
-             </article>
+              <!-- Row 4: Cotas + Cidades -->
+              <div class="exam-charts-row">
+                <article class="panel exam-chart-card">
+                  <div class="exam-chart-header">
+                    <h4>Cotas com maior desempenho</h4>
+                    <span class="exam-chart-sub">Acerto médio por grupo de cota</span>
+                  </div>
+                  <div class="exam-chart-area" style="height:200px">
+                    <Bar
+                      :data="{
+                        labels: (examRespondentProfileData.quotaAccuracy || []).slice(0, 5).map(i => i.label),
+                        datasets: [{
+                          label: 'Acerto %',
+                          data: (examRespondentProfileData.quotaAccuracy || []).slice(0, 5).map(i => Number(i.value || 0).toFixed(1)),
+                          backgroundColor: ['#14b8a6','#0ea5e9','#8b5cf6','#f59e0b','#ef4444'],
+                          borderRadius: 6,
+                          borderSkipped: false,
+                        }]
+                      }"
+                      :options="{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '%' } } },
+                        scales: {
+                          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                          y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%', font: { size: 11 } }, grid: { color: '#f1f5f9' } }
+                        }
+                      }"
+                    />
+                  </div>
+                </article>
 
-             <article class="panel exam-insight-card">
-               <h4>Melhor acerto por curso</h4>
-               <div class="simple-list">
-                 <div v-for="item in (examRespondentProfileData.topCourseAccuracy || []).slice(0, 5)" :key="`accuracy-${item.label}`">
-                   <span>{{ item.label }}</span>
-                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
-                 </div>
-               </div>
-             </article>
-
-             <article class="panel exam-insight-card">
-               <h4>Cotas com maior desempenho</h4>
-               <div class="simple-list">
-                 <div v-for="item in (examRespondentProfileData.quotaAccuracy || []).slice(0, 5)" :key="`quota-${item.label}`">
-                   <span>{{ item.label }}</span>
-                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
-                 </div>
-               </div>
-             </article>
-
-             <article class="panel exam-insight-card">
-               <h4>Cidades com maior desempenho</h4>
-               <div class="simple-list">
-                 <div v-for="item in (examRespondentProfileData.topCityAccuracy || []).slice(0, 5)" :key="`city-${item.label}`">
-                   <span>{{ item.label }}</span>
-                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
-                 </div>
-                </div>
-              </article>
-            </div>
+                <article class="panel exam-chart-card">
+                  <div class="exam-chart-header">
+                    <h4>Cidades com maior desempenho</h4>
+                    <span class="exam-chart-sub">Top 5 cidades por taxa de acerto</span>
+                  </div>
+                  <div class="exam-hbar-list">
+                    <div
+                      v-for="item in (examRespondentProfileData.topCityAccuracy || []).slice(0, 5)"
+                      :key="`city-${item.label}`"
+                      class="exam-hbar-row"
+                    >
+                      <div class="exam-hbar-label"><span>{{ item.label }}</span></div>
+                      <div class="exam-hbar-track">
+                        <div class="exam-hbar-fill exam-hbar-fill-teal" :style="{ width: Number(item.value || 0).toFixed(1) + '%' }"></div>
+                      </div>
+                      <span class="exam-hbar-pct exam-hbar-pct-teal">{{ Number(item.value || 0).toFixed(1) }}%</span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </template>
 
             <article class="exam-ranking-config">
               <div class="exam-ranking-config-head">
@@ -903,7 +1110,8 @@
              </article>
            </div>
 
-           <div class="students-table">
+           <!-- Tabela de alunos com scrollbar -->
+           <div class="students-table students-table-scrollable">
              <table>
                <thead>
                  <tr>
@@ -8059,23 +8267,165 @@ textarea.field {
   line-height: 1.5;
 }
 
-.exam-insights-grid,
-.exam-profile-grid {
+/* ─── Exam KPI row ─── */
+.exam-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+.exam-kpi-card {
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.exam-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.exam-kpi-value {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--brand-900);
+}
+.exam-kpi-teal  { color: #0d9488; }
+.exam-kpi-emerald { color: #059669; }
+.exam-kpi-red   { color: #dc2626; }
+
+/* ─── Exam charts layout ─── */
+.exam-charts-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 16px;
+  margin-bottom: 12px;
 }
-
-.exam-insight-card {
-  padding: 14px;
+.exam-chart-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-
-.exam-insight-card h4 {
-  margin: 0 0 12px;
+.exam-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.exam-chart-header h4 {
+  margin: 0;
   color: var(--brand-900);
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 700;
 }
+.exam-chart-sub {
+  font-size: 11px;
+  color: var(--slate-500);
+}
+.exam-chip-success {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #059669;
+  font-weight: 700;
+  font-size: 11px;
+}
+.exam-chip-warning {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #b45309;
+  font-weight: 700;
+  font-size: 11px;
+}
+.exam-chart-area {
+  position: relative;
+  width: 100%;
+}
+.exam-chart-doughnut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Horizontal bar list ─── */
+.exam-hbar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+.exam-hbar-list::-webkit-scrollbar { width: 5px; }
+.exam-hbar-list::-webkit-scrollbar-thumb { background: #b8c6d8; border-radius: 999px; }
+.exam-hbar-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 160px) minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 10px;
+}
+.exam-hbar-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.exam-hbar-label span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-900);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+}
+.exam-hbar-label small {
+  font-size: 10px;
+  color: var(--slate-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.exam-hbar-track {
+  height: 10px;
+  background: var(--slate-100);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.exam-hbar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.exam-hbar-fill-success { background: linear-gradient(90deg, #10b981, #34d399); }
+.exam-hbar-fill-danger  { background: linear-gradient(90deg, #f87171, #fca5a5); }
+.exam-hbar-fill-purple  { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.exam-hbar-fill-teal    { background: linear-gradient(90deg, #14b8a6, #2dd4bf); }
+.exam-hbar-pct {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+}
+.exam-hbar-pct-success { color: #059669; }
+.exam-hbar-pct-danger  { color: #dc2626; }
+.exam-hbar-pct-purple  { color: #7c3aed; }
+.exam-hbar-pct-teal    { color: #0d9488; }
 
 .exam-ranking-config {
   margin-top: 16px;
@@ -8196,6 +8546,10 @@ textarea.field {
   font-weight: 600;
   color: var(--slate-600);
   text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--slate-50);
 }
 .students-table tbody tr {
   border-bottom: 1px solid var(--slate-200);
@@ -8205,6 +8559,23 @@ textarea.field {
 }
 .students-table td {
   padding: 12px;
+}
+/* Scrollable variant for nivelamento students */
+.students-table-scrollable {
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  margin-top: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+.students-table-scrollable::-webkit-scrollbar {
+  width: 7px;
+}
+.students-table-scrollable::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 .student-progress {
   display: flex;
@@ -8223,6 +8594,132 @@ textarea.field {
   height: 100%;
   background: var(--teal-600);
   border-radius: 3px;
+}
+
+/* Nivelamento chart row */
+.nivelamento-chart-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: start;
+}
+.nivelamento-chart-box {
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fff;
+}
+.nivelamento-chart-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-900);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.nivelamento-progress-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+.nivelamento-progress-bars::-webkit-scrollbar {
+  width: 5px;
+}
+.nivelamento-progress-bars::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
+}
+.nivelamento-bar-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 10px;
+}
+.nivelamento-bar-name {
+  font-size: 12px;
+  color: var(--slate-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nivelamento-bar-track {
+  height: 10px;
+  background: var(--slate-100);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.nivelamento-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.nivelamento-bar-pct {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+}
+.pct-done { color: #059669; }
+.pct-ok { color: #0f766e; }
+.pct-low { color: #b45309; }
+.nivelamento-chart-more {
+  font-size: 12px;
+  color: var(--slate-500);
+  margin-top: 4px;
+  text-align: center;
+  font-style: italic;
+}
+.nivelamento-chart-stats {
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  padding: 14px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.nivelamento-stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nivelamento-stat-block span {
+  font-size: 11px;
+  color: var(--slate-500);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.nivelamento-stat-block strong {
+  font-size: 22px;
+  line-height: 1.1;
+}
+.text-emerald { color: #059669; }
+.text-teal { color: #0f766e; }
+.text-amber { color: #b45309; }
+.nivelamento-legend {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--slate-600);
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 .status-pill {
   display: inline-flex;
