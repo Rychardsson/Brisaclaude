@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="figma-page">
     <ConfirmDialog ref="confirmDialog" />
 
@@ -222,46 +222,29 @@
             <div class="distribution-grid">
               <article class="panel distribution-panel">
                 <h4>Por Cota</h4>
-                <div class="quota-list">
-                  <div v-for="item in quotaDistribution" :key="item.label" class="quota-row">
-                    <div class="quota-head">
-                      <span>{{ item.label }}</span>
-                      <strong>{{ item.value }}%</strong>
-                    </div>
-                    <div class="quota-track">
-                      <div class="quota-fill" :style="{ width: `${item.value}%`, background: item.color }" />
-                    </div>
-                  </div>
+                <div class="distribution-chart-area">
+                  <Bar :data="quotaChartData" :options="quotaChartOptions" />
                 </div>
               </article>
 
               <article class="panel distribution-panel">
                 <h4>Por Gênero</h4>
-                <div class="gender-grid">
-                  <div v-for="item in genderDistribution" :key="item.label" class="gender-card">
-                    <strong>{{ item.value }}%</strong>
-                    <span>{{ item.label }}</span>
-                  </div>
+                <div class="distribution-chart-area">
+                  <Doughnut :data="genderChartData" :options="chartOptions" />
                 </div>
               </article>
 
               <article class="panel distribution-panel">
                 <h4>Por Cidade/UF</h4>
-                <div class="simple-list">
-                  <div v-for="item in cityDistribution" :key="item.label">
-                    <span>{{ item.label }}</span>
-                    <strong>{{ item.value }}</strong>
-                  </div>
+                <div class="distribution-chart-area">
+                  <Bar :data="cityChartData" :options="cityChartOptions" />
                 </div>
               </article>
 
               <article class="panel distribution-panel">
                 <h4>Por Tipo de Formação</h4>
-                <div class="simple-list">
-                  <div v-for="item in educationDistribution" :key="item.label">
-                    <span>{{ item.label }}</span>
-                    <strong>{{ item.value }}</strong>
-                  </div>
+                <div class="distribution-chart-area">
+                  <Pie :data="educationChartData" :options="countChartOptions" />
                 </div>
               </article>
             </div>
@@ -526,7 +509,7 @@
           </div>
 
           <div v-if="etapasSubTab === 'nivelamento'" class="space-y-4">
-             <div class="nivelamento-cards">
+            <div class="nivelamento-cards">
               <div class="n-card">
                 <div class="label">Alunos no nivelamento</div>
                 <div class="value">{{ getNivelamentoStudents.length }}</div>
@@ -667,6 +650,10 @@
                  <span>Sem conclusão</span>
                  <strong>{{ classStatusReport?.studentsWithoutProgress || 0 }}</strong>
                </article>
+             </div>
+
+             <div v-if="!classStatusLoading && !classStatusError" class="class-status-chart">
+               <Bar :data="classStatusChartData" :options="classStatusChartOptions" />
              </div>
 
              <div v-if="!classStatusLoading && !classStatusError" class="class-status-bars">
@@ -1686,7 +1673,7 @@
             <p class="columns-grid-title">A planilha deve conter as seguintes colunas:</p>
             <div class="column-item"><strong>Obrigatórias:</strong> CPF, Nome, Nota final, Tempo de conclusão</div>
             <div class="column-item"><strong>Prova:</strong> Código da prova, Nome da prova, Data da prova</div>
-            <div class="column-item"><strong>Questões:</strong> Q1, Q2, Q3... Q80 (respostas ou pontuação por questão)</div>
+            <div class="column-item"><strong>Questões:</strong> Q1, Q2, Q3... Q40 (respostas ou pontuação por questão)</div>
             <div class="column-item"><strong>Opcional:</strong> Área/Assunto (para análise por tema)</div>
           </div>
 
@@ -1963,25 +1950,25 @@
             <label class="section-label">Destinatários</label>
             <div class="radio-option">
               <input type="radio" id="all-students" name="recipients" value="all" v-model="sendMessageRecipients" />
-              <label for="all-students">Todos os alunos do nivelamento</label>
+              <label for="all-students">Todos os cursos com alunos pendentes</label>
             </div>
             <div class="radio-option">
               <input type="radio" id="pending-students" name="recipients" value="pending" v-model="sendMessageRecipients" />
-              <label for="pending-students">Apenas alunos com cursos obrigatórios pendentes</label>
+              <label for="pending-students">Apenas cursos obrigatórios com pendência</label>
             </div>
 
             <div class="stats-grid">
               <div class="stat-item">
-                <span class="stat-label">Total selecionados:</span>
-                <span class="stat-value">37</span>
+                <span class="stat-label">Cursos alvo:</span>
+                <span class="stat-value">{{ sendMessageTargetCourses.length }}</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Com pendências:</span>
-                <span class="stat-value pending">37</span>
+                <span class="stat-label">Alunos pendentes:</span>
+                <span class="stat-value pending">{{ sendMessagePendingStudentsCount }}</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Sem pendências:</span>
-                <span class="stat-value">0</span>
+                <span class="stat-label">Sem pendência:</span>
+                <span class="stat-value">{{ sendMessageCompletedStudentsCount }}</span>
               </div>
             </div>
           </div>
@@ -2008,9 +1995,19 @@
             />
           </div>
 
+          <div v-if="sendMessageError" class="state-box state-error">{{ sendMessageError }}</div>
+          <div v-if="sendMessageSuccess" class="state-box state-success">{{ sendMessageSuccess }}</div>
+
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="showSendMessageModal = false">Cancelar</button>
-            <button type="button" class="btn-primary">Enviar mensagem</button>
+            <button
+              type="button"
+              class="btn-primary"
+              :disabled="sendingCourseEmail || !sendMessageTargetCourses.length || !sendMessageSubject.trim() || !sendMessageBody.trim()"
+              @click="sendCourseAlertEmails"
+            >
+              {{ sendingCourseEmail ? 'Enviando...' : 'Enviar mensagem' }}
+            </button>
           </div>
         </div>
       </div>
@@ -2092,6 +2089,10 @@
 
 <script>
 import { computed, onMounted, ref, watch } from 'vue';
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement } from 'chart.js';
+import { Bar, Doughnut, Pie } from 'vue-chartjs';
+
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement);
 import { useRoute, useRouter } from 'vue-router';
 import { classService } from '@/services/classService';
 import { enrollmentService } from '@/services/enrollmentService';
@@ -2123,7 +2124,7 @@ const selectionQuotaLabels = [
 
 export default {
   name: 'ClassDetailsView',
-  components: { ConfirmDialog, GroupCreateModal },
+  components: { ConfirmDialog, GroupCreateModal, Bar, Doughnut, Pie },
   setup() {
     const route = useRoute();
     const router = useRouter();
@@ -2169,6 +2170,11 @@ export default {
     const sendMessageRecipients = ref('all');
     const sendMessageSubject = ref('Pendência na conclusão dos cursos obrigatórios');
     const sendMessageBody = ref('Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.');
+    const sendMessageCourseTarget = ref(null);
+    const sendingCourseEmail = ref(false);
+    const sendMessageError = ref('');
+    const sendMessageSuccess = ref('');
+    const lastCourseEmailSent = ref(null);
     const downloadPeopleTemplate = (fileName) => {
       downloadPeopleSpreadsheetTemplate(fileName);
     };
@@ -2688,10 +2694,13 @@ export default {
     };
 
     const openSendMessageModal = (options = {}) => {
-      const { subject, body, recipients } = options;
+      const { subject, body, recipients, course } = options;
       sendMessageSubject.value = subject ?? 'Pendência na conclusão dos cursos obrigatórios';
       sendMessageBody.value = body ?? 'Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.';
       sendMessageRecipients.value = recipients ?? 'all';
+      sendMessageCourseTarget.value = course || null;
+      sendMessageError.value = '';
+      sendMessageSuccess.value = '';
       showSendMessageModal.value = true;
     };
 
@@ -2699,6 +2708,7 @@ export default {
       if (!selectedCourseItem.value) return;
       const courseName = selectedCourseItem.value?.name || 'este curso';
       openSendMessageModal({
+        course: selectedCourseItem.value,
         subject: `Pendência no curso ${courseName}`,
         body: `Olá, identificamos que você ainda possui pendência no curso "${courseName}" do nivelamento. A conclusão desse curso é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.`,
         recipients: 'pending',
@@ -3064,6 +3074,12 @@ export default {
       buildCountDistribution(distributionRows.value, (row) => formatEducation(row.educationLevel || row.education), 'Não informado', 5)
     );
 
+    const buildChartLabel = (value, maxLength = 18) => {
+      const label = String(value || '').trim();
+      if (!label) return 'Sem dados';
+      return label.length > maxLength ? `${label.slice(0, maxLength - 1)}…` : label;
+    };
+
     const timelinePeriodLabel = (start, end) => {
       const startLabel = formatDate(start);
       const endLabel = formatDate(end);
@@ -3243,6 +3259,91 @@ export default {
       return pendingPeopleIds.size;
     });
 
+    const getProgressionCourseId = (progression) => progression?.course?.id || progression?.courseId || null;
+    const getProgressionPeopleId = (progression) => progression?.people?.id || progression?.peopleId || progression?.personId || progression?.person?.id || null;
+    const courseHasPendingProgression = (courseId) => progressions.value.some((progression) => (
+      getProgressionCourseId(progression) === courseId && !isCompletedProgression(progression)
+    ));
+
+    const sendMessageTargetCourses = computed(() => {
+      if (sendMessageCourseTarget.value?.id) {
+        return [sendMessageCourseTarget.value];
+      }
+
+      return courseItems.value.filter((course) => {
+        const allowedByRecipient = sendMessageRecipients.value === 'pending' ? course.required : true;
+        return allowedByRecipient && courseHasPendingProgression(course.id);
+      });
+    });
+
+    const sendMessageTargetCourseIds = computed(() => new Set(sendMessageTargetCourses.value.map((course) => course.id)));
+    const sendMessagePendingPeopleIds = computed(() => {
+      const peopleIds = new Set();
+      progressions.value.forEach((progression) => {
+        const courseId = getProgressionCourseId(progression);
+        const peopleId = getProgressionPeopleId(progression);
+        if (!courseId || !peopleId || !sendMessageTargetCourseIds.value.has(courseId)) return;
+        if (!isCompletedProgression(progression)) peopleIds.add(peopleId);
+      });
+      return peopleIds;
+    });
+    const sendMessageAllPeopleIds = computed(() => {
+      const peopleIds = new Set();
+      progressions.value.forEach((progression) => {
+        const courseId = getProgressionCourseId(progression);
+        const peopleId = getProgressionPeopleId(progression);
+        if (!courseId || !peopleId || !sendMessageTargetCourseIds.value.has(courseId)) return;
+        peopleIds.add(peopleId);
+      });
+      return peopleIds;
+    });
+    const sendMessagePendingStudentsCount = computed(() => sendMessagePendingPeopleIds.value.size);
+    const sendMessageCompletedStudentsCount = computed(() => Math.max(sendMessageAllPeopleIds.value.size - sendMessagePendingPeopleIds.value.size, 0));
+
+    const sendCourseAlertEmails = async () => {
+      const targetCourses = sendMessageTargetCourses.value;
+      if (!targetCourses.length) {
+        sendMessageError.value = 'Nenhum curso com pendencia encontrado para envio.';
+        return;
+      }
+
+      sendingCourseEmail.value = true;
+      sendMessageError.value = '';
+      sendMessageSuccess.value = '';
+
+      let totalSent = 0;
+      let totalFailed = 0;
+      const failedCourses = [];
+
+      for (const course of targetCourses) {
+        try {
+          const result = await courseService.sendAlert(course.id, classId.value, {
+            subject: sendMessageSubject.value.trim(),
+            message: sendMessageBody.value.trim(),
+          });
+          totalSent += Number(result?.totalSent || 0);
+          totalFailed += Number(result?.totalFailed || 0);
+          if (Number(result?.totalFailed || 0) > 0) failedCourses.push(course.name);
+        } catch (err) {
+          totalFailed += Number(course.pendingCount || 1);
+          failedCourses.push(course.name || `Curso ${course.id}`);
+        }
+      }
+
+      sendingCourseEmail.value = false;
+      sendMessageSuccess.value = `${totalSent} e-mail(s) enviado(s) em ${targetCourses.length} curso(s).`;
+      if (totalSent > 0) {
+        lastCourseEmailSent.value = {
+          date: new Date(),
+          count: totalSent,
+          courses: targetCourses.length,
+        };
+      }
+      if (totalFailed > 0) {
+        sendMessageError.value = `${totalFailed} envio(s) falharam${failedCourses.length ? `: ${failedCourses.join(', ')}` : '.'}`;
+      }
+    };
+
     function assignedIdsIncludes(list, id) {
       try { return list.some(x => x.course?.id === id); } catch (e) { return false; }
     }
@@ -3365,6 +3466,10 @@ export default {
         // Mantido como flag para forcar a leitura real dos grupos da imersao.
         const useRealImersaoGroups = ref(true);
         const lastEmailInfo = computed(() => {
+          if (lastCourseEmailSent.value) {
+            const d = new Date(lastCourseEmailSent.value.date);
+            return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} → ${lastCourseEmailSent.value.count || 0} e-mail(s) em ${lastCourseEmailSent.value.courses || 0} curso(s)`;
+          }
           const info = classData.value?.lastEmailSent;
           if (info && info.date) {
             const d = new Date(info.date);
@@ -4426,7 +4531,122 @@ export default {
       }
     );
 
+
+    const genderChartData = computed(() => ({
+      labels: genderDistribution.value.map(item => item.label),
+      datasets: [{
+        label: 'Gênero',
+        data: genderDistribution.value.map(item => item.value),
+        backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#64748b'],
+        borderWidth: 0
+      }]
+    }));
+
+    const quotaChartData = computed(() => ({
+      labels: quotaDistribution.value.map(item => item.label),
+      datasets: [{
+        label: 'Cota',
+        data: quotaDistribution.value.map(item => item.value),
+        backgroundColor: quotaDistribution.value.map(item => item.color || '#3b82f6'),
+        borderRadius: 4
+      }]
+    }));
+
+    const educationChartData = computed(() => ({
+      labels: educationDistribution.value.map(item => item.label),
+      datasets: [{
+        data: educationDistribution.value.map(item => item.value),
+        backgroundColor: ['#f43f5e', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#64748b'],
+        borderWidth: 0
+      }]
+    }));
+
+    const cityChartData = computed(() => ({
+      labels: cityDistribution.value.map((item) => buildChartLabel(item.label, 22)),
+      datasets: [{
+        label: 'Alunos',
+        data: cityDistribution.value.map((item) => item.count || item.value || 0),
+        backgroundColor: '#14b8a6',
+        borderRadius: 6
+      }]
+    }));
+
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: { size: 11 } } },
+        tooltip: { callbacks: { label: (ctx) => ' ' + ctx.formattedValue + '%' } }
+      }
+    };
+
+    const countChartOptions = {
+      ...chartOptions,
+      plugins: { ...chartOptions.plugins, tooltip: { callbacks: { label: (ctx) => ' ' + ctx.formattedValue } } }
+    };
+
+    const quotaChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ' ' + ctx.formattedValue + '%' } }
+      },
+      scales: {
+        x: { display: false, max: 100 },
+        y: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    };
+
+    const cityChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ` ${ctx.formattedValue} aluno(s)` } }
+      },
+      scales: {
+        x: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+        y: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    };
+
+    const classStatusChartData = computed(() => ({
+      labels: classStatusBuckets.value.map((bucket) => `${bucket.completedCourses} curso(s)`),
+      datasets: [{
+        label: 'Alunos',
+        data: classStatusBuckets.value.map((bucket) => bucket.students),
+        backgroundColor: '#14b8a6',
+        borderRadius: 6
+      }]
+    }));
+
+    const classStatusChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ` ${ctx.formattedValue} aluno(s)` } }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+        x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    };
+
     return {
+      genderChartData,
+      quotaChartData,
+      educationChartData,
+      cityChartData,
+      chartOptions,
+      countChartOptions,
+      quotaChartOptions,
+      cityChartOptions,
+      classStatusChartData,
+      classStatusChartOptions,
       activeTab,
       programId,
       classId,
@@ -4563,6 +4783,13 @@ export default {
       sendMessageRecipients,
       sendMessageSubject,
       sendMessageBody,
+      sendingCourseEmail,
+      sendMessageError,
+      sendMessageSuccess,
+      sendMessageTargetCourses,
+      sendMessagePendingStudentsCount,
+      sendMessageCompletedStudentsCount,
+      sendCourseAlertEmails,
       showSendMessageModal,
       openSendMessageModal,
       openCoursePendingMessage,
@@ -5272,6 +5499,11 @@ export default {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.distribution-chart-area {
+  height: 220px;
+  margin-top: 12px;
 }
 
 .distribution-panel h4 {
@@ -7159,6 +7391,7 @@ textarea.field {
     justify-content: center;
     width: 100%;
   }
+
 }
 
 /* Scoped styles for Nivelamento additions */
@@ -7585,6 +7818,11 @@ textarea.field {
   color: #0f172a;
   font-size: 24px;
   line-height: 1;
+}
+
+.class-status-chart {
+  height: 240px;
+  margin: 10px 0 16px;
 }
 
 .class-status-bars {

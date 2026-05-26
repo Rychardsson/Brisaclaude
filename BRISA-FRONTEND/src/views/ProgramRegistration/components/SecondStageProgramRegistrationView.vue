@@ -220,7 +220,7 @@
        <div class="form-row two-cols">
          <div class="form-group">
            <label>Quantidade de Questões</label>
-           <input v-model="nivelamentoForm.finalExam.questionsCount" type="number" class="form-input" :disabled="!nivelamentoForm.finalExam.active"/>
+           <input v-model="nivelamentoForm.finalExam.questionsCount" type="number" min="40" max="40" readonly class="form-input" :disabled="!nivelamentoForm.finalExam.active"/>
          </div>
          <div class="form-group">
            <label>Tipo</label>

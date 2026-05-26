@@ -1105,9 +1105,9 @@ public class MockDataSeeder implements ApplicationListener<ApplicationReadyEvent
         List<PeopleModel> approvedStudents = new ArrayList<>();
         ExamModel levelingExam = ensureExam("Prova de Nivelamento - UFG 2025.2", classModel, LocalDate.of(2025, 11, 4));
         List<ExamQuestionModel> questions = new ArrayList<>();
-        for (int number = 1; number <= 20; number++) {
-            KnowledgeAreaModel subject = number <= 8 ? knowledgeAreas.get("Programacao") : number <= 14 ? knowledgeAreas.get("Dados") : knowledgeAreas.get("Produto");
-            questions.add(ensureExamQuestion(levelingExam, number, subject, 4.0));
+        for (int number = 1; number <= 40; number++) {
+            KnowledgeAreaModel subject = number <= 16 ? knowledgeAreas.get("Programacao") : number <= 28 ? knowledgeAreas.get("Dados") : knowledgeAreas.get("Produto");
+            questions.add(ensureExamQuestion(levelingExam, number, subject, 2.0));
         }
 
         for (int index = 0; index < studentRows.length; index++) {
@@ -1175,10 +1175,10 @@ public class MockDataSeeder implements ApplicationListener<ApplicationReadyEvent
 
             double score = Math.min(80.0, 48.0 + (index % 12) * 2.0 + Math.min(requiredCourses, 6));
             ensureExamResult(levelingExam, student, score, 39 + (index % 24));
-            int correctLimit = Math.max(1, (int) Math.round(score / 4.0));
+            int correctLimit = Math.max(1, (int) Math.round(score / 2.0));
             for (ExamQuestionModel question : questions) {
                 boolean correct = question.getQuestionNumber() <= correctLimit;
-                ensureExamAnswer(student, question, correct, correct ? "Acerto" : "Erro", correct ? 4.0 : 0.0);
+                ensureExamAnswer(student, question, correct, correct ? "Acerto" : "Erro", correct ? 2.0 : 0.0);
             }
         }
 
