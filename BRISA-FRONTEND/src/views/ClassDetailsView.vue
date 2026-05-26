@@ -1220,46 +1220,63 @@
               </div>
             </article>
 
-            <div class="imersao-groups-grid">
+            <div class="imersao-list-view">
+              <div class="imersao-list-header">
+                <div>Projeto</div>
+                <div>Alunos</div>
+                <div>Orientador</div>
+                <div>Média Parcial</div>
+                <div>Média Final</div>
+                <div></div>
+              </div>
+
               <div v-for="group in imersaoGroups" :key="group.id" class="imersao-card-wrapper" :class="{ 'is-expanded': imersaoExpandedGroupId === group.id }">
                 <div class="imersao-card-header" @click="toggleImersaoGroup(group.id)">
                   
+                  <!-- Coluna 1: Projeto -->
                   <div class="imersao-card-top">
-                    <span class="imersao-group-status" :class="group.statusClass">{{ group.status }}</span>
-                    <h4 class="imersao-card-title">{{ group.name }}</h4>
-                    <p class="imersao-card-project">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                      {{ group.project }}
-                    </p>
-                  </div>
-
-                  <div class="imersao-card-metrics">
-                    <div class="metric-box">
-                      <span>Alunos</span>
-                      <strong>{{ group.students }}</strong>
-                    </div>
-                    <div class="metric-box">
-                      <span>Orientador</span>
-                      <strong class="truncate">{{ group.mentor }}</strong>
-                    </div>
-                    <div class="metric-box">
-                      <span>Média Parcial</span>
-                      <strong class="teal">{{ group.partialAverage }}</strong>
-                    </div>
-                    <div class="metric-box">
-                      <span>Média Final</span>
-                      <strong class="teal">{{ group.finalAverage }}</strong>
+                    <div class="imersao-card-title-wrap">
+                      <span class="imersao-group-status" :class="group.statusClass">{{ group.status.toUpperCase() }}</span>
+                      <h4 class="imersao-card-title">{{ group.name }}</h4>
+                      <div class="imersao-card-checkbox-label">
+                        <div class="imersao-checkbox-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="checkbox-svg">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                          </svg>
+                        </div>
+                        <span class="imersao-checkbox-text">{{ group.project || group.name }}</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div class="imersao-card-action">
-                    <span class="action-text">{{ imersaoExpandedGroupId === group.id ? 'Ocultar detalhes' : 'Ver detalhes' }}</span>
-                    <div class="imersao-card-arrow">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline v-if="imersaoExpandedGroupId === group.id" points="18 15 12 9 6 15" />
-                        <polyline v-else points="6 9 12 15 18 9" />
+                  <!-- Coluna 2: Alunos -->
+                  <div class="imersao-column-students">
+                    <strong>{{ group.students }}</strong>
+                  </div>
+
+                  <!-- Coluna 3: Orientador -->
+                  <div class="imersao-column-mentor">
+                    <span>{{ group.mentor || '-' }}</span>
+                  </div>
+
+                  <!-- Coluna 4: Média Parcial -->
+                  <div class="imersao-column-partial">
+                    <span>{{ group.partialAverage || '-' }}</span>
+                  </div>
+
+                  <!-- Coluna 5: Média Final -->
+                  <div class="imersao-column-final">
+                    <span>{{ group.finalAverage || '-' }}</span>
+                  </div>
+
+                  <!-- Coluna 6: Ação Ver detalhes -->
+                  <div class="imersao-column-action">
+                    <button type="button" class="btn-ver-detalhes" @click.stop="toggleImersaoGroup(group.id)">
+                      <span>Ver detalhes</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron-icon" :class="{ 'is-rotated': imersaoExpandedGroupId === group.id }">
+                        <polyline points="6 9 12 15 18 9" />
                       </svg>
-                    </div>
+                    </button>
                   </div>
                 </div>
 
@@ -7784,17 +7801,129 @@ textarea.field {
 }
 
 .imersao-card-header {
-  padding: 16px;
+  padding: 16px 20px;
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 3fr 0.8fr 1.2fr 1fr 1fr 140px;
   gap: 16px;
+  align-items: center;
+  background: #fff;
 }
 
 .imersao-card-top {
+  display: block;
+}
+
+.imersao-group-status {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.imersao-group-status.is-warning {
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 3px 6px !important;
+  border-radius: 4px !important;
+}
+
+.imersao-group-status.is-ok {
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  border: 1px solid #bbf7d0 !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 3px 6px !important;
+  border-radius: 4px !important;
+}
+
+.imersao-card-checkbox-label {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 6px;
+  margin-top: 4px;
+}
+
+.imersao-checkbox-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--slate-400);
+}
+
+.checkbox-svg {
+  color: var(--slate-400);
+  background: transparent;
+}
+
+.imersao-checkbox-text {
+  font-size: 13px;
+  color: var(--slate-500);
+  font-weight: 500;
+}
+
+.imersao-column-students strong {
+  font-size: 16px;
+  color: var(--slate-900);
+  font-weight: 700;
+}
+
+.imersao-column-mentor span {
+  font-size: 14px;
+  color: var(--slate-700);
+  font-weight: 500;
+}
+
+.imersao-column-partial span,
+.imersao-column-final span {
+  font-size: 14px;
+  color: var(--slate-500);
+  font-weight: 500;
+}
+
+.btn-ver-detalhes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #c0d7f2;
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  width: 100%;
+}
+
+.btn-ver-detalhes:hover {
+  background: #f0f7ff;
+  border-color: #3b82f6;
+}
+
+.btn-ver-detalhes:active {
+  background: #e0efff;
+}
+
+.chevron-icon {
+  transition: transform 0.2s ease-in-out;
+}
+
+.chevron-icon.is-rotated {
+  transform: rotate(180deg);
 }
 
 .imersao-card-title {
@@ -7958,6 +8087,82 @@ textarea.field {
 .imersao-situation-pill.status-warning {
   color: #b45309;
   background: #fef3c7;
+}
+
+/* List view header and horizontal columns style */
+.imersao-list-header {
+  display: grid;
+  grid-template-columns: 3fr 0.8fr 1.2fr 1fr 1fr 140px;
+  gap: 16px;
+  padding: 12px 20px;
+  color: var(--slate-600);
+  font-weight: 700;
+  border-bottom: 1px solid var(--slate-100);
+  margin-bottom: 8px;
+}
+
+.imersao-list-view {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.imersao-list-view .imersao-card-wrapper {
+  width: 100% !important;
+}
+
+@media (max-width: 900px) {
+  .imersao-card-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .imersao-list-header {
+    display: none;
+  }
+
+  .imersao-column-students,
+  .imersao-column-mentor,
+  .imersao-column-partial,
+  .imersao-column-final {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .imersao-column-students::before {
+    content: "Alunos:";
+    font-weight: 700;
+    color: var(--slate-500);
+  }
+
+  .imersao-column-mentor::before {
+    content: "Orientador:";
+    font-weight: 700;
+    color: var(--slate-500);
+  }
+
+  .imersao-column-partial::before {
+    content: "Média Parcial:";
+    font-weight: 700;
+    color: var(--slate-500);
+  }
+
+  .imersao-column-final::before {
+    content: "Média Final:";
+    font-weight: 700;
+    color: var(--slate-500);
+  }
+
+  .btn-ver-detalhes {
+    width: auto;
+    margin-top: 4px;
+  }
 }
 .nivelamento-status-pill {
   margin-left: 4px;

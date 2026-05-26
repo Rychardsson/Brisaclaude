@@ -192,15 +192,6 @@
                     </div>
                   </div>
 
-                  <label class="field field-full">
-                    <span>Assunto do e-mail</span>
-                    <input
-                      v-model="automationSubject"
-                      type="text"
-                      placeholder="Ex: Acompanhamento de carreira - BRISA"
-                    />
-                  </label>
-
                   <label class="field field-full field-message-grow">
                     <span>Mensagem-base</span>
                     <textarea
@@ -213,6 +204,15 @@
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                       A mensagem é enviada junto com o template institucional do e-mail de carreira.
                     </small>
+                  </label>
+
+                  <label class="field field-full">
+                    <span>Assunto do e-mail</span>
+                    <input
+                      v-model="automationSubject"
+                      type="text"
+                      placeholder="Ex: Acompanhamento de carreira - BRISA"
+                    />
                   </label>
                 </div>
                 </div>
@@ -929,21 +929,42 @@ const automationScopedRows = computed(() => {
   return rows;
 });
 
-const automationDueRows = computed(() =>
-  automationScopedRows.value.filter(
-    (row) => row.dueCheckpoint && enabledAutomationCheckpoints.value.includes(row.dueCheckpoint)
-  )
-);
+const automationDueRows = computed(() => {
+  const filtered = automationScopedRows.value.filter(
+    (row) => row.dueCheckpoint && 
+             enabledAutomationCheckpoints.value.includes(row.dueCheckpoint) &&
+             row.name && 
+             row.name !== 'Pessoa sem nome' && 
+             row.name.trim() !== ''
+  );
+  const seen = new Set();
+  return filtered.filter((row) => {
+    if (seen.has(row.personId)) return false;
+    seen.add(row.personId);
+    return true;
+  });
+});
 
-const automationUpcomingRows = computed(() =>
-  automationScopedRows.value
-    .filter((row) => !row.dueCheckpoint && row.nextCheckpoint && enabledAutomationCheckpoints.value.includes(row.nextCheckpoint))
+const automationUpcomingRows = computed(() => {
+  const filtered = automationScopedRows.value
+    .filter((row) => !row.dueCheckpoint && 
+                     row.nextCheckpoint && 
+                     enabledAutomationCheckpoints.value.includes(row.nextCheckpoint) &&
+                     row.name && 
+                     row.name !== 'Pessoa sem nome' && 
+                     row.name.trim() !== '')
     .map((row) => ({
       ...row,
       scheduledCheckpointDate: addMonthsToDateValue(row.completionDate, row.nextCheckpoint)
     }))
-    .sort((left, right) => compareDateValues(left.scheduledCheckpointDate, right.scheduledCheckpointDate))
-);
+    .sort((left, right) => compareDateValues(left.scheduledCheckpointDate, right.scheduledCheckpointDate));
+  const seen = new Set();
+  return filtered.filter((row) => {
+    if (seen.has(row.personId)) return false;
+    seen.add(row.personId);
+    return true;
+  });
+});
 
 const automationPreviewRecipients = computed(() => {
   if (automationDueRows.value.length) return automationDueRows.value.slice(0, 4);
@@ -1347,13 +1368,17 @@ function buildCareerRow(enrollment, groupedFollowUps, today) {
   const dueCheckpoint = getDueCheckpoint(completionDate, history, monthsSinceCompletion);
   const nextCheckpoint = getNextCheckpoint(monthsSinceCompletion, dueCheckpoint);
 
+  const rawName = person.name || '';
+  const trimmedName = String(rawName).trim();
+  const displayName = trimmedName || 'Pessoa sem nome';
+
   return {
     key,
     enrollmentId: String(enrollment.id),
     personId: String(person.id),
     classId: String(classItem.id),
     programId: program?.id ? String(program.id) : '',
-    name: person.name || 'Pessoa sem nome',
+    name: displayName,
     email: person.email || '',
     programName: program?.name || 'Programa',
     classCode: classItem.code || `Turma ${classItem.id}`,
@@ -1382,13 +1407,17 @@ function buildDemoCareerRow(seed, groupedFollowUps, today) {
   const dueCheckpoint = getDueCheckpoint(seed.completionDate, history, monthsSinceCompletion);
   const nextCheckpoint = getNextCheckpoint(monthsSinceCompletion, dueCheckpoint);
 
+  const rawName = seed.name || '';
+  const trimmedName = String(rawName).trim();
+  const displayName = trimmedName || 'Pessoa sem nome';
+
   return {
     key: seed.key,
     enrollmentId: seed.enrollmentId,
     personId: seed.personId,
     classId: seed.classId,
     programId: seed.programId,
-    name: seed.name,
+    name: displayName,
     email: seed.email,
     programName: seed.programName,
     classCode: seed.classCode,
@@ -2913,7 +2942,7 @@ function formatDateTime(value) {
   height: 100%;
   margin-top: 0;
   min-height: 0;
-  grid-template-rows: auto auto auto minmax(320px, 1fr);
+  grid-template-rows: auto auto auto minmax(320px, 1fr) auto;
   align-content: stretch;
 }
 

@@ -296,3 +296,24 @@
 [2m23:46:04[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/ClassDetailsView.vue?vue&type=style&index=0&scoped=1f866198&lang.css[22m
 [2m23:50:17[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/ClassDetailsView.vue[22m
 [2m23:50:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/ClassDetailsView.vue?vue&type=style&index=0&scoped=1f866198&lang.css[22m
+[2m23:56:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/ProgramsView.vue[22m
+[2m00:01:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/ProgramsView.vue[22m
+[2m00:08:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/ClassDetailsView.vue?vue&type=style&index=0&scoped=1f866198&lang.css[22m
+[2m00:08:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/ClassDetailsView.vue?vue&type=style&index=0&scoped=1f866198&lang.css[22m
+[2m00:13:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/ClassDetailsView.vue[22m
+
+<--- Last few GCs --->
+
+[29776:0000023E90D4D000] 48020454 ms: Scavenge (interleaved) 4091.7 (4099.0) -> 4090.6 (4103.0) MB, pooled: 0 MB, 7.96 / 0.00 ms  (average mu = 0.251, current mu = 0.022) allocation failure; 
+[29776:0000023E90D4D000] 48023426 ms: Mark-Compact (reduce) 4093.7 (4103.0) -> 4092.6 (4099.0) MB, pooled: 0 MB, 2029.79 / 0.00 ms  (+ 243.0 ms in 50 steps since start of marking, biggest step 5.1 ms, walltime since start of marking 2380 ms) (average mu =
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF70072C44F node::OnFatalError+1343
+ 2: 00007FF701376217 v8::Function::NewInstance+423
+ 3: 00007FF701176C07 v8::base::AddressSpaceReservation::AddressSpaceReservation+322071
+ 4: 00007FF7011748A6 v8::base::AddressSpaceReservation::AddressSpaceReservation+313014
+ 5: 00007FF70118EF1A X509_STORE_set_cleanup+5098
+ 6: 00007FF70119B3B6 uv_timer_set_repeat+20694
+ 7: 00007FF700D6D0F7 v8::String::Utf8Value::~Utf8Value+144199
+ 8: 0000023EC94375FA 

@@ -478,6 +478,11 @@ public class CourseService {
      */
     public CourseAlertResponseDTO sendCourseAlert(Long courseId, Long classId, CourseAlertRequestDTO request) {
         CourseModel course = findById(courseId);
+
+        if (!emailService.isMailConfigured()) {
+            return new CourseAlertResponseDTO(0, 1, List.of("Servidor de e-mail nao configurado. Preencha SPRING_MAIL_USERNAME e SPRING_MAIL_PASSWORD no .env"));
+        }
+
         String subject = hasText(request == null ? null : request.subject())
                 ? request.subject().trim()
                 : "Pendencia no curso " + course.getName();
@@ -514,7 +519,8 @@ public class CourseService {
                         course.getName(),
                         pct
                 );
-                emailService.sendEmail(email.trim(), subject, htmlContent);
+                // Use synchronous send so failures are reported to this caller
+                emailService.sendEmailSync(email.trim(), subject, htmlContent);
                 totalSent++;
             } catch (MessagingException | IOException | RuntimeException e) {
                 System.err.println("Falha ao enviar email para " + email + ": " + e.getMessage());
@@ -631,6 +637,15 @@ public class CourseService {
 
         ClassPathResource resource = new ClassPathResource("templates/email/course-alert.html");
         String html = new String(Files.readAllBytes(Path.of(resource.getURI())));
+
+        // Some templates were accidentally saved as a Java-like string (with leading/trailing
+        // quotes and escaped newlines/quotes). Normalize that case so replacements work.
+        if (html != null && html.startsWith("\"") && html.endsWith("\"")) {
+            // remove surrounding quotes
+            html = html.substring(1, html.length() - 1)
+                .replace("\\n", "\n")
+                .replace("\\\"", "\"");
+        }
 
         return html
                 .replace("${studentName}",          safeEmailValue(studentName))
