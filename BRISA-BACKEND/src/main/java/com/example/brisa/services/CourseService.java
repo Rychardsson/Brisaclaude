@@ -22,6 +22,7 @@ import com.example.brisa.repositories.CourseRepository;
 import com.example.brisa.repositories.EnrollmentRepository;
 import com.example.brisa.repositories.KnowledgeAreaRepository;
 import com.example.brisa.repositories.StageCandidateRepository;
+import com.example.brisa.repositories.StageRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
@@ -61,6 +62,7 @@ public class CourseService {
     private final ClassRepository classRepository;
     private final KnowledgeAreaRepository knowledgeAreaRepository;
     private final StageCandidateRepository stageCandidateRepository;
+    private final StageRepository stageRepository;
     private final AcademicRoleRepository academicRoleRepository;
     private final AdvisorRepository advisorRepository;
     private final ExcelImportHelper excelImportHelper;
@@ -479,32 +481,66 @@ public class CourseService {
     public CourseAlertResponseDTO sendCourseAlert(Long courseId, Long classId, CourseAlertRequestDTO request) {
         CourseModel course = findById(courseId);
 
+        // Filtra apenas alunos que estão na etapa de nivelamento
+        Set<Long> nivelamentoPeopleIds = stageRepository
+                .findByNameAndClassModelId("NIVELAMENTO", classId)
+                .map(nivelamentoStage ->
+                    stageCandidateRepository.findByStageId(nivelamentoStage.getId())
+                        .stream()
+                        .map(sc -> sc.getPeople().getId())
+                        .collect(Collectors.toSet())
+                )
+                .orElse(Set.of());
+
+        if (nivelamentoPeopleIds.isEmpty()) {
+            return new CourseAlertResponseDTO(0, 0, List.of());
+        }
+
+        String subject = hasText(request == null ? null : request.subject())
+                ? request.subject().trim()
+                : "Pendencia no curso " + course.getName();
+        String message = hasText(request == null ? null : request.message())
+                ? request.message().trim()
+                : "Identificamos pendencias neste curso. Acesse a plataforma e regularize sua situacao dentro do prazo.";
+
         List<CourseProgressionModel> pendingProgressions = courseProgressionRepository
                 .findByCourseIdAndClassId(courseId, classId)
                 .stream()
-                .filter(p -> "não iniciado".equalsIgnoreCase(p.getStatus())
-                          || "em andamento".equalsIgnoreCase(p.getStatus()))
+                .filter(p -> nivelamentoPeopleIds.contains(p.getPeople().getId()))
+                .filter(this::isPendingCourseProgression)
                 .collect(Collectors.toList());
+
+        if (!emailService.isMailConfigured()) {
+            return new CourseAlertResponseDTO(pendingProgressions.size(), 0, List.of());
+        }
 
         int totalSent   = 0;
         int totalFailed = 0;
         List<String> failedEmails = new ArrayList<>();
 
         for (CourseProgressionModel progression : pendingProgressions) {
-            String email = progression.getPeople().getEmail();
-            String name  = progression.getPeople().getName();
-            int    pct   = (int) Math.round(progression.getCompletionPercentage());
+            PeopleModel people = progression.getPeople();
+            String email = people == null ? null : people.getEmail();
+            String name = people == null ? "Aluno(a)" : firstNonBlank(people.getName(), "Aluno(a)");
+            int pct = (int) Math.round(progression.getCompletionPercentage());
+
+            if (!hasText(email)) {
+                failedEmails.add(name + " (sem e-mail)");
+                totalFailed++;
+                continue;
+            }
 
             try {
                 String htmlContent = buildAlertEmailHtml(
                         name,
-                        request.message(),
+                        message,
                         course.getName(),
                         pct
                 );
-                emailService.sendEmail(email, request.subject(), htmlContent);
+                // Use synchronous send so failures are reported to this caller
+                emailService.sendEmailSync(email.trim(), subject, htmlContent);
                 totalSent++;
-            } catch (MessagingException | IOException e) {
+            } catch (MessagingException | IOException | RuntimeException e) {
                 System.err.println("Falha ao enviar email para " + email + ": " + e.getMessage());
                 failedEmails.add(email);
                 totalFailed++;
@@ -620,11 +656,51 @@ public class CourseService {
         ClassPathResource resource = new ClassPathResource("templates/email/course-alert.html");
         String html = new String(Files.readAllBytes(Path.of(resource.getURI())));
 
+        // Some templates were accidentally saved as a Java-like string (with leading/trailing
+        // quotes and escaped newlines/quotes). Normalize that case so replacements work.
+        if (html != null && html.startsWith("\"") && html.endsWith("\"")) {
+            // remove surrounding quotes
+            html = html.substring(1, html.length() - 1)
+                .replace("\\n", "\n")
+                .replace("\\\"", "\"");
+        }
+
         return html
-                .replace("${studentName}",          studentName)
-                .replace("${message}",              message)
-                .replace("${courseName}",           courseName)
+                .replace("${studentName}",          safeEmailValue(studentName))
+                .replace("${message}",              safeEmailValue(message))
+                .replace("${courseName}",           safeEmailValue(courseName))
                 .replace("${completionPercentage}", String.valueOf(completionPercentage));
+    }
+
+    private boolean isPendingCourseProgression(CourseProgressionModel progression) {
+        if (progression == null || progression.getCompletionPercentage() >= 100.0) {
+            return false;
+        }
+
+        String normalizedStatus = normalizeStatus(progression.getStatus());
+        if (normalizedStatus.isBlank()) return true;
+        if (normalizedStatus.startsWith("nao")) return true;
+        if (normalizedStatus.contains("concluido")
+                || normalizedStatus.contains("realizado")
+                || normalizedStatus.contains("finalizado")
+                || normalizedStatus.contains("aprovado")
+                || normalizedStatus.contains("cancelado")
+                || normalizedStatus.contains("inativo")) {
+            return false;
+        }
+        return true;
+    }
+
+    private String normalizeStatus(String status) {
+        return excelImportHelper.normalize(status).replaceAll("[^a-z0-9]+", "");
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private String safeEmailValue(String value) {
+        return value == null ? "" : value;
     }
 
     private void backfillProgressionsForAssignedCourse(CourseModel course, Long classId) {

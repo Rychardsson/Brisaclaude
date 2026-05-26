@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="figma-page">
     <ConfirmDialog ref="confirmDialog" />
 
@@ -222,46 +222,29 @@
             <div class="distribution-grid">
               <article class="panel distribution-panel">
                 <h4>Por Cota</h4>
-                <div class="quota-list">
-                  <div v-for="item in quotaDistribution" :key="item.label" class="quota-row">
-                    <div class="quota-head">
-                      <span>{{ item.label }}</span>
-                      <strong>{{ item.value }}%</strong>
-                    </div>
-                    <div class="quota-track">
-                      <div class="quota-fill" :style="{ width: `${item.value}%`, background: item.color }" />
-                    </div>
-                  </div>
+                <div class="distribution-chart-area">
+                  <Bar :data="quotaChartData" :options="quotaChartOptions" />
                 </div>
               </article>
 
               <article class="panel distribution-panel">
                 <h4>Por Gênero</h4>
-                <div class="gender-grid">
-                  <div v-for="item in genderDistribution" :key="item.label" class="gender-card">
-                    <strong>{{ item.value }}%</strong>
-                    <span>{{ item.label }}</span>
-                  </div>
+                <div class="distribution-chart-area">
+                  <Doughnut :data="genderChartData" :options="chartOptions" />
                 </div>
               </article>
 
               <article class="panel distribution-panel">
                 <h4>Por Cidade/UF</h4>
-                <div class="simple-list">
-                  <div v-for="item in cityDistribution" :key="item.label">
-                    <span>{{ item.label }}</span>
-                    <strong>{{ item.value }}</strong>
-                  </div>
+                <div class="distribution-chart-area">
+                  <Bar :data="cityChartData" :options="cityChartOptions" />
                 </div>
               </article>
 
               <article class="panel distribution-panel">
                 <h4>Por Tipo de Formação</h4>
-                <div class="simple-list">
-                  <div v-for="item in educationDistribution" :key="item.label">
-                    <span>{{ item.label }}</span>
-                    <strong>{{ item.value }}</strong>
-                  </div>
+                <div class="distribution-chart-area">
+                  <Pie :data="educationChartData" :options="countChartOptions" />
                 </div>
               </article>
             </div>
@@ -526,71 +509,76 @@
           </div>
 
           <div v-if="etapasSubTab === 'nivelamento'" class="space-y-4">
-             <div class="nivelamento-cards">
-              <div class="n-card">
-                <div class="label">Alunos no nivelamento</div>
-                <div class="value">{{ getNivelamentoStudents.length }}</div>
+            <article class="panel">
+              <div class="panel-head">
+                <h3>Nivelamento</h3>
               </div>
-               <div class="n-card teal">
-                <div class="label">Ativos</div>
-                <div class="value">{{ courseStats.inProgress + courseStats.completed }}</div>
-              </div>
-              <div class="n-card">
-                <div class="label">Cursos obrigatórios</div>
-                <div class="value">{{ courseItems.filter(c => c.required).length }}</div>
-              </div>
-              <div class="n-card">
-                <div class="label">Cursos não obrigatórios</div>
-                <div class="value">{{ courseItems.filter(c => !c.required).length }}</div>
-              </div>
-               <div class="n-card teal">
-                <div class="label">Conclusão obrigatórios</div>
-                <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '-' }}</div>
-              </div>
-               <div class="n-card amber">
-                <div class="label">Nota de corte prova</div>
-                <div class="value">{{ levelingCutoffScore }}</div>
-              </div>
-               <div class="n-card red">
-                <div class="label">Alertas</div>
-                <div class="value">{{ courseItems.filter(c => c.completionPct < 40).length }}</div>
-              </div>
-            </div>
-
-            <div class="email-banner">
-              <div class="email-banner-content">
-                <div class="email-banner-main">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-                  <div>
-                    <span class="email-banner-label">Último e-mail enviado: </span>
-                    <span class="email-banner-value">{{ lastEmailInfo }}</span>
-                  </div>
+              <div class="nivelamento-cards">
+                <div class="n-card">
+                  <div class="label">Alunos no nivelamento</div>
+                  <div class="value">{{ getNivelamentoStudents.length }}</div>
                 </div>
-                <span class="email-banner-status" v-if="lastEmailInfo && lastEmailInfo !== 'Nenhum e-mail enviado recentemente'">Enviado</span>
+                 <div class="n-card teal">
+                   <div class="label">Ativos</div>
+                   <div class="value">{{ courseStats.inProgress + courseStats.completed }}</div>
+                 </div>
+                <div class="n-card">
+                  <div class="label">Cursos obrigatórios</div>
+                  <div class="value">{{ courseItems.filter(c => c.required).length }}</div>
+                </div>
+                <div class="n-card">
+                  <div class="label">Cursos não obrigatórios</div>
+                  <div class="value">{{ courseItems.filter(c => !c.required).length }}</div>
+                </div>
+                 <div class="n-card teal">
+                   <div class="label">Conclusão obrigatórios</div>
+                   <div class="value">{{ courseItems.length ? Math.round((courseItems.filter(c=>c.required && c.pctCompleted).length / Math.max(1, courseItems.filter(c=>c.required).length)) * 100) + '%' : '-' }}</div>
+                 </div>
+                 <div class="n-card amber">
+                   <div class="label">Nota de corte prova</div>
+                   <div class="value">{{ levelingCutoffScore }}</div>
+                 </div>
+                 <div class="n-card red">
+                   <div class="label">Alertas</div>
+                   <div class="value">{{ courseItems.filter(c => c.completionPct < 40).length }}</div>
+                 </div>
               </div>
-            </div>
 
-            <div class="nivelamento-actions">
-              <button type="button" class="btn-outline" @click="openUpdateSelectionModal('nivelamento')"><span>Atualizar dados</span></button>
-              <button type="button" class="btn-outline" @click="showSubmitCoursesModal = true">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                <span>Submeter dados dos cursos</span>
-              </button>
-              <button type="button" class="btn-outline" @click="showSubmitProvaNotasModal = true">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                <span>Submeter notas da prova</span>
-              </button>
-              <div class="spacer"></div>
-              <button type="button" class="btn-primary" @click="openSendMessageModal()"><span>Enviar mensagem</span></button>
-            </div>
+              <div class="email-banner">
+                <div class="email-banner-content">
+                  <div class="email-banner-main">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+                    <div>
+                      <span class="email-banner-label">Último e-mail enviado: </span>
+                      <span class="email-banner-value">{{ lastEmailInfo }}</span>
+                    </div>
+                  </div>
+                  <span class="email-banner-status" v-if="lastEmailInfo && lastEmailInfo !== 'Nenhum e-mail enviado recentemente'">Enviado</span>
+                </div>
+              </div>
+
+              <div class="nivelamento-actions">
+                <button type="button" class="btn-outline" @click="openUpdateSelectionModal('nivelamento')"><span>Atualizar dados</span></button>
+                <button type="button" class="btn-outline" @click="showSubmitCoursesModal = true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span>Submeter dados dos cursos</span>
+                </button>
+                <button type="button" class="btn-outline" @click="showSubmitProvaNotasModal = true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span>Submeter notas da prova</span>
+                </button>
+                <div class="spacer"></div>
+                <button type="button" class="btn-primary" @click="openSendMessageModal()"><span>Enviar mensagem</span></button>
+              </div>
+            </article>
           </div>
 
           <template v-if="etapasSubTab === 'nivelamento'">
@@ -669,6 +657,10 @@
                </article>
              </div>
 
+             <div v-if="!classStatusLoading && !classStatusError" class="class-status-chart">
+               <Bar :data="classStatusChartData" :options="classStatusChartOptions" />
+             </div>
+
              <div v-if="!classStatusLoading && !classStatusError" class="class-status-bars">
                <div
                  v-for="bucket in classStatusBuckets"
@@ -742,115 +734,317 @@
           <article class="panel">
            <div class="panel-head">
              <h3>Alunos do Nivelamento</h3>
+             <span class="class-status-pill">{{ getNivelamentoStudents.length }} aluno(s)</span>
+           </div>
+
+           <!-- Gráfico de progresso dos alunos -->
+           <div class="nivelamento-chart-row">
+             <div class="nivelamento-chart-box">
+               <div class="nivelamento-chart-title">Progresso dos alunos</div>
+               <div class="nivelamento-progress-bars">
+                 <div
+                   v-for="student in getNivelamentoStudents.slice(0, 20)"
+                   :key="'chart-' + student.id"
+                   class="nivelamento-bar-row"
+                 >
+                   <div class="nivelamento-bar-name" :title="student.name || student.id">{{ (student.name || student.id || '').split(' ').slice(0, 2).join(' ') }}</div>
+                   <div class="nivelamento-bar-track">
+                     <div
+                       class="nivelamento-bar-fill"
+                       :style="{
+                         width: student.avg + '%',
+                         background: student.avg >= 100 ? '#10b981' : student.avg >= 60 ? '#14b8a6' : student.avg >= 30 ? '#f59e0b' : '#ef4444'
+                       }"
+                     ></div>
+                   </div>
+                   <div class="nivelamento-bar-pct" :class="student.avg >= 100 ? 'pct-done' : student.avg >= 60 ? 'pct-ok' : 'pct-low'">{{ student.avg }}%</div>
+                 </div>
+                 <div v-if="getNivelamentoStudents.length === 0" class="no-data">Nenhum aluno no nivelamento.</div>
+                 <div v-if="getNivelamentoStudents.length > 20" class="nivelamento-chart-more">+{{ getNivelamentoStudents.length - 20 }} alunos na tabela abaixo</div>
+               </div>
+             </div>
+
+             <div class="nivelamento-chart-stats">
+               <div class="nivelamento-stat-block">
+                 <span>Concluídos (100%)</span>
+                 <strong class="text-emerald">{{ getNivelamentoStudents.filter(s => s.avg >= 100).length }}</strong>
+               </div>
+               <div class="nivelamento-stat-block">
+                 <span>Em andamento</span>
+                 <strong class="text-teal">{{ getNivelamentoStudents.filter(s => s.avg > 0 && s.avg < 100).length }}</strong>
+               </div>
+               <div class="nivelamento-stat-block">
+                 <span>Sem progresso</span>
+                 <strong class="text-amber">{{ getNivelamentoStudents.filter(s => s.avg === 0).length }}</strong>
+               </div>
+               <div class="nivelamento-stat-block">
+                 <span>Média geral</span>
+                 <strong class="text-teal">{{ getNivelamentoStudents.length ? Math.round(getNivelamentoStudents.reduce((acc, s) => acc + (s.avg || 0), 0) / getNivelamentoStudents.length) : 0 }}%</strong>
+               </div>
+               <!-- Legend -->
+               <div class="nivelamento-legend">
+                 <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>100%</div>
+                 <div class="legend-item"><span class="legend-dot" style="background:#14b8a6"></span>60–99%</div>
+                 <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>30–59%</div>
+                 <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>&lt;30%</div>
+               </div>
+             </div>
            </div>
 
            <div v-if="examInsightsError" class="state-box state-error" style="margin-bottom: 14px;">{{ examInsightsError }}</div>
 
-           <div v-if="examSummaryData" class="exam-insights-grid">
-             <article class="panel exam-insight-card">
-               <h4>Resumo importado da prova</h4>
-               <div class="simple-list">
-                 <div>
-                   <span>Participantes</span>
-                   <strong>{{ examSummaryData.totalParticipants || 0 }}</strong>
-                 </div>
-                 <div>
-                   <span>Média geral</span>
-                   <strong>{{ examSummaryData.averageScore != null ? Number(examSummaryData.averageScore).toFixed(1) : '--' }}</strong>
-                 </div>
-                 <div>
-                   <span>Maior nota</span>
-                   <strong>{{ examSummaryData.highestScore != null ? Number(examSummaryData.highestScore).toFixed(1) : '--' }}</strong>
-                 </div>
-                 <div>
-                   <span>Notas zero</span>
-                   <strong>{{ examSummaryData.zeroScoreCount || 0 }}</strong>
-                 </div>
+           <template v-if="examSummaryData">
+             <!-- KPI row -->
+             <div class="exam-kpi-row">
+               <div class="exam-kpi-card">
+                 <span class="exam-kpi-label">Participantes</span>
+                 <strong class="exam-kpi-value">{{ examSummaryData.totalParticipants || 0 }}</strong>
                </div>
-             </article>
+               <div class="exam-kpi-card">
+                 <span class="exam-kpi-label">Média geral</span>
+                 <strong class="exam-kpi-value exam-kpi-teal">{{ examSummaryData.averageScore != null ? Number(examSummaryData.averageScore).toFixed(1) : '--' }}</strong>
+               </div>
+               <div class="exam-kpi-card">
+                 <span class="exam-kpi-label">Maior nota</span>
+                 <strong class="exam-kpi-value exam-kpi-emerald">{{ examSummaryData.highestScore != null ? Number(examSummaryData.highestScore).toFixed(1) : '--' }}</strong>
+               </div>
+               <div class="exam-kpi-card">
+                 <span class="exam-kpi-label">Notas zero</span>
+                 <strong class="exam-kpi-value exam-kpi-red">{{ examSummaryData.zeroScoreCount || 0 }}</strong>
+               </div>
+             </div>
 
-              <article class="panel exam-insight-card">
-                <h4>Distribuição de notas</h4>
-                <div class="simple-list">
-                  <div v-for="bucket in examSummaryData.scoreDistribution || []" :key="bucket.label">
-                    <span>{{ bucket.label }}</span>
-                    <strong>{{ bucket.count }}</strong>
+             <!-- Row 1: Distribuição de notas + Participantes por cota -->
+             <div class="exam-charts-row">
+               <article class="panel exam-chart-card">
+                 <div class="exam-chart-header">
+                   <h4>Distribuição de notas</h4>
+                   <span class="exam-chart-sub">Alunos por faixa de pontuação</span>
+                 </div>
+                 <div class="exam-chart-area" style="height:200px">
+                   <Bar
+                     :data="{
+                       labels: (examSummaryData.scoreDistribution || []).map(b => b.label),
+                       datasets: [{
+                         label: 'Alunos',
+                         data: (examSummaryData.scoreDistribution || []).map(b => b.count),
+                         backgroundColor: (examSummaryData.scoreDistribution || []).map((b, i) => {
+                           const colors = ['#e2e8f0','#e2e8f0','#e2e8f0','#14b8a6','#0d9488','#0f766e'];
+                           return colors[i] || '#14b8a6';
+                         }),
+                         borderRadius: 6,
+                         borderSkipped: false,
+                       }]
+                     }"
+                     :options="{
+                       responsive: true,
+                       maintainAspectRatio: false,
+                       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' aluno(s)' } } },
+                       scales: {
+                         x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                         y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f1f5f9' } }
+                       }
+                     }"
+                   />
+                 </div>
+               </article>
+
+               <article class="panel exam-chart-card">
+                 <div class="exam-chart-header">
+                   <h4>Participantes por cota</h4>
+                   <span class="exam-chart-sub">Distribuição de vagas preenchidas</span>
+                 </div>
+                 <div class="exam-chart-area exam-chart-doughnut-wrap">
+                   <div style="max-width:220px; margin:0 auto; height:200px">
+                     <Doughnut
+                       :data="{
+                         labels: (examSummaryData.quotaParticipants || []).map(q => q.label),
+                         datasets: [{
+                           data: (examSummaryData.quotaParticipants || []).map(q => q.count),
+                           backgroundColor: ['#14b8a6','#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#10b981'],
+                           borderWidth: 2,
+                           borderColor: '#fff',
+                         }]
+                       }"
+                       :options="{
+                         responsive: true,
+                         maintainAspectRatio: false,
+                         cutout: '60%',
+                         plugins: {
+                           legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 8 } },
+                           tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed + ' aluno(s)' } }
+                         }
+                       }"
+                     />
+                   </div>
+                 </div>
+               </article>
+             </div>
+
+             <!-- Row 2: Questões com mais acertos + menos acertos -->
+             <div class="exam-charts-row">
+               <article class="panel exam-chart-card">
+                 <div class="exam-chart-header">
+                   <h4>15 questões com mais acertos</h4>
+                   <span class="exam-chart-sub exam-chip-success">Top desempenho</span>
+                 </div>
+                 <div class="exam-hbar-list">
+                   <div
+                     v-for="q in (examSummaryData.bestQuestions || []).slice(0, 15)"
+                     :key="`best-${q.questionNumber}`"
+                     class="exam-hbar-row"
+                   >
+                     <div class="exam-hbar-label">
+                       <span>Q{{ q.questionNumber }}</span>
+                       <small v-if="q.subject">{{ q.subject }}</small>
+                     </div>
+                     <div class="exam-hbar-track">
+                       <div
+                         class="exam-hbar-fill exam-hbar-fill-success"
+                         :style="{ width: Number(q.successRate || 0).toFixed(1) + '%' }"
+                       ></div>
+                     </div>
+                     <span class="exam-hbar-pct exam-hbar-pct-success">{{ Number(q.successRate || 0).toFixed(1) }}%</span>
+                   </div>
+                 </div>
+               </article>
+
+               <article class="panel exam-chart-card">
+                 <div class="exam-chart-header">
+                   <h4>15 questões com menos acertos</h4>
+                   <span class="exam-chart-sub exam-chip-warning">Pontos de atenção</span>
+                 </div>
+                 <div class="exam-hbar-list">
+                   <div
+                     v-for="q in (examSummaryData.worstQuestions || []).slice(0, 15)"
+                     :key="`worst-${q.questionNumber}`"
+                     class="exam-hbar-row"
+                   >
+                     <div class="exam-hbar-label">
+                       <span>Q{{ q.questionNumber }}</span>
+                       <small v-if="q.subject">{{ q.subject }}</small>
+                     </div>
+                     <div class="exam-hbar-track">
+                       <div
+                         class="exam-hbar-fill exam-hbar-fill-danger"
+                         :style="{ width: Math.max(Number(q.successRate || 0).toFixed(1), 2) + '%' }"
+                       ></div>
+                     </div>
+                     <span class="exam-hbar-pct exam-hbar-pct-danger">{{ Number(q.successRate || 0).toFixed(1) }}%</span>
+                   </div>
+                 </div>
+               </article>
+             </div>
+           </template>
+
+            <template v-if="examRespondentProfileData">
+              <!-- Row 3: Cursos de origem + Melhor acerto por curso -->
+              <div class="exam-charts-row">
+                <article class="panel exam-chart-card">
+                  <div class="exam-chart-header">
+                    <h4>Cursos de origem</h4>
+                    <span class="exam-chart-sub">Quantidade por formação</span>
                   </div>
-                </div>
-              </article>
-
-              <article class="panel exam-insight-card">
-                <h4>Participantes por cota</h4>
-                <div class="simple-list">
-                  <div v-for="quota in examSummaryData.quotaParticipants || []" :key="`quota-participant-${quota.label}`">
-                    <span>{{ quota.label }}</span>
-                    <strong>{{ quota.count }}</strong>
+                  <div class="exam-chart-area" style="height:200px">
+                    <Bar
+                      :data="{
+                        labels: (examRespondentProfileData.courseDistribution || []).slice(0, 5).map(i => i.label),
+                        datasets: [{
+                          label: 'Alunos',
+                          data: (examRespondentProfileData.courseDistribution || []).slice(0, 5).map(i => i.count),
+                          backgroundColor: '#818cf8',
+                          borderRadius: 6,
+                          borderSkipped: false,
+                        }]
+                      }"
+                      :options="{
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                          x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f1f5f9' } },
+                          y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+                        }
+                      }"
+                    />
                   </div>
-                </div>
-              </article>
+                </article>
 
-              <article class="panel exam-insight-card">
-                <h4>15 questões com mais acertos</h4>
-                <div class="simple-list">
-                  <div v-for="question in (examSummaryData.bestQuestions || []).slice(0, 15)" :key="`best-${question.questionNumber}`">
-                    <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
-                    <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
+                <article class="panel exam-chart-card">
+                  <div class="exam-chart-header">
+                    <h4>Melhor acerto por curso</h4>
+                    <span class="exam-chart-sub">Taxa de acerto média (%)</span>
                   </div>
-                </div>
-              </article>
-
-              <article class="panel exam-insight-card">
-                <h4>15 questões com menos acertos</h4>
-                <div class="simple-list">
-                  <div v-for="question in (examSummaryData.worstQuestions || []).slice(0, 15)" :key="`worst-${question.questionNumber}`">
-                    <span>Q{{ question.questionNumber }} <small v-if="question.subject">· {{ question.subject }}</small></span>
-                    <strong>{{ Number(question.successRate || 0).toFixed(1) }}%</strong>
+                  <div class="exam-hbar-list">
+                    <div
+                      v-for="item in (examRespondentProfileData.topCourseAccuracy || []).slice(0, 5)"
+                      :key="`accuracy-${item.label}`"
+                      class="exam-hbar-row"
+                    >
+                      <div class="exam-hbar-label"><span>{{ item.label }}</span></div>
+                      <div class="exam-hbar-track">
+                        <div class="exam-hbar-fill exam-hbar-fill-purple" :style="{ width: Number(item.value || 0).toFixed(1) + '%' }"></div>
+                      </div>
+                      <span class="exam-hbar-pct exam-hbar-pct-purple">{{ Number(item.value || 0).toFixed(1) }}%</span>
+                    </div>
                   </div>
-               </div>
-             </article>
-           </div>
+                </article>
+              </div>
 
-            <div v-if="examRespondentProfileData" class="exam-profile-grid">
-              <article class="panel exam-insight-card">
-                <h4>Cursos de origem</h4>
-                <div class="simple-list">
-                  <div v-for="item in (examRespondentProfileData.courseDistribution || []).slice(0, 5)" :key="`course-${item.label}`">
-                   <span>{{ item.label }}</span>
-                   <strong>{{ item.count }}</strong>
-                 </div>
-               </div>
-             </article>
+              <!-- Row 4: Cotas + Cidades -->
+              <div class="exam-charts-row">
+                <article class="panel exam-chart-card">
+                  <div class="exam-chart-header">
+                    <h4>Cotas com maior desempenho</h4>
+                    <span class="exam-chart-sub">Acerto médio por grupo de cota</span>
+                  </div>
+                  <div class="exam-chart-area" style="height:200px">
+                    <Bar
+                      :data="{
+                        labels: (examRespondentProfileData.quotaAccuracy || []).slice(0, 5).map(i => i.label),
+                        datasets: [{
+                          label: 'Acerto %',
+                          data: (examRespondentProfileData.quotaAccuracy || []).slice(0, 5).map(i => Number(i.value || 0).toFixed(1)),
+                          backgroundColor: ['#14b8a6','#0ea5e9','#8b5cf6','#f59e0b','#ef4444'],
+                          borderRadius: 6,
+                          borderSkipped: false,
+                        }]
+                      }"
+                      :options="{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '%' } } },
+                        scales: {
+                          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                          y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%', font: { size: 11 } }, grid: { color: '#f1f5f9' } }
+                        }
+                      }"
+                    />
+                  </div>
+                </article>
 
-             <article class="panel exam-insight-card">
-               <h4>Melhor acerto por curso</h4>
-               <div class="simple-list">
-                 <div v-for="item in (examRespondentProfileData.topCourseAccuracy || []).slice(0, 5)" :key="`accuracy-${item.label}`">
-                   <span>{{ item.label }}</span>
-                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
-                 </div>
-               </div>
-             </article>
-
-             <article class="panel exam-insight-card">
-               <h4>Cotas com maior desempenho</h4>
-               <div class="simple-list">
-                 <div v-for="item in (examRespondentProfileData.quotaAccuracy || []).slice(0, 5)" :key="`quota-${item.label}`">
-                   <span>{{ item.label }}</span>
-                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
-                 </div>
-               </div>
-             </article>
-
-             <article class="panel exam-insight-card">
-               <h4>Cidades com maior desempenho</h4>
-               <div class="simple-list">
-                 <div v-for="item in (examRespondentProfileData.topCityAccuracy || []).slice(0, 5)" :key="`city-${item.label}`">
-                   <span>{{ item.label }}</span>
-                   <strong>{{ Number(item.value || 0).toFixed(1) }}%</strong>
-                 </div>
-                </div>
-              </article>
-            </div>
+                <article class="panel exam-chart-card">
+                  <div class="exam-chart-header">
+                    <h4>Cidades com maior desempenho</h4>
+                    <span class="exam-chart-sub">Top 5 cidades por taxa de acerto</span>
+                  </div>
+                  <div class="exam-hbar-list">
+                    <div
+                      v-for="item in (examRespondentProfileData.topCityAccuracy || []).slice(0, 5)"
+                      :key="`city-${item.label}`"
+                      class="exam-hbar-row"
+                    >
+                      <div class="exam-hbar-label"><span>{{ item.label }}</span></div>
+                      <div class="exam-hbar-track">
+                        <div class="exam-hbar-fill exam-hbar-fill-teal" :style="{ width: Number(item.value || 0).toFixed(1) + '%' }"></div>
+                      </div>
+                      <span class="exam-hbar-pct exam-hbar-pct-teal">{{ Number(item.value || 0).toFixed(1) }}%</span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </template>
 
             <article class="exam-ranking-config">
               <div class="exam-ranking-config-head">
@@ -916,7 +1110,8 @@
              </article>
            </div>
 
-           <div class="students-table">
+           <!-- Tabela de alunos com scrollbar -->
+           <div class="students-table students-table-scrollable">
              <table>
                <thead>
                  <tr>
@@ -1003,7 +1198,7 @@
                 Nenhum aluno vinculado à etapa de imersão.
               </div>
 
-              <div v-else class="students-table">
+              <div v-else class="students-table students-table-scrollable">
                 <table>
                   <thead>
                     <tr>
@@ -1025,44 +1220,65 @@
               </div>
             </article>
 
-            <div class="imersao-groups-list">
-              <div v-for="group in imersaoGroups" :key="group.id" class="imersao-group-item">
-                <button type="button" class="imersao-group-card" @click="toggleImersaoGroup(group.id)">
-                  <div class="imersao-group-main">
-                    <div class="imersao-group-title">
-                      <strong>{{ group.name }}</strong>
-                      <span class="imersao-group-status" :class="group.statusClass">{{ group.status }}</span>
-                    </div>
-                    <div class="imersao-group-sub">
-                      <span>Orientador:</span>
-                      <strong>{{ group.mentor }}</strong>
+            <div class="imersao-list-view">
+              <div class="imersao-list-header">
+                <div>Projeto</div>
+                <div>Alunos</div>
+                <div>Orientador</div>
+                <div>Média Parcial</div>
+                <div>Média Final</div>
+                <div></div>
+              </div>
+
+              <div v-for="group in imersaoGroups" :key="group.id" class="imersao-card-wrapper" :class="{ 'is-expanded': imersaoExpandedGroupId === group.id }">
+                <div class="imersao-card-header" @click="toggleImersaoGroup(group.id)">
+                  
+                  <!-- Coluna 1: Projeto -->
+                  <div class="imersao-card-top">
+                    <div class="imersao-card-title-wrap">
+                      <span class="imersao-group-status" :class="group.statusClass">{{ group.status.toUpperCase() }}</span>
+                      <h4 class="imersao-card-title">{{ group.name }}</h4>
+                      <div class="imersao-card-checkbox-label">
+                        <div class="imersao-checkbox-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="checkbox-svg">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                          </svg>
+                        </div>
+                        <span class="imersao-checkbox-text">{{ group.project || group.name }}</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div class="imersao-group-project">
-                    <span>Projeto:</span>
-                    <strong>{{ group.project }}</strong>
-                  </div>
-
-                  <div class="imersao-group-students">
-                    <span>Alunos:</span>
+                  <!-- Coluna 2: Alunos -->
+                  <div class="imersao-column-students">
                     <strong>{{ group.students }}</strong>
                   </div>
 
-                  <div class="imersao-group-avg">
-                    <span>Média parcial:</span>
-                    <strong class="teal">{{ group.partialAverage }}</strong>
-                    <span>Final:</span>
-                    <strong class="teal">{{ group.finalAverage }}</strong>
+                  <!-- Coluna 3: Orientador -->
+                  <div class="imersao-column-mentor">
+                    <span>{{ group.mentor || '-' }}</span>
                   </div>
 
-                  <div class="imersao-group-arrow" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline v-if="imersaoExpandedGroupId === group.id" points="6 9 12 15 18 9" />
-                      <polyline v-else points="9 18 15 12 9 6" />
-                    </svg>
+                  <!-- Coluna 4: Média Parcial -->
+                  <div class="imersao-column-partial">
+                    <span>{{ group.partialAverage || '-' }}</span>
                   </div>
-                </button>
+
+                  <!-- Coluna 5: Média Final -->
+                  <div class="imersao-column-final">
+                    <span>{{ group.finalAverage || '-' }}</span>
+                  </div>
+
+                  <!-- Coluna 6: Ação Ver detalhes -->
+                  <div class="imersao-column-action">
+                    <button type="button" class="btn-ver-detalhes" @click.stop="toggleImersaoGroup(group.id)">
+                      <span>Ver detalhes</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron-icon" :class="{ 'is-rotated': imersaoExpandedGroupId === group.id }">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
 
                 <div v-if="imersaoExpandedGroupId === group.id" class="imersao-group-expanded">
                   <div class="imersao-group-tabs">
@@ -1076,6 +1292,8 @@
                     <div class="imersao-group-meta">
                       <p><strong>Projeto:</strong> {{ group.project }}</p>
                       <p><strong>Empresa parceira:</strong> {{ group.partnerCompany }}</p>
+                      <p><strong>Presença média:</strong> {{ group.attendanceAverage }}</p>
+                      <p><strong>Reuniões realizadas:</strong> {{ group.completedMeetingsCount }} de {{ group.meetingsCount }}</p>
                       <p class="muted">Última atualização de notas: {{ group.lastGradesUpdate }}</p>
                     </div>
                     <table class="imersao-group-table">
@@ -1084,14 +1302,16 @@
                           <th>Aluno</th>
                           <th>Média Parcial</th>
                           <th>Média Final</th>
+                          <th>Frequência</th>
                           <th>Situação</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr v-for="student in group.studentsDetails" :key="student.id">
                           <td>{{ student.name }}</td>
-                          <td :class="{ 'warning-strong': Number(student.partial) < 4 }">{{ student.partial }}</td>
-                          <td :class="{ 'warning-strong': Number(student.final) < 4 }">{{ student.final }}</td>
+                          <td :class="{ 'warning-strong': Number(student.partial) < 6 }">{{ student.partial }}</td>
+                          <td :class="{ 'warning-strong': Number(student.final) < 6 }">{{ student.final }}</td>
+                          <td :class="{ 'warning-strong': Number(student.attendanceRate) < 75 }">{{ student.attendanceRate }}%</td>
                           <td><span class="imersao-situation-pill" :class="student.situationClass">{{ student.situation }}</span></td>
                         </tr>
                       </tbody>
@@ -1104,14 +1324,20 @@
                         <tr>
                           <th>Aluno</th>
                           <th>Nota parcial</th>
+                          <th>Banca</th>
+                          <th>Entrega</th>
+                          <th>Colaboração</th>
                           <th>Observação</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr v-for="student in group.studentsDetails" :key="`p-${student.id}`">
                           <td>{{ student.name }}</td>
-                          <td :class="{ 'warning-strong': Number(student.partial) < 4 }">{{ student.partial }}</td>
-                          <td>{{ Number(student.partial) < 4 ? 'Acompanhamento necessário' : 'Desempenho esperado' }}</td>
+                          <td :class="{ 'warning-strong': Number(student.partial) < 6 }">{{ student.partial }}</td>
+                          <td>{{ student.partialBreakdown.board }}</td>
+                          <td>{{ student.partialBreakdown.delivery }}</td>
+                          <td>{{ student.partialBreakdown.collaboration }}</td>
+                          <td>{{ student.partialObservation }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -1123,13 +1349,19 @@
                         <tr>
                           <th>Aluno</th>
                           <th>Nota final</th>
+                          <th>Produto</th>
+                          <th>Impacto</th>
+                          <th>Documentação</th>
                           <th>Situação</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr v-for="student in group.studentsDetails" :key="`f-${student.id}`">
                           <td>{{ student.name }}</td>
-                          <td :class="{ 'warning-strong': Number(student.final) < 4 }">{{ student.final }}</td>
+                          <td :class="{ 'warning-strong': Number(student.final) < 6 }">{{ student.final }}</td>
+                          <td>{{ student.finalBreakdown.product }}</td>
+                          <td>{{ student.finalBreakdown.impact }}</td>
+                          <td>{{ student.finalBreakdown.documentation }}</td>
                           <td><span class="imersao-situation-pill" :class="student.situationClass">{{ student.situation }}</span></td>
                         </tr>
                       </tbody>
@@ -1142,6 +1374,8 @@
                         <tr>
                           <th>Aluno</th>
                           <th>Última reunião</th>
+                          <th>Frequência</th>
+                          <th>Faltas</th>
                           <th>Presença</th>
                         </tr>
                       </thead>
@@ -1149,6 +1383,8 @@
                         <tr v-for="student in group.studentsDetails" :key="`a-${student.id}`">
                           <td>{{ student.name }}</td>
                           <td>{{ group.lastMeetingDate }}</td>
+                          <td :class="{ 'warning-strong': Number(student.attendanceRate) < 75 }">{{ student.attendanceRate }}%</td>
+                          <td>{{ student.absences }}</td>
                           <td>
                             <span class="imersao-situation-pill" :class="student.attendedLastMeeting ? 'status-regular' : 'status-warning'">
                               {{ student.attendedLastMeeting ? 'Presente' : 'Ausente' }}
@@ -1686,7 +1922,7 @@
             <p class="columns-grid-title">A planilha deve conter as seguintes colunas:</p>
             <div class="column-item"><strong>Obrigatórias:</strong> CPF, Nome, Nota final, Tempo de conclusão</div>
             <div class="column-item"><strong>Prova:</strong> Código da prova, Nome da prova, Data da prova</div>
-            <div class="column-item"><strong>Questões:</strong> Q1, Q2, Q3... Q80 (respostas ou pontuação por questão)</div>
+            <div class="column-item"><strong>Questões:</strong> Q1, Q2, Q3... Q40 (respostas ou pontuação por questão)</div>
             <div class="column-item"><strong>Opcional:</strong> Área/Assunto (para análise por tema)</div>
           </div>
 
@@ -1963,25 +2199,25 @@
             <label class="section-label">Destinatários</label>
             <div class="radio-option">
               <input type="radio" id="all-students" name="recipients" value="all" v-model="sendMessageRecipients" />
-              <label for="all-students">Todos os alunos do nivelamento</label>
+              <label for="all-students">Todos os cursos com alunos pendentes</label>
             </div>
             <div class="radio-option">
               <input type="radio" id="pending-students" name="recipients" value="pending" v-model="sendMessageRecipients" />
-              <label for="pending-students">Apenas alunos com cursos obrigatórios pendentes</label>
+              <label for="pending-students">Apenas cursos obrigatórios com pendência</label>
             </div>
 
             <div class="stats-grid">
               <div class="stat-item">
-                <span class="stat-label">Total selecionados:</span>
-                <span class="stat-value">37</span>
+                <span class="stat-label">Cursos alvo:</span>
+                <span class="stat-value">{{ sendMessageTargetCourses.length }}</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Com pendências:</span>
-                <span class="stat-value pending">37</span>
+                <span class="stat-label">Alunos pendentes:</span>
+                <span class="stat-value pending">{{ sendMessagePendingStudentsCount }}</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Sem pendências:</span>
-                <span class="stat-value">0</span>
+                <span class="stat-label">Sem pendência:</span>
+                <span class="stat-value">{{ sendMessageCompletedStudentsCount }}</span>
               </div>
             </div>
           </div>
@@ -2008,9 +2244,19 @@
             />
           </div>
 
+          <div v-if="sendMessageError" class="state-box state-error">{{ sendMessageError }}</div>
+          <div v-if="sendMessageSuccess" class="state-box state-success">{{ sendMessageSuccess }}</div>
+
           <div class="modal-actions">
             <button type="button" class="btn-outline" @click="showSendMessageModal = false">Cancelar</button>
-            <button type="button" class="btn-primary">Enviar mensagem</button>
+            <button
+              type="button"
+              class="btn-primary"
+              :disabled="sendingCourseEmail || !sendMessageTargetCourses.length || !sendMessageSubject.trim() || !sendMessageBody.trim()"
+              @click="sendCourseAlertEmails"
+            >
+              {{ sendingCourseEmail ? 'Enviando...' : 'Enviar mensagem' }}
+            </button>
           </div>
         </div>
       </div>
@@ -2092,6 +2338,10 @@
 
 <script>
 import { computed, onMounted, ref, watch } from 'vue';
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement } from 'chart.js';
+import { Bar, Doughnut, Pie } from 'vue-chartjs';
+
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement);
 import { useRoute, useRouter } from 'vue-router';
 import { classService } from '@/services/classService';
 import { enrollmentService } from '@/services/enrollmentService';
@@ -2123,7 +2373,7 @@ const selectionQuotaLabels = [
 
 export default {
   name: 'ClassDetailsView',
-  components: { ConfirmDialog, GroupCreateModal },
+  components: { ConfirmDialog, GroupCreateModal, Bar, Doughnut, Pie },
   setup() {
     const route = useRoute();
     const router = useRouter();
@@ -2169,6 +2419,11 @@ export default {
     const sendMessageRecipients = ref('all');
     const sendMessageSubject = ref('Pendência na conclusão dos cursos obrigatórios');
     const sendMessageBody = ref('Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.');
+    const sendMessageCourseTarget = ref(null);
+    const sendingCourseEmail = ref(false);
+    const sendMessageError = ref('');
+    const sendMessageSuccess = ref('');
+    const lastCourseEmailSent = ref(null);
     const downloadPeopleTemplate = (fileName) => {
       downloadPeopleSpreadsheetTemplate(fileName);
     };
@@ -2265,9 +2520,9 @@ export default {
     const presencaDraft = ref({});
     const selectedPresencaGroup = computed(() => imersaoPresencaGroups.value.find((group) => group.id === imersaoPresencaForm.value.groupId) || null);
     const presencaMeetingOptions = computed(() => selectedPresencaGroup.value?.meetings || []);
-    const getPresenceValue = (groupId, meetingDate, studentId) => {
+    const getPresenceValue = (groupId, meetingDate, studentId, defaultValue = true) => {
       const value = presencaDraft.value?.[groupId]?.[meetingDate]?.[studentId];
-      return typeof value === 'boolean' ? value : true;
+      return typeof value === 'boolean' ? value : defaultValue;
     };
     const setPresenceValue = (studentId, present) => {
       const { groupId, meetingDate } = imersaoPresencaForm.value;
@@ -2282,7 +2537,7 @@ export default {
       const meetingDate = imersaoPresencaForm.value.meetingDate;
       return group.students.map((student) => ({
         ...student,
-        present: getPresenceValue(group.id, meetingDate, student.id),
+        present: getPresenceValue(group.id, meetingDate, student.id, student.attendedLastMeeting ?? true),
       }));
     });
 
@@ -2688,10 +2943,13 @@ export default {
     };
 
     const openSendMessageModal = (options = {}) => {
-      const { subject, body, recipients } = options;
+      const { subject, body, recipients, course } = options;
       sendMessageSubject.value = subject ?? 'Pendência na conclusão dos cursos obrigatórios';
       sendMessageBody.value = body ?? 'Olá, identificamos que você ainda possui pendências em um ou mais cursos obrigatórios da etapa de Nivelamento. A conclusão desses cursos é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.';
       sendMessageRecipients.value = recipients ?? 'all';
+      sendMessageCourseTarget.value = course || null;
+      sendMessageError.value = '';
+      sendMessageSuccess.value = '';
       showSendMessageModal.value = true;
     };
 
@@ -2699,6 +2957,7 @@ export default {
       if (!selectedCourseItem.value) return;
       const courseName = selectedCourseItem.value?.name || 'este curso';
       openSendMessageModal({
+        course: selectedCourseItem.value,
         subject: `Pendência no curso ${courseName}`,
         body: `Olá, identificamos que você ainda possui pendência no curso "${courseName}" do nivelamento. A conclusão desse curso é necessária para continuar no processo. Acesse a plataforma e regularize sua situação dentro do prazo.`,
         recipients: 'pending',
@@ -3064,6 +3323,12 @@ export default {
       buildCountDistribution(distributionRows.value, (row) => formatEducation(row.educationLevel || row.education), 'Não informado', 5)
     );
 
+    const buildChartLabel = (value, maxLength = 18) => {
+      const label = String(value || '').trim();
+      if (!label) return 'Sem dados';
+      return label.length > maxLength ? `${label.slice(0, maxLength - 1)}…` : label;
+    };
+
     const timelinePeriodLabel = (start, end) => {
       const startLabel = formatDate(start);
       const endLabel = formatDate(end);
@@ -3243,6 +3508,95 @@ export default {
       return pendingPeopleIds.size;
     });
 
+    const getProgressionCourseId = (progression) => progression?.course?.id || progression?.courseId || null;
+    const getProgressionPeopleId = (progression) => progression?.people?.id || progression?.peopleId || progression?.personId || progression?.person?.id || null;
+    const courseHasPendingProgression = (courseId) => progressions.value.some((progression) => (
+      getProgressionCourseId(progression) === courseId && !isCompletedProgression(progression)
+    ));
+
+    const sendMessageTargetCourses = computed(() => {
+      if (sendMessageCourseTarget.value?.id) {
+        return [sendMessageCourseTarget.value];
+      }
+
+      return courseItems.value.filter((course) => {
+        const allowedByRecipient = sendMessageRecipients.value === 'pending' ? course.required : true;
+        return allowedByRecipient && courseHasPendingProgression(course.id);
+      });
+    });
+
+    const sendMessageTargetCourseIds = computed(() => new Set(sendMessageTargetCourses.value.map((course) => course.id)));
+    const sendMessagePendingPeopleIds = computed(() => {
+      const peopleIds = new Set();
+      progressions.value.forEach((progression) => {
+        const courseId = getProgressionCourseId(progression);
+        const peopleId = getProgressionPeopleId(progression);
+        if (!courseId || !peopleId || !sendMessageTargetCourseIds.value.has(courseId)) return;
+        if (!isCompletedProgression(progression)) peopleIds.add(peopleId);
+      });
+      return peopleIds;
+    });
+    const sendMessageAllPeopleIds = computed(() => {
+      const peopleIds = new Set();
+      progressions.value.forEach((progression) => {
+        const courseId = getProgressionCourseId(progression);
+        const peopleId = getProgressionPeopleId(progression);
+        if (!courseId || !peopleId || !sendMessageTargetCourseIds.value.has(courseId)) return;
+        peopleIds.add(peopleId);
+      });
+      return peopleIds;
+    });
+    const sendMessagePendingStudentsCount = computed(() => sendMessagePendingPeopleIds.value.size);
+    const sendMessageCompletedStudentsCount = computed(() => Math.max(sendMessageAllPeopleIds.value.size - sendMessagePendingPeopleIds.value.size, 0));
+
+    const sendCourseAlertEmails = async () => {
+      const targetCourses = sendMessageTargetCourses.value;
+      if (!targetCourses.length) {
+        sendMessageError.value = 'Nenhum curso com pendencia encontrado para envio.';
+        return;
+      }
+
+      sendingCourseEmail.value = true;
+      sendMessageError.value = '';
+      sendMessageSuccess.value = '';
+
+      let totalSent = 0;
+      let totalFailed = 0;
+      const failedCourses = [];
+
+      for (const course of targetCourses) {
+        try {
+          const result = await courseService.sendAlert(course.id, classId.value, {
+            subject: sendMessageSubject.value.trim(),
+            message: sendMessageBody.value.trim(),
+          });
+          totalSent += Number(result?.totalSent || 0);
+          totalFailed += Number(result?.totalFailed || 0);
+          if (Number(result?.totalFailed || 0) > 0) {
+            const msg = result?.failedEmails?.[0] || course.name;
+            failedCourses.push(msg);
+          }
+        } catch (err) {
+          totalFailed += Number(course.pendingCount || 1);
+          failedCourses.push(course.name || `Curso ${course.id}`);
+        }
+      }
+
+      sendingCourseEmail.value = false;
+      if (totalFailed > 0) {
+        sendMessageSuccess.value = '';
+        sendMessageError.value = [...new Set(failedCourses)].join('; ');
+      } else if (totalSent > 0) {
+        sendMessageSuccess.value = `${totalSent} e-mail(s) enviado(s) em ${targetCourses.length} curso(s).`;
+        sendMessageError.value = '';
+        lastCourseEmailSent.value = {
+          date: new Date(),
+          count: totalSent,
+          courses: targetCourses.length,
+        };
+      }
+    };
+
     function assignedIdsIncludes(list, id) {
       try { return list.some(x => x.course?.id === id); } catch (e) { return false; }
     }
@@ -3365,6 +3719,10 @@ export default {
         // Mantido como flag para forcar a leitura real dos grupos da imersao.
         const useRealImersaoGroups = ref(true);
         const lastEmailInfo = computed(() => {
+          if (lastCourseEmailSent.value) {
+            const d = new Date(lastCourseEmailSent.value.date);
+            return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} → ${lastCourseEmailSent.value.count || 0} e-mail(s) em ${lastCourseEmailSent.value.courses || 0} curso(s)`;
+          }
           const info = classData.value?.lastEmailSent;
           if (info && info.date) {
             const d = new Date(info.date);
@@ -3372,6 +3730,107 @@ export default {
           }
           return 'Nenhum e-mail enviado recentemente';
         });
+
+        const clampMockMetric = (value, min, max) => Math.min(max, Math.max(min, value));
+        const mockSeed = (...values) => String(values.join('|'))
+          .split('')
+          .reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 17);
+        const formatMockScore = (value) => Number(value).toFixed(1);
+        const averageMockScore = (items, field) => {
+          const values = items
+            .map((item) => Number(item[field]))
+            .filter((value) => Number.isFinite(value));
+          if (!values.length) return '-';
+          return formatMockScore(values.reduce((sum, value) => sum + value, 0) / values.length);
+        };
+        const averageMockPercent = (items, field) => {
+          const values = items
+            .map((item) => Number(item[field]))
+            .filter((value) => Number.isFinite(value));
+          if (!values.length) return '-';
+          return `${Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)}%`;
+        };
+        const buildMockImmersionMeetings = (group, groupIndex = 0) => {
+          const startDate = parseDateValue(classData.value?.immersionStartDate)
+            || parseDateValue(classData.value?.partialEvaluationDate)
+            || parseDateValue(classData.value?.levelingEndDate)
+            || new Date();
+          const cadenceOffset = groupIndex % 3;
+
+          return [7, 21, 35, 49].map((days, index) => {
+            const meetingDate = new Date(startDate);
+            meetingDate.setDate(meetingDate.getDate() + days + cadenceOffset);
+            const value = meetingDate.toISOString().slice(0, 10);
+            return {
+              value,
+              label: formatDate(value),
+              status: 'COMPLETED',
+              mock: true,
+              id: `mock-meeting-${group?.id || groupIndex}-${index}`,
+            };
+          });
+        };
+        const getMockImmersionMembersForGroup = (groupIndex, totalGroups) => {
+          const source = imersaoStageStudents.value
+            .filter((student) => !['nao selecionado', 'reprovado'].includes(normalizeText(student.status)))
+            .map((student, index) => ({
+              id: student.peopleId || student.id || `mock-student-${index}`,
+              name: student.name,
+              email: student.email,
+            }));
+
+          if (!source.length || !totalGroups) return [];
+
+          const baseSize = Math.floor(source.length / totalGroups);
+          const remainder = source.length % totalGroups;
+          const start = groupIndex * baseSize + Math.min(groupIndex, remainder);
+          const size = baseSize + (groupIndex < remainder ? 1 : 0);
+
+          return source.slice(start, start + size);
+        };
+        const buildMockScoreBreakdown = (base, seed, offsets) => ({
+          board: formatMockScore(clampMockMetric(base + offsets[0] + ((seed % 5) / 10), 0, 10)),
+          delivery: formatMockScore(clampMockMetric(base + offsets[1] + (((seed >> 2) % 5) / 10), 0, 10)),
+          collaboration: formatMockScore(clampMockMetric(base + offsets[2] + (((seed >> 3) % 5) / 10), 0, 10)),
+          product: formatMockScore(clampMockMetric(base + offsets[0] + (((seed >> 1) % 5) / 10), 0, 10)),
+          impact: formatMockScore(clampMockMetric(base + offsets[1] + (((seed >> 4) % 5) / 10), 0, 10)),
+          documentation: formatMockScore(clampMockMetric(base + offsets[2] + (((seed >> 5) % 5) / 10), 0, 10)),
+        });
+        const buildMockImmersionStudent = (member, group, index, meetings) => {
+          const seed = mockSeed(group?.id, group?.projectTheme || group?.name, member?.id, member?.name, index);
+          let partial = 5.2 + ((seed % 42) / 10);
+          if ((seed + index) % 9 === 0) partial -= 1.6;
+          partial = clampMockMetric(partial, 3.8, 9.8);
+          const finalScore = clampMockMetric(partial + ((((seed >> 2) % 17) - 5) / 10), 4.2, 10);
+          let attendanceRate = 74 + (seed % 24);
+          if ((seed + index) % 8 === 0) attendanceRate = 68 + (seed % 7);
+          attendanceRate = Math.round(clampMockMetric(attendanceRate, 68, 99));
+          const completedMeetings = meetings.filter((meeting) => String(meeting.status || '').toUpperCase() === 'COMPLETED').length || meetings.length || 1;
+          const absences = Math.max(0, Math.round(((100 - attendanceRate) / 100) * completedMeetings));
+          const attendedLastMeeting = absences === 0 || (seed % 5 !== 0);
+          const situation = Number(finalScore) < 6 || attendanceRate < 75 ? 'Atenção' : Number(finalScore) >= 8.5 ? 'Destaque' : 'Regular';
+          const situationClass = situation === 'Atenção' ? 'status-warning' : 'status-regular';
+          const partialBreakdown = buildMockScoreBreakdown(partial, seed, [-0.2, 0.1, 0.0]);
+          const finalBreakdown = buildMockScoreBreakdown(finalScore, seed, [0.0, -0.1, 0.2]);
+
+          return {
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            partial: formatMockScore(partial),
+            final: formatMockScore(finalScore),
+            attendanceRate,
+            absences,
+            attendedLastMeeting,
+            situation,
+            situationClass,
+            partialBreakdown,
+            finalBreakdown,
+            partialObservation: situation === 'Atenção'
+              ? 'Acompanhamento necessário'
+              : Number(partial) >= 8.5 ? 'Entrega acima do esperado' : 'Desempenho esperado',
+          };
+        };
 
         watch(() => activeTab.value, (tab) => {
           if (tab === 'etapas') {
@@ -3407,6 +3866,9 @@ export default {
               students: group.studentsDetails.map((student) => ({
                 id: student.id,
                 name: student.name,
+                attendedLastMeeting: student.attendedLastMeeting,
+                attendanceRate: student.attendanceRate,
+                absences: student.absences,
               })),
             }));
           const firstGroup = imersaoPresencaGroups.value[0] || null;
@@ -3418,12 +3880,16 @@ export default {
 
         const syncImersaoMetrics = () => {
           const activeStudents = imersaoStageCandidates.value.filter((candidate) => String(candidate?.status || '').toUpperCase() !== 'REPROVADO').length;
+          const atRiskStudents = imersaoGroups.value.reduce(
+            (sum, group) => sum + group.studentsDetails.filter((student) => student.situation === 'Atenção').length,
+            0
+          );
           imersaoMetricsCards.value[0].value = String(imersaoGroups.value.length || 0);
           imersaoMetricsCards.value[1].value = String(imersaoStageCandidates.value.length || 0);
           imersaoMetricsCards.value[2].value = String(activeStudents);
-          imersaoMetricsCards.value[5].value = String(
-            imersaoGroups.value.filter((group) => group.statusClass === 'is-warning').length
-          );
+          imersaoMetricsCards.value[3].value = imersaoGroups.value.length ? '6.0' : '-';
+          imersaoMetricsCards.value[4].value = imersaoGroups.value.length ? '6.0' : '-';
+          imersaoMetricsCards.value[5].value = String(atRiskStudents);
           imersaoMetricsCards.value = [...imersaoMetricsCards.value];
         };
 
@@ -3442,42 +3908,47 @@ export default {
                 }
               })
             );
-            imersaoGroups.value = details.map((group) => {
-              const meetings = Array.isArray(group.meetings)
+            imersaoGroups.value = details.map((group, groupIndex) => {
+              const realMeetings = Array.isArray(group.meetings)
                 ? [...group.meetings]
                     .map((meeting) => ({
                       value: meeting.meetingDate,
                       label: formatDate(meeting.meetingDate),
+                      status: meeting.status,
                     }))
                     .sort((left, right) => new Date(left.value) - new Date(right.value))
                 : [];
-              const studentsDetails = Array.isArray(group.members)
-                ? group.members.map((member) => ({
-                    id: member.id,
-                    name: member.name,
-                    partial: '-',
-                    final: '-',
-                    situation: 'Regular',
-                    situationClass: 'status-regular',
-                    attendedLastMeeting: false,
-                  }))
-                : [];
-              const totalStudents = group.memberCount ?? studentsDetails.length;
-              const hasStudents = totalStudents > 0;
+              const meetings = realMeetings.length ? realMeetings : buildMockImmersionMeetings(group, groupIndex);
+              const realMembers = Array.isArray(group.members) ? group.members : [];
+              const groupMembers = realMembers.length
+                ? realMembers
+                : getMockImmersionMembersForGroup(groupIndex, details.length);
+              const studentsDetails = groupMembers.map((member, index) => buildMockImmersionStudent(member, group, index, meetings));
+              const totalStudents = studentsDetails.length || Number(group.memberCount || 0);
+              const hasStudents = studentsDetails.length > 0;
               const latestMeeting = meetings.length ? meetings[meetings.length - 1].label : '-';
+              const completedMeetingsCount = meetings.filter((meeting) => String(meeting.status || '').toUpperCase() === 'COMPLETED').length;
+              const partialAverage = hasStudents ? averageMockScore(studentsDetails, 'partial') : '-';
+              const finalAverage = hasStudents ? averageMockScore(studentsDetails, 'final') : '-';
+              const attendanceAverage = hasStudents ? averageMockPercent(studentsDetails, 'attendanceRate') : '-';
+              const hasAttention = studentsDetails.some((student) => student.situation === 'Atenção');
+              const lastGradesUpdate = formatDate(classData.value?.finalEvaluationDate);
               return {
                 id: group.id,
                 name: group.projectTheme || group.name || '-',
-                status: hasStudents ? 'OK' : 'Atenção',
-                statusClass: hasStudents ? 'is-ok' : 'is-warning',
+                status: hasStudents && !hasAttention ? 'OK' : 'Atenção',
+                statusClass: hasStudents && !hasAttention ? 'is-ok' : 'is-warning',
                 mentor: group.leaderName || group.leader || '-',
                 project: group.projectTheme || group.project || '-',
                 partnerCompany: group.projectCompanyName || group.projectCompany || '',
-                lastGradesUpdate: latestMeeting,
+                lastGradesUpdate: lastGradesUpdate !== '-' ? lastGradesUpdate : latestMeeting,
                 lastMeetingDate: latestMeeting,
                 students: totalStudents,
-                partialAverage: '-',
-                finalAverage: '-',
+                partialAverage,
+                finalAverage,
+                attendanceAverage,
+                meetingsCount: meetings.length,
+                completedMeetingsCount,
                 studentsDetails,
                 meetings,
               };
@@ -3991,8 +4462,8 @@ export default {
       try {
         classData.value = await classService.getById(classId.value);
         syncApprovedRankingDefaults();
+        await loadStages();
         await Promise.all([
-          loadStages(),
           loadClassPeople(),
           loadSelectionProcessContext(),
           loadProgramOverviewItem(),
@@ -4426,7 +4897,122 @@ export default {
       }
     );
 
+
+    const genderChartData = computed(() => ({
+      labels: genderDistribution.value.map(item => item.label),
+      datasets: [{
+        label: 'Gênero',
+        data: genderDistribution.value.map(item => item.value),
+        backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#64748b'],
+        borderWidth: 0
+      }]
+    }));
+
+    const quotaChartData = computed(() => ({
+      labels: quotaDistribution.value.map(item => item.label),
+      datasets: [{
+        label: 'Cota',
+        data: quotaDistribution.value.map(item => item.value),
+        backgroundColor: quotaDistribution.value.map(item => item.color || '#3b82f6'),
+        borderRadius: 4
+      }]
+    }));
+
+    const educationChartData = computed(() => ({
+      labels: educationDistribution.value.map(item => item.label),
+      datasets: [{
+        data: educationDistribution.value.map(item => item.value),
+        backgroundColor: ['#f43f5e', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#64748b'],
+        borderWidth: 0
+      }]
+    }));
+
+    const cityChartData = computed(() => ({
+      labels: cityDistribution.value.map((item) => buildChartLabel(item.label, 22)),
+      datasets: [{
+        label: 'Alunos',
+        data: cityDistribution.value.map((item) => item.count || item.value || 0),
+        backgroundColor: '#14b8a6',
+        borderRadius: 6
+      }]
+    }));
+
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: { size: 11 } } },
+        tooltip: { callbacks: { label: (ctx) => ' ' + ctx.formattedValue + '%' } }
+      }
+    };
+
+    const countChartOptions = {
+      ...chartOptions,
+      plugins: { ...chartOptions.plugins, tooltip: { callbacks: { label: (ctx) => ' ' + ctx.formattedValue } } }
+    };
+
+    const quotaChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ' ' + ctx.formattedValue + '%' } }
+      },
+      scales: {
+        x: { display: false, max: 100 },
+        y: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    };
+
+    const cityChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ` ${ctx.formattedValue} aluno(s)` } }
+      },
+      scales: {
+        x: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+        y: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    };
+
+    const classStatusChartData = computed(() => ({
+      labels: classStatusBuckets.value.map((bucket) => `${bucket.completedCourses} curso(s)`),
+      datasets: [{
+        label: 'Alunos',
+        data: classStatusBuckets.value.map((bucket) => bucket.students),
+        backgroundColor: '#14b8a6',
+        borderRadius: 6
+      }]
+    }));
+
+    const classStatusChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ` ${ctx.formattedValue} aluno(s)` } }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+        x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    };
+
     return {
+      genderChartData,
+      quotaChartData,
+      educationChartData,
+      cityChartData,
+      chartOptions,
+      countChartOptions,
+      quotaChartOptions,
+      cityChartOptions,
+      classStatusChartData,
+      classStatusChartOptions,
       activeTab,
       programId,
       classId,
@@ -4563,6 +5149,13 @@ export default {
       sendMessageRecipients,
       sendMessageSubject,
       sendMessageBody,
+      sendingCourseEmail,
+      sendMessageError,
+      sendMessageSuccess,
+      sendMessageTargetCourses,
+      sendMessagePendingStudentsCount,
+      sendMessageCompletedStudentsCount,
+      sendCourseAlertEmails,
       showSendMessageModal,
       openSendMessageModal,
       openCoursePendingMessage,
@@ -5272,6 +5865,10 @@ export default {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.distribution-chart-area {
+  height: 220px;
 }
 
 .distribution-panel h4 {
@@ -7159,6 +7756,7 @@ textarea.field {
     justify-content: center;
     width: 100%;
   }
+
 }
 
 /* Scoped styles for Nivelamento additions */
@@ -7309,117 +7907,251 @@ textarea.field {
   overflow: hidden;
 }
 
-.imersao-group-card {
-  width: 100%;
-  border: none;
-  background: transparent;
-  border-radius: 0;
-  padding: 14px 16px;
+.imersao-groups-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1.4fr auto 1.1fr auto;
-  align-items: center;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 16px;
-  text-align: left;
-  cursor: pointer;
+  max-height: min(68vh, 660px);
+  overflow-y: auto;
+  padding: 4px;
 }
 
-.imersao-group-card:hover {
-  background: #f8fafc;
-}
-
-.imersao-group-main {
-  min-width: 0;
-}
-
-.imersao-group-title {
+.imersao-card-wrapper {
+  background: #fff;
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.imersao-group-title strong {
-  color: var(--brand-900);
-  font-size: 16px;
-  line-height: 1.1;
+.imersao-card-wrapper:hover {
+  border-color: var(--brand-300);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+
+.imersao-card-wrapper.is-expanded {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 1px var(--brand-500);
+}
+
+.imersao-card-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 3fr 0.8fr 1.2fr 1fr 1fr 140px;
+  gap: 16px;
+  align-items: center;
+  background: #fff;
+}
+
+.imersao-card-top {
+  display: block;
 }
 
 .imersao-group-status {
-  border-radius: 8px;
-  padding: 3px 10px;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11px;
   font-weight: 700;
-  border: 1px solid transparent;
-  white-space: nowrap;
-}
-
-.imersao-group-status.is-ok {
-  background: #d1fae5;
-  color: #047857;
-  border-color: #a7f3d0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .imersao-group-status.is-warning {
-  background: #fef3c7;
-  color: #b45309;
-  border-color: #fde68a;
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 3px 6px !important;
+  border-radius: 4px !important;
 }
 
-.imersao-group-sub {
-  margin-top: 8px;
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  flex-wrap: wrap;
+.imersao-group-status.is-ok {
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  border: 1px solid #bbf7d0 !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 3px 6px !important;
+  border-radius: 4px !important;
 }
 
-.imersao-group-sub span,
-.imersao-group-project span,
-.imersao-group-students span,
-.imersao-group-avg span {
-  color: var(--slate-600);
-  font-size: 14px;
-}
-
-.imersao-group-sub strong,
-.imersao-group-project strong,
-.imersao-group-students strong,
-.imersao-group-avg strong {
-  color: var(--brand-900);
-  font-size: 14px;
-}
-
-.imersao-group-project,
-.imersao-group-students,
-.imersao-group-avg {
+.imersao-card-checkbox-label {
   display: flex;
   align-items: center;
-  gap: 5px;
-  min-width: 0;
+  gap: 6px;
+  margin-top: 4px;
 }
 
-.imersao-group-project strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.imersao-checkbox-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--slate-400);
 }
 
-.imersao-group-avg strong.teal,
-.imersao-group-students strong {
-  color: var(--teal-600);
+.checkbox-svg {
+  color: var(--slate-400);
+  background: transparent;
 }
 
-.imersao-group-arrow {
-  color: #94a3b8;
+.imersao-checkbox-text {
+  font-size: 13px;
+  color: var(--slate-500);
+  font-weight: 500;
+}
+
+.imersao-column-students strong {
+  font-size: 16px;
+  color: var(--slate-900);
+  font-weight: 700;
+}
+
+.imersao-column-mentor span {
+  font-size: 14px;
+  color: var(--slate-700);
+  font-weight: 500;
+}
+
+.imersao-column-partial span,
+.imersao-column-final span {
+  font-size: 14px;
+  color: var(--slate-500);
+  font-weight: 500;
+}
+
+.btn-ver-detalhes {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #c0d7f2;
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  width: 100%;
+}
+
+.btn-ver-detalhes:hover {
+  background: #f0f7ff;
+  border-color: #3b82f6;
+}
+
+.btn-ver-detalhes:active {
+  background: #e0efff;
+}
+
+.chevron-icon {
+  transition: transform 0.2s ease-in-out;
+}
+
+.chevron-icon.is-rotated {
+  transform: rotate(180deg);
+}
+
+.imersao-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--brand-900);
+  line-height: 1.2;
+}
+
+.imersao-card-project {
+  margin: 0;
+  font-size: 13px;
+  color: var(--slate-600);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.imersao-card-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.metric-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-box span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--slate-500);
+  font-weight: 700;
+}
+
+.metric-box strong {
+  font-size: 13px;
+  color: var(--brand-900);
+  font-weight: 700;
+}
+
+.metric-box strong.teal {
+  color: #0d9488;
+  font-size: 15px;
+}
+
+.metric-box strong.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.imersao-card-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed var(--slate-200);
+  padding-top: 12px;
+  margin-top: -4px;
+}
+
+.action-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-600);
+}
+
+.imersao-card-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand-600);
+  background: #eff6ff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
 }
 
 .imersao-group-expanded {
   border-top: 1px solid var(--slate-200);
-  padding: 12px 16px 14px;
-  max-height: 430px;
-  overflow: auto;
+  padding: 16px;
+  background: #fdfdfd;
 }
 
 .imersao-group-tabs {
@@ -7492,6 +8224,82 @@ textarea.field {
 .imersao-situation-pill.status-warning {
   color: #b45309;
   background: #fef3c7;
+}
+
+/* List view header and horizontal columns style */
+.imersao-list-header {
+  display: grid;
+  grid-template-columns: 3fr 0.8fr 1.2fr 1fr 1fr 140px;
+  gap: 16px;
+  padding: 12px 20px;
+  color: var(--slate-600);
+  font-weight: 700;
+  border-bottom: 1px solid var(--slate-100);
+  margin-bottom: 8px;
+}
+
+.imersao-list-view {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.imersao-list-view .imersao-card-wrapper {
+  width: 100% !important;
+}
+
+@media (max-width: 900px) {
+  .imersao-card-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .imersao-list-header {
+    display: none;
+  }
+
+  .imersao-column-students,
+  .imersao-column-mentor,
+  .imersao-column-partial,
+  .imersao-column-final {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .imersao-column-students::before {
+    content: "Alunos:";
+    font-weight: 700;
+    color: var(--slate-500);
+  }
+
+  .imersao-column-mentor::before {
+    content: "Orientador:";
+    font-weight: 700;
+    color: var(--slate-500);
+  }
+
+  .imersao-column-partial::before {
+    content: "Média Parcial:";
+    font-weight: 700;
+    color: var(--slate-500);
+  }
+
+  .imersao-column-final::before {
+    content: "Média Final:";
+    font-weight: 700;
+    color: var(--slate-500);
+  }
+
+  .btn-ver-detalhes {
+    width: auto;
+    margin-top: 4px;
+  }
 }
 .nivelamento-status-pill {
   margin-left: 4px;
@@ -7585,6 +8393,11 @@ textarea.field {
   color: #0f172a;
   font-size: 24px;
   line-height: 1;
+}
+
+.class-status-chart {
+  height: 240px;
+  margin: 10px 0 16px;
 }
 
 .class-status-bars {
@@ -7821,23 +8634,165 @@ textarea.field {
   line-height: 1.5;
 }
 
-.exam-insights-grid,
-.exam-profile-grid {
+/* ─── Exam KPI row ─── */
+.exam-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+.exam-kpi-card {
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.exam-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.exam-kpi-value {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--brand-900);
+}
+.exam-kpi-teal  { color: #0d9488; }
+.exam-kpi-emerald { color: #059669; }
+.exam-kpi-red   { color: #dc2626; }
+
+/* ─── Exam charts layout ─── */
+.exam-charts-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 16px;
+  margin-bottom: 12px;
 }
-
-.exam-insight-card {
-  padding: 14px;
+.exam-chart-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-
-.exam-insight-card h4 {
-  margin: 0 0 12px;
+.exam-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.exam-chart-header h4 {
+  margin: 0;
   color: var(--brand-900);
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 700;
 }
+.exam-chart-sub {
+  font-size: 11px;
+  color: var(--slate-500);
+}
+.exam-chip-success {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #059669;
+  font-weight: 700;
+  font-size: 11px;
+}
+.exam-chip-warning {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #b45309;
+  font-weight: 700;
+  font-size: 11px;
+}
+.exam-chart-area {
+  position: relative;
+  width: 100%;
+}
+.exam-chart-doughnut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Horizontal bar list ─── */
+.exam-hbar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+.exam-hbar-list::-webkit-scrollbar { width: 5px; }
+.exam-hbar-list::-webkit-scrollbar-thumb { background: #b8c6d8; border-radius: 999px; }
+.exam-hbar-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 160px) minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 10px;
+}
+.exam-hbar-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.exam-hbar-label span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-900);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+}
+.exam-hbar-label small {
+  font-size: 10px;
+  color: var(--slate-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.exam-hbar-track {
+  height: 10px;
+  background: var(--slate-100);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.exam-hbar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.exam-hbar-fill-success { background: linear-gradient(90deg, #10b981, #34d399); }
+.exam-hbar-fill-danger  { background: linear-gradient(90deg, #f87171, #fca5a5); }
+.exam-hbar-fill-purple  { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.exam-hbar-fill-teal    { background: linear-gradient(90deg, #14b8a6, #2dd4bf); }
+.exam-hbar-pct {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+}
+.exam-hbar-pct-success { color: #059669; }
+.exam-hbar-pct-danger  { color: #dc2626; }
+.exam-hbar-pct-purple  { color: #7c3aed; }
+.exam-hbar-pct-teal    { color: #0d9488; }
 
 .exam-ranking-config {
   margin-top: 16px;
@@ -7958,6 +8913,10 @@ textarea.field {
   font-weight: 600;
   color: var(--slate-600);
   text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--slate-50);
 }
 .students-table tbody tr {
   border-bottom: 1px solid var(--slate-200);
@@ -7967,6 +8926,23 @@ textarea.field {
 }
 .students-table td {
   padding: 12px;
+}
+/* Scrollable variant for nivelamento students */
+.students-table-scrollable {
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  margin-top: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+.students-table-scrollable::-webkit-scrollbar {
+  width: 7px;
+}
+.students-table-scrollable::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
 }
 .student-progress {
   display: flex;
@@ -7985,6 +8961,132 @@ textarea.field {
   height: 100%;
   background: var(--teal-600);
   border-radius: 3px;
+}
+
+/* Nivelamento chart row */
+.nivelamento-chart-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: start;
+}
+.nivelamento-chart-box {
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fff;
+}
+.nivelamento-chart-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-900);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.nivelamento-progress-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 transparent;
+}
+.nivelamento-progress-bars::-webkit-scrollbar {
+  width: 5px;
+}
+.nivelamento-progress-bars::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 999px;
+}
+.nivelamento-bar-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 10px;
+}
+.nivelamento-bar-name {
+  font-size: 12px;
+  color: var(--slate-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nivelamento-bar-track {
+  height: 10px;
+  background: var(--slate-100);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.nivelamento-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.nivelamento-bar-pct {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+}
+.pct-done { color: #059669; }
+.pct-ok { color: #0f766e; }
+.pct-low { color: #b45309; }
+.nivelamento-chart-more {
+  font-size: 12px;
+  color: var(--slate-500);
+  margin-top: 4px;
+  text-align: center;
+  font-style: italic;
+}
+.nivelamento-chart-stats {
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  padding: 14px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.nivelamento-stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nivelamento-stat-block span {
+  font-size: 11px;
+  color: var(--slate-500);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.nivelamento-stat-block strong {
+  font-size: 22px;
+  line-height: 1.1;
+}
+.text-emerald { color: #059669; }
+.text-teal { color: #0f766e; }
+.text-amber { color: #b45309; }
+.nivelamento-legend {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--slate-600);
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 .status-pill {
   display: inline-flex;

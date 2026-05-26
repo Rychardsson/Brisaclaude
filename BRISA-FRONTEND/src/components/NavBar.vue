@@ -22,6 +22,15 @@
           </router-link>
         </li>
         <li>
+          <router-link to="/programs/register" :class="{ active: $route.path === '/programs/register' }">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Cadastro
+          </router-link>
+        </li>
+        <li>
           <router-link to="/programs" :class="{ active: $route.path === '/programs' }">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
@@ -50,15 +59,6 @@
               <path d="M4 12h16"></path>
             </svg>
             Equipe
-          </router-link>
-        </li>
-        <li>
-          <router-link to="/programs/register" :class="{ active: $route.path === '/programs/register' }">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            Cadastro
           </router-link>
         </li>
         <li>

@@ -19,37 +19,6 @@
           </div>
         </div>
 
-        <div class="stats-grid">
-          <article class="stat-card stat-card-primary">
-            <div class="stat-label">Egressos elegíveis</div>
-            <div class="stat-value">{{ formatNumber(filteredCareerRows.length) }}</div>
-            <div class="stat-note">{{ activeWindowSummary }}</div>
-          </article>
-
-          <article class="stat-card stat-card-teal">
-            <div class="stat-label">Em acompanhamento</div>
-            <div class="stat-value">{{ formatNumber(trackedCount) }}</div>
-            <div class="stat-note">{{ trackingCoverageLabel }}</div>
-          </article>
-
-          <article class="stat-card stat-card-success">
-            <div class="stat-label">Empregados</div>
-            <div class="stat-value">{{ formatNumber(employedCount) }}</div>
-            <div class="stat-note">{{ employmentRateLabel }}</div>
-          </article>
-
-          <article class="stat-card stat-card-warning">
-            <div class="stat-label">Desempregados</div>
-            <div class="stat-value">{{ formatNumber(unemployedCount) }}</div>
-            <div class="stat-note">Última leitura registrada</div>
-          </article>
-
-          <article class="stat-card stat-card-neutral">
-            <div class="stat-label">Pendências</div>
-            <div class="stat-value">{{ formatNumber(dueRows.length) }}</div>
-            <div class="stat-note">Checkpoints atrasados ou sem resposta</div>
-          </article>
-        </div>
       </section>
 
       <section class="table-card">
@@ -223,6 +192,20 @@
                     </div>
                   </div>
 
+                  <label class="field field-full field-message-grow">
+                    <span>Mensagem-base</span>
+                    <textarea
+                      class="automation-message-input"
+                      v-model="automationMessage"
+                      rows="5"
+                      placeholder="Digite aqui a mensagem inicial do acompanhamento."
+                    ></textarea>
+                    <small class="field-hint">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                      A mensagem é enviada junto com o template institucional do e-mail de carreira.
+                    </small>
+                  </label>
+
                   <label class="field field-full">
                     <span>Assunto do e-mail</span>
                     <input
@@ -230,19 +213,6 @@
                       type="text"
                       placeholder="Ex: Acompanhamento de carreira - BRISA"
                     />
-                  </label>
-
-                  <label class="field field-full field-message-grow">
-                    <span>Mensagem-base</span>
-                    <textarea
-                      class="automation-message-input"
-                      v-model="automationMessage"
-                      rows="6"
-                      placeholder="Digite aqui a mensagem inicial do acompanhamento."
-                    ></textarea>
-                    <small class="field-hint">
-                      A mensagem é enviada junto com o template institucional do e-mail de carreira.
-                    </small>
                   </label>
                 </div>
                 </div>
@@ -328,15 +298,14 @@
                       :key="item.id"
                       class="automation-history-item"
                     >
-                      <div class="automation-list-main">
+                      <div class="automation-history-top">
                         <strong>{{ item.title }}</strong>
-                        <span>{{ item.dateLabel }}</span>
+                        <span class="automation-history-badge">{{ item.sentLabel }}</span>
                       </div>
-
-                      <div class="automation-history-meta">
-                        <span>{{ item.sentLabel }}</span>
-                        <small>{{ item.note }}</small>
+                      <div class="automation-history-sub">
+                        <span class="automation-history-date">{{ item.dateLabel }}</span>
                       </div>
+                      <p class="automation-history-note">{{ item.note }}</p>
                     </article>
                   </div>
 
@@ -347,6 +316,73 @@
               </article>
             </div>
           </section>
+
+          <div class="stats-grid">
+            <article class="stat-card stat-card-primary">
+              <div class="stat-label">Egressos elegíveis</div>
+              <div class="stat-value">32</div>
+              <div class="stat-note">Janela padrão de 24 meses</div>
+            </article>
+
+            <article class="stat-card stat-card-teal">
+              <div class="stat-label">Em acompanhamento</div>
+              <div class="stat-value">6</div>
+              <div class="stat-note">19% do recorte com pelo menos uma leitura</div>
+            </article>
+
+            <article class="stat-card stat-card-success">
+              <div class="stat-label">Empregados</div>
+              <div class="stat-value">3</div>
+              <div class="stat-note">75% entre leituras comparáveis</div>
+            </article>
+
+            <article class="stat-card stat-card-warning">
+              <div class="stat-label">Desempregados</div>
+              <div class="stat-value">1</div>
+              <div class="stat-note">Última leitura registrada</div>
+            </article>
+
+            <article class="stat-card stat-card-neutral">
+              <div class="stat-label">Pendências</div>
+              <div class="stat-value">2</div>
+              <div class="stat-note">Checkpoints atrasados ou sem resposta</div>
+            </article>
+          </div>
+
+          <div class="career-pulse-grid">
+            <article class="career-pulse-card">
+              <div class="career-pulse-head">
+                <span>Cobertura de leitura</span>
+                <strong>19%</strong>
+              </div>
+              <div class="career-pulse-track">
+                <span class="career-pulse-fill" style="width: 19%; background: #14b8a6;"></span>
+              </div>
+              <small>6 de 32 egressos com acompanhamento</small>
+            </article>
+
+            <article class="career-pulse-card">
+              <div class="career-pulse-head">
+                <span>Empregabilidade apurada</span>
+                <strong>75%</strong>
+              </div>
+              <div class="career-pulse-track">
+                <span class="career-pulse-fill" style="width: 75%; background: #22c55e;"></span>
+              </div>
+              <small>4 leitura(s) comparáveis</small>
+            </article>
+
+            <article class="career-pulse-card">
+              <div class="career-pulse-head">
+                <span>Pressão de pendências</span>
+                <strong>0%</strong>
+              </div>
+              <div class="career-pulse-track">
+                <span class="career-pulse-fill" style="width: 0%; background: #f59e0b;"></span>
+              </div>
+              <small>-</small>
+            </article>
+          </div>
 
           <div class="analytics-grid">
             <article class="insight-card">
@@ -893,21 +929,42 @@ const automationScopedRows = computed(() => {
   return rows;
 });
 
-const automationDueRows = computed(() =>
-  automationScopedRows.value.filter(
-    (row) => row.dueCheckpoint && enabledAutomationCheckpoints.value.includes(row.dueCheckpoint)
-  )
-);
+const automationDueRows = computed(() => {
+  const filtered = automationScopedRows.value.filter(
+    (row) => row.dueCheckpoint && 
+             enabledAutomationCheckpoints.value.includes(row.dueCheckpoint) &&
+             row.name && 
+             row.name !== 'Pessoa sem nome' && 
+             row.name.trim() !== ''
+  );
+  const seen = new Set();
+  return filtered.filter((row) => {
+    if (seen.has(row.personId)) return false;
+    seen.add(row.personId);
+    return true;
+  });
+});
 
-const automationUpcomingRows = computed(() =>
-  automationScopedRows.value
-    .filter((row) => !row.dueCheckpoint && row.nextCheckpoint && enabledAutomationCheckpoints.value.includes(row.nextCheckpoint))
+const automationUpcomingRows = computed(() => {
+  const filtered = automationScopedRows.value
+    .filter((row) => !row.dueCheckpoint && 
+                     row.nextCheckpoint && 
+                     enabledAutomationCheckpoints.value.includes(row.nextCheckpoint) &&
+                     row.name && 
+                     row.name !== 'Pessoa sem nome' && 
+                     row.name.trim() !== '')
     .map((row) => ({
       ...row,
       scheduledCheckpointDate: addMonthsToDateValue(row.completionDate, row.nextCheckpoint)
     }))
-    .sort((left, right) => compareDateValues(left.scheduledCheckpointDate, right.scheduledCheckpointDate))
-);
+    .sort((left, right) => compareDateValues(left.scheduledCheckpointDate, right.scheduledCheckpointDate));
+  const seen = new Set();
+  return filtered.filter((row) => {
+    if (seen.has(row.personId)) return false;
+    seen.add(row.personId);
+    return true;
+  });
+});
 
 const automationPreviewRecipients = computed(() => {
   if (automationDueRows.value.length) return automationDueRows.value.slice(0, 4);
@@ -1007,6 +1064,48 @@ const employmentRateLabel = computed(() => {
   const employed = comparable.filter((row) => row.latestStatus === 'EMPREGADO').length;
   return `${formatPercent(employed / comparable.length)} entre leituras comparáveis`;
 });
+
+const trackingCoveragePct = computed(() =>
+  filteredCareerRows.value.length ? Math.round((trackedCount.value / filteredCareerRows.value.length) * 100) : 0
+);
+
+const comparableEmploymentRows = computed(() =>
+  filteredCareerRows.value.filter((row) => ['EMPREGADO', 'DESEMPREGADO'].includes(row.latestStatus))
+);
+
+const employmentRatePct = computed(() =>
+  comparableEmploymentRows.value.length ? Math.round((employedCount.value / comparableEmploymentRows.value.length) * 100) : 0
+);
+
+const dueRatePct = computed(() =>
+  filteredCareerRows.value.length ? Math.round((dueRows.value.length / filteredCareerRows.value.length) * 100) : 0
+);
+
+const careerPulseCards = computed(() => [
+  {
+    label: 'Cobertura de leitura',
+    value: `${trackingCoveragePct.value}%`,
+    percent: trackingCoveragePct.value,
+    color: '#14b8a6',
+    note: `${formatNumber(trackedCount.value)} de ${formatNumber(filteredCareerRows.value.length)} egressos com acompanhamento`
+  },
+  {
+    label: 'Empregabilidade apurada',
+    value: comparableEmploymentRows.value.length ? `${employmentRatePct.value}%` : '--',
+    percent: employmentRatePct.value,
+    color: '#22c55e',
+    note: comparableEmploymentRows.value.length
+      ? `${formatNumber(comparableEmploymentRows.value.length)} leitura(s) comparáveis`
+      : 'Aguardando status de empregados e desempregados'
+  },
+  {
+    label: 'Pressão de pendências',
+    value: `${dueRatePct.value}%`,
+    percent: dueRatePct.value,
+    color: dueRatePct.value > 35 ? '#ef4444' : '#f59e0b',
+    note: `${formatNumber(dueRows.value.length)} checkpoint(s) pedindo ação`
+  }
+]);
 
 const statusBuckets = computed(() => {
   const windows = [
@@ -1269,13 +1368,17 @@ function buildCareerRow(enrollment, groupedFollowUps, today) {
   const dueCheckpoint = getDueCheckpoint(completionDate, history, monthsSinceCompletion);
   const nextCheckpoint = getNextCheckpoint(monthsSinceCompletion, dueCheckpoint);
 
+  const rawName = person.name || '';
+  const trimmedName = String(rawName).trim();
+  const displayName = trimmedName || 'Pessoa sem nome';
+
   return {
     key,
     enrollmentId: String(enrollment.id),
     personId: String(person.id),
     classId: String(classItem.id),
     programId: program?.id ? String(program.id) : '',
-    name: person.name || 'Pessoa sem nome',
+    name: displayName,
     email: person.email || '',
     programName: program?.name || 'Programa',
     classCode: classItem.code || `Turma ${classItem.id}`,
@@ -1304,13 +1407,17 @@ function buildDemoCareerRow(seed, groupedFollowUps, today) {
   const dueCheckpoint = getDueCheckpoint(seed.completionDate, history, monthsSinceCompletion);
   const nextCheckpoint = getNextCheckpoint(monthsSinceCompletion, dueCheckpoint);
 
+  const rawName = seed.name || '';
+  const trimmedName = String(rawName).trim();
+  const displayName = trimmedName || 'Pessoa sem nome';
+
   return {
     key: seed.key,
     enrollmentId: seed.enrollmentId,
     personId: seed.personId,
     classId: seed.classId,
     programId: seed.programId,
-    name: seed.name,
+    name: displayName,
     email: seed.email,
     programName: seed.programName,
     classCode: seed.classCode,
@@ -1728,8 +1835,8 @@ function formatDateTime(value) {
 <style scoped>
 .career-page {
   min-height: 100%;
-  background: #eef3f8;
-  padding: 14px 16px 20px;
+  background: #f5f7fa;
+  padding: 16px;
 }
 
 .career-shell {
@@ -1737,7 +1844,7 @@ function formatDateTime(value) {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .page-header-card,
@@ -1746,13 +1853,13 @@ function formatDateTime(value) {
 .insight-card,
 .modal-card {
   background: #fff;
-  border: 1px solid #dfe7f1;
-  border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(13, 27, 42, 0.05);
+  border: 1px solid #d1d6e8;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(23, 31, 74, 0.08);
 }
 
 .page-header-card {
-  padding: 18px 18px 16px;
+  padding: 16px;
 }
 
 .page-header-top {
@@ -1778,7 +1885,7 @@ function formatDateTime(value) {
 
 .header-content h1 {
   margin: 0;
-  font-size: 34px;
+  font-size: 28px;
   line-height: 1.1;
   color: #13233f;
   font-weight: 800;
@@ -1788,7 +1895,7 @@ function formatDateTime(value) {
   margin: 6px 0 0;
   color: #6a7a90;
   font-size: 14px;
-  max-width: 860px;
+  max-width: 920px;
   line-height: 1.6;
 }
 
@@ -1810,8 +1917,8 @@ function formatDateTime(value) {
 
 .ghost-btn,
 .primary-btn {
-  height: 40px;
-  border-radius: 12px;
+  height: 36px;
+  border-radius: 8px;
   border: 1px solid #d1dbe8;
   display: inline-flex;
   align-items: center;
@@ -1862,16 +1969,16 @@ function formatDateTime(value) {
 }
 
 .stats-grid {
-  margin-top: 14px;
+  margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
   align-items: stretch;
 }
 
 .stat-card {
-  padding: 14px 14px 12px;
-  min-height: 118px;
+  padding: 12px;
+  min-height: 96px;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -1910,20 +2017,76 @@ function formatDateTime(value) {
 .stat-value {
   margin-top: 10px;
   color: #13233f;
-  font-size: 28px;
+  font-size: 25px;
   line-height: 1;
   font-weight: 800;
 }
 
 .stat-note {
   margin-top: auto;
-  padding-top: 12px;
+  padding-top: 8px;
   color: #8a98ab;
   font-size: 11px;
   line-height: 1.45;
-  min-height: 32px;
+  min-height: 26px;
   display: flex;
   align-items: flex-end;
+}
+
+.career-pulse-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.career-pulse-card {
+  background: #fff;
+  border: 1px solid #d1d6e8;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.career-pulse-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.career-pulse-head span {
+  color: #50619e;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.career-pulse-head strong {
+  color: #171f4a;
+  font-size: 20px;
+}
+
+.career-pulse-track {
+  height: 8px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: #e8edf7;
+  border-radius: 999px;
+}
+
+.career-pulse-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.career-pulse-card small {
+  display: block;
+  margin-top: 8px;
+  color: #6a7a90;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .table-card {
@@ -1967,9 +2130,9 @@ function formatDateTime(value) {
 
 .search-input,
 .filter-select {
-  height: 40px;
+  height: 38px;
   border: 1px solid #d9e2ec;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #fff;
   color: #13233f;
   box-sizing: border-box;
@@ -2049,13 +2212,13 @@ function formatDateTime(value) {
 .analytics-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr) minmax(320px, 0.8fr);
-  gap: 14px;
-  padding: 18px;
+  gap: 12px;
+  padding: 14px;
   align-items: stretch;
 }
 
 .insight-card {
-  padding: 16px;
+  padding: 14px;
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -2083,6 +2246,8 @@ function formatDateTime(value) {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow-y: auto;
+  max-height: 320px;
 }
 
 .ranking-list,
@@ -2155,6 +2320,8 @@ function formatDateTime(value) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
+  max-height: 320px;
 }
 
 .history-list {
@@ -2775,7 +2942,7 @@ function formatDateTime(value) {
   height: 100%;
   margin-top: 0;
   min-height: 0;
-  grid-template-rows: auto auto auto minmax(320px, 1fr);
+  grid-template-rows: auto auto auto minmax(320px, 1fr) auto;
   align-content: stretch;
 }
 
@@ -2943,8 +3110,7 @@ function formatDateTime(value) {
   padding-right: 4px;
 }
 
-.automation-list-item,
-.automation-history-item {
+.automation-list-item {
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   background: #fff;
@@ -2956,8 +3122,62 @@ function formatDateTime(value) {
 }
 
 .automation-history-item {
-  display: grid;
-  grid-template-columns: minmax(180px, 0.45fr) minmax(0, 1fr);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.automation-history-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.automation-history-top strong {
+  color: #13233f;
+  font-size: 13px;
+  font-weight: 700;
+  flex: 1;
+  min-width: 0;
+}
+
+.automation-history-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: #f0fdf9;
+  border: 1px solid #b3e8de;
+  color: #0f766e;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.automation-history-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.automation-history-date {
+  color: #8a98ab;
+  font-size: 11px;
+}
+
+.automation-history-note {
+  margin: 4px 0 0;
+  color: #6a7a90;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .automation-list-main {
@@ -2980,8 +3200,7 @@ function formatDateTime(value) {
   font-size: 12px;
 }
 
-.automation-list-side,
-.automation-history-meta {
+.automation-list-side {
   flex-shrink: 0;
   text-align: right;
   display: flex;
@@ -2989,26 +3208,9 @@ function formatDateTime(value) {
   gap: 4px;
 }
 
-.automation-history-meta {
-  min-width: 0;
-  align-items: flex-end;
-}
-
-.automation-list-side small,
-.automation-history-meta small {
+.automation-list-side small {
   color: #6a7a90;
   font-size: 12px;
-}
-
-.automation-history-meta small {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-
-.automation-history-meta span {
-  color: #13233f;
-  font-size: 13px;
-  font-weight: 700;
 }
 
 @keyframes spin {
@@ -3018,6 +3220,10 @@ function formatDateTime(value) {
 }
 
 @media (max-width: 1280px) {
+  .career-pulse-grid {
+    grid-template-columns: 1fr;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -3050,6 +3256,7 @@ function formatDateTime(value) {
   }
 
   .stats-grid,
+  .career-pulse-grid,
   .automation-summary-grid,
   .details-grid,
   .form-grid {
@@ -3081,7 +3288,6 @@ function formatDateTime(value) {
   }
 
   .automation-list-item,
-  .automation-history-item,
   .agenda-item {
     display: flex;
     flex-direction: column;
@@ -3089,9 +3295,12 @@ function formatDateTime(value) {
   }
 
   .automation-list-side,
-  .automation-history-meta,
   .agenda-side {
     text-align: left;
+  }
+
+  .automation-history-top {
+    flex-wrap: nowrap;
   }
 }
 </style>

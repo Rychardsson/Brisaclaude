@@ -61,6 +61,7 @@ public class ExamService {
     private static final Pattern QUESTION_WITH_POINTS_PATTERN = Pattern.compile("^\\s*(?:q|questao|questão|question)\\.?\\s*(\\d+)\\s*(?:/\\s*([\\d,.]+))?.*$", Pattern.CASE_INSENSITIVE);
     private static final Pattern SUBJECT_PATTERN = Pattern.compile("^(?:q|questao|question)(\\d+)(?:assunto|area|tema|subject)$");
     private static final Pattern SUBJECT_PREFIX_PATTERN = Pattern.compile("^(?:assunto|area|tema|subject)(\\d+)$");
+    private static final int LEVELING_EXAM_QUESTION_COUNT = 40;
 
     private final ClassRepository classRepository;
     private final ExamRepository examRepository;
@@ -136,6 +137,9 @@ public class ExamService {
                     questionSubjectColumns.putIfAbsent(subjectQuestionNumber, entry.getValue());
                 }
             }
+            questionColumns.entrySet().removeIf(entry -> !isOfficialLevelingQuestion(entry.getKey()));
+            questionSubjectColumns.entrySet().removeIf(entry -> !isOfficialLevelingQuestion(entry.getKey()));
+            questionMaxPoints.entrySet().removeIf(entry -> !isOfficialLevelingQuestion(entry.getKey()));
 
             Row firstDataRow = findFirstDataRow(sheet);
             String examName = firstDataRow != null && examNameIndex != null
@@ -171,7 +175,7 @@ public class ExamService {
             Map<Integer, ExamQuestionModel> questionsByNumber = examQuestionRepository.findByExamIdOrderByQuestionNumberAsc(exam.getId()).stream()
                     .collect(Collectors.toMap(ExamQuestionModel::getQuestionNumber, question -> question, (left, right) -> left, LinkedHashMap::new));
 
-            for (Integer questionNumber : questionColumns.keySet()) {
+            for (int questionNumber = 1; questionNumber <= LEVELING_EXAM_QUESTION_COUNT; questionNumber++) {
                 ExamQuestionModel question = questionsByNumber.get(questionNumber);
                 if (question == null) {
                     question = new ExamQuestionModel();
@@ -279,7 +283,7 @@ public class ExamService {
                     exam.getId(),
                     exam.getName(),
                     participantsProcessed,
-                    questionColumns.size(),
+                    LEVELING_EXAM_QUESTION_COUNT,
                     warnings
             );
         }
@@ -314,7 +318,7 @@ public class ExamService {
         return new ExamSummaryDTO(
                 exam.getCode() == null ? exam.getName() : exam.getCode(),
                 exam.getExamDate() == null ? "-" : exam.getExamDate().toString(),
-                questionPerformance.size(),
+                LEVELING_EXAM_QUESTION_COUNT,
                 totalParticipants,
                 results.stream().filter(result -> isFemale(result.getPeople())).count(),
                 results.stream().filter(result -> isMale(result.getPeople())).count(),
@@ -422,7 +426,7 @@ public class ExamService {
     }
 
     private ExamSummaryDTO emptySummary() {
-        return new ExamSummaryDTO("-", "-", 0, 0, 0, 0, List.of(), 0, 0, 0.0, 0.0, List.of(), List.of(), List.of());
+        return new ExamSummaryDTO("-", "-", LEVELING_EXAM_QUESTION_COUNT, 0, 0, 0, List.of(), 0, 0, 0.0, 0.0, List.of(), List.of(), List.of());
     }
 
     private Row findFirstDataRow(Sheet sheet) {
@@ -477,6 +481,12 @@ public class ExamService {
             return Integer.parseInt(prefixMatcher.group(1));
         }
         return null;
+    }
+
+    private boolean isOfficialLevelingQuestion(Integer questionNumber) {
+        return questionNumber != null
+                && questionNumber >= 1
+                && questionNumber <= LEVELING_EXAM_QUESTION_COUNT;
     }
 
     private Map<String, PeopleModel> buildPeopleByCpf(Long classId) {
