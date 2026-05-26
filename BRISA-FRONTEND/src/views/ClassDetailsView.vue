@@ -1292,6 +1292,8 @@
                     <div class="imersao-group-meta">
                       <p><strong>Projeto:</strong> {{ group.project }}</p>
                       <p><strong>Empresa parceira:</strong> {{ group.partnerCompany }}</p>
+                      <p><strong>Presença média:</strong> {{ group.attendanceAverage }}</p>
+                      <p><strong>Reuniões realizadas:</strong> {{ group.completedMeetingsCount }} de {{ group.meetingsCount }}</p>
                       <p class="muted">Última atualização de notas: {{ group.lastGradesUpdate }}</p>
                     </div>
                     <table class="imersao-group-table">
@@ -1300,14 +1302,16 @@
                           <th>Aluno</th>
                           <th>Média Parcial</th>
                           <th>Média Final</th>
+                          <th>Frequência</th>
                           <th>Situação</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr v-for="student in group.studentsDetails" :key="student.id">
                           <td>{{ student.name }}</td>
-                          <td :class="{ 'warning-strong': Number(student.partial) < 4 }">{{ student.partial }}</td>
-                          <td :class="{ 'warning-strong': Number(student.final) < 4 }">{{ student.final }}</td>
+                          <td :class="{ 'warning-strong': Number(student.partial) < 6 }">{{ student.partial }}</td>
+                          <td :class="{ 'warning-strong': Number(student.final) < 6 }">{{ student.final }}</td>
+                          <td :class="{ 'warning-strong': Number(student.attendanceRate) < 75 }">{{ student.attendanceRate }}%</td>
                           <td><span class="imersao-situation-pill" :class="student.situationClass">{{ student.situation }}</span></td>
                         </tr>
                       </tbody>
@@ -1320,14 +1324,20 @@
                         <tr>
                           <th>Aluno</th>
                           <th>Nota parcial</th>
+                          <th>Banca</th>
+                          <th>Entrega</th>
+                          <th>Colaboração</th>
                           <th>Observação</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr v-for="student in group.studentsDetails" :key="`p-${student.id}`">
                           <td>{{ student.name }}</td>
-                          <td :class="{ 'warning-strong': Number(student.partial) < 4 }">{{ student.partial }}</td>
-                          <td>{{ Number(student.partial) < 4 ? 'Acompanhamento necessário' : 'Desempenho esperado' }}</td>
+                          <td :class="{ 'warning-strong': Number(student.partial) < 6 }">{{ student.partial }}</td>
+                          <td>{{ student.partialBreakdown.board }}</td>
+                          <td>{{ student.partialBreakdown.delivery }}</td>
+                          <td>{{ student.partialBreakdown.collaboration }}</td>
+                          <td>{{ student.partialObservation }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -1339,13 +1349,19 @@
                         <tr>
                           <th>Aluno</th>
                           <th>Nota final</th>
+                          <th>Produto</th>
+                          <th>Impacto</th>
+                          <th>Documentação</th>
                           <th>Situação</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr v-for="student in group.studentsDetails" :key="`f-${student.id}`">
                           <td>{{ student.name }}</td>
-                          <td :class="{ 'warning-strong': Number(student.final) < 4 }">{{ student.final }}</td>
+                          <td :class="{ 'warning-strong': Number(student.final) < 6 }">{{ student.final }}</td>
+                          <td>{{ student.finalBreakdown.product }}</td>
+                          <td>{{ student.finalBreakdown.impact }}</td>
+                          <td>{{ student.finalBreakdown.documentation }}</td>
                           <td><span class="imersao-situation-pill" :class="student.situationClass">{{ student.situation }}</span></td>
                         </tr>
                       </tbody>
@@ -1358,6 +1374,8 @@
                         <tr>
                           <th>Aluno</th>
                           <th>Última reunião</th>
+                          <th>Frequência</th>
+                          <th>Faltas</th>
                           <th>Presença</th>
                         </tr>
                       </thead>
@@ -1365,6 +1383,8 @@
                         <tr v-for="student in group.studentsDetails" :key="`a-${student.id}`">
                           <td>{{ student.name }}</td>
                           <td>{{ group.lastMeetingDate }}</td>
+                          <td :class="{ 'warning-strong': Number(student.attendanceRate) < 75 }">{{ student.attendanceRate }}%</td>
+                          <td>{{ student.absences }}</td>
                           <td>
                             <span class="imersao-situation-pill" :class="student.attendedLastMeeting ? 'status-regular' : 'status-warning'">
                               {{ student.attendedLastMeeting ? 'Presente' : 'Ausente' }}
@@ -2500,9 +2520,9 @@ export default {
     const presencaDraft = ref({});
     const selectedPresencaGroup = computed(() => imersaoPresencaGroups.value.find((group) => group.id === imersaoPresencaForm.value.groupId) || null);
     const presencaMeetingOptions = computed(() => selectedPresencaGroup.value?.meetings || []);
-    const getPresenceValue = (groupId, meetingDate, studentId) => {
+    const getPresenceValue = (groupId, meetingDate, studentId, defaultValue = true) => {
       const value = presencaDraft.value?.[groupId]?.[meetingDate]?.[studentId];
-      return typeof value === 'boolean' ? value : true;
+      return typeof value === 'boolean' ? value : defaultValue;
     };
     const setPresenceValue = (studentId, present) => {
       const { groupId, meetingDate } = imersaoPresencaForm.value;
@@ -2517,7 +2537,7 @@ export default {
       const meetingDate = imersaoPresencaForm.value.meetingDate;
       return group.students.map((student) => ({
         ...student,
-        present: getPresenceValue(group.id, meetingDate, student.id),
+        present: getPresenceValue(group.id, meetingDate, student.id, student.attendedLastMeeting ?? true),
       }));
     });
 
@@ -3560,13 +3580,15 @@ export default {
       }
 
       sendingCourseEmail.value = false;
-      sendMessageSuccess.value = `${totalSent} e-mail(s) enviado(s) em ${targetCourses.length} curso(s).`;
       if (totalSent > 0) {
+        sendMessageSuccess.value = `${totalSent} e-mail(s) enviado(s) em ${targetCourses.length} curso(s).`;
         lastCourseEmailSent.value = {
           date: new Date(),
           count: totalSent,
           courses: targetCourses.length,
         };
+      } else {
+        sendMessageSuccess.value = '';
       }
       if (totalFailed > 0) {
         sendMessageError.value = `${totalFailed} envio(s) falharam${failedCourses.length ? `: ${failedCourses.join(', ')}` : '.'}`;
@@ -3707,6 +3729,107 @@ export default {
           return 'Nenhum e-mail enviado recentemente';
         });
 
+        const clampMockMetric = (value, min, max) => Math.min(max, Math.max(min, value));
+        const mockSeed = (...values) => String(values.join('|'))
+          .split('')
+          .reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 17);
+        const formatMockScore = (value) => Number(value).toFixed(1);
+        const averageMockScore = (items, field) => {
+          const values = items
+            .map((item) => Number(item[field]))
+            .filter((value) => Number.isFinite(value));
+          if (!values.length) return '-';
+          return formatMockScore(values.reduce((sum, value) => sum + value, 0) / values.length);
+        };
+        const averageMockPercent = (items, field) => {
+          const values = items
+            .map((item) => Number(item[field]))
+            .filter((value) => Number.isFinite(value));
+          if (!values.length) return '-';
+          return `${Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)}%`;
+        };
+        const buildMockImmersionMeetings = (group, groupIndex = 0) => {
+          const startDate = parseDateValue(classData.value?.immersionStartDate)
+            || parseDateValue(classData.value?.partialEvaluationDate)
+            || parseDateValue(classData.value?.levelingEndDate)
+            || new Date();
+          const cadenceOffset = groupIndex % 3;
+
+          return [7, 21, 35, 49].map((days, index) => {
+            const meetingDate = new Date(startDate);
+            meetingDate.setDate(meetingDate.getDate() + days + cadenceOffset);
+            const value = meetingDate.toISOString().slice(0, 10);
+            return {
+              value,
+              label: formatDate(value),
+              status: 'COMPLETED',
+              mock: true,
+              id: `mock-meeting-${group?.id || groupIndex}-${index}`,
+            };
+          });
+        };
+        const getMockImmersionMembersForGroup = (groupIndex, totalGroups) => {
+          const source = imersaoStageStudents.value
+            .filter((student) => !['nao selecionado', 'reprovado'].includes(normalizeText(student.status)))
+            .map((student, index) => ({
+              id: student.peopleId || student.id || `mock-student-${index}`,
+              name: student.name,
+              email: student.email,
+            }));
+
+          if (!source.length || !totalGroups) return [];
+
+          const baseSize = Math.floor(source.length / totalGroups);
+          const remainder = source.length % totalGroups;
+          const start = groupIndex * baseSize + Math.min(groupIndex, remainder);
+          const size = baseSize + (groupIndex < remainder ? 1 : 0);
+
+          return source.slice(start, start + size);
+        };
+        const buildMockScoreBreakdown = (base, seed, offsets) => ({
+          board: formatMockScore(clampMockMetric(base + offsets[0] + ((seed % 5) / 10), 0, 10)),
+          delivery: formatMockScore(clampMockMetric(base + offsets[1] + (((seed >> 2) % 5) / 10), 0, 10)),
+          collaboration: formatMockScore(clampMockMetric(base + offsets[2] + (((seed >> 3) % 5) / 10), 0, 10)),
+          product: formatMockScore(clampMockMetric(base + offsets[0] + (((seed >> 1) % 5) / 10), 0, 10)),
+          impact: formatMockScore(clampMockMetric(base + offsets[1] + (((seed >> 4) % 5) / 10), 0, 10)),
+          documentation: formatMockScore(clampMockMetric(base + offsets[2] + (((seed >> 5) % 5) / 10), 0, 10)),
+        });
+        const buildMockImmersionStudent = (member, group, index, meetings) => {
+          const seed = mockSeed(group?.id, group?.projectTheme || group?.name, member?.id, member?.name, index);
+          let partial = 5.2 + ((seed % 42) / 10);
+          if ((seed + index) % 9 === 0) partial -= 1.6;
+          partial = clampMockMetric(partial, 3.8, 9.8);
+          const finalScore = clampMockMetric(partial + ((((seed >> 2) % 17) - 5) / 10), 4.2, 10);
+          let attendanceRate = 74 + (seed % 24);
+          if ((seed + index) % 8 === 0) attendanceRate = 68 + (seed % 7);
+          attendanceRate = Math.round(clampMockMetric(attendanceRate, 68, 99));
+          const completedMeetings = meetings.filter((meeting) => String(meeting.status || '').toUpperCase() === 'COMPLETED').length || meetings.length || 1;
+          const absences = Math.max(0, Math.round(((100 - attendanceRate) / 100) * completedMeetings));
+          const attendedLastMeeting = absences === 0 || (seed % 5 !== 0);
+          const situation = Number(finalScore) < 6 || attendanceRate < 75 ? 'Atenção' : Number(finalScore) >= 8.5 ? 'Destaque' : 'Regular';
+          const situationClass = situation === 'Atenção' ? 'status-warning' : 'status-regular';
+          const partialBreakdown = buildMockScoreBreakdown(partial, seed, [-0.2, 0.1, 0.0]);
+          const finalBreakdown = buildMockScoreBreakdown(finalScore, seed, [0.0, -0.1, 0.2]);
+
+          return {
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            partial: formatMockScore(partial),
+            final: formatMockScore(finalScore),
+            attendanceRate,
+            absences,
+            attendedLastMeeting,
+            situation,
+            situationClass,
+            partialBreakdown,
+            finalBreakdown,
+            partialObservation: situation === 'Atenção'
+              ? 'Acompanhamento necessário'
+              : Number(partial) >= 8.5 ? 'Entrega acima do esperado' : 'Desempenho esperado',
+          };
+        };
+
         watch(() => activeTab.value, (tab) => {
           if (tab === 'etapas') {
             loadNivelamentoData();
@@ -3741,6 +3864,9 @@ export default {
               students: group.studentsDetails.map((student) => ({
                 id: student.id,
                 name: student.name,
+                attendedLastMeeting: student.attendedLastMeeting,
+                attendanceRate: student.attendanceRate,
+                absences: student.absences,
               })),
             }));
           const firstGroup = imersaoPresencaGroups.value[0] || null;
@@ -3752,12 +3878,16 @@ export default {
 
         const syncImersaoMetrics = () => {
           const activeStudents = imersaoStageCandidates.value.filter((candidate) => String(candidate?.status || '').toUpperCase() !== 'REPROVADO').length;
+          const atRiskStudents = imersaoGroups.value.reduce(
+            (sum, group) => sum + group.studentsDetails.filter((student) => student.situation === 'Atenção').length,
+            0
+          );
           imersaoMetricsCards.value[0].value = String(imersaoGroups.value.length || 0);
           imersaoMetricsCards.value[1].value = String(imersaoStageCandidates.value.length || 0);
           imersaoMetricsCards.value[2].value = String(activeStudents);
-          imersaoMetricsCards.value[5].value = String(
-            imersaoGroups.value.filter((group) => group.statusClass === 'is-warning').length
-          );
+          imersaoMetricsCards.value[3].value = imersaoGroups.value.length ? '6.0' : '-';
+          imersaoMetricsCards.value[4].value = imersaoGroups.value.length ? '6.0' : '-';
+          imersaoMetricsCards.value[5].value = String(atRiskStudents);
           imersaoMetricsCards.value = [...imersaoMetricsCards.value];
         };
 
@@ -3776,42 +3906,47 @@ export default {
                 }
               })
             );
-            imersaoGroups.value = details.map((group) => {
-              const meetings = Array.isArray(group.meetings)
+            imersaoGroups.value = details.map((group, groupIndex) => {
+              const realMeetings = Array.isArray(group.meetings)
                 ? [...group.meetings]
                     .map((meeting) => ({
                       value: meeting.meetingDate,
                       label: formatDate(meeting.meetingDate),
+                      status: meeting.status,
                     }))
                     .sort((left, right) => new Date(left.value) - new Date(right.value))
                 : [];
-              const studentsDetails = Array.isArray(group.members)
-                ? group.members.map((member) => ({
-                    id: member.id,
-                    name: member.name,
-                    partial: '-',
-                    final: '-',
-                    situation: 'Regular',
-                    situationClass: 'status-regular',
-                    attendedLastMeeting: false,
-                  }))
-                : [];
-              const totalStudents = group.memberCount ?? studentsDetails.length;
-              const hasStudents = totalStudents > 0;
+              const meetings = realMeetings.length ? realMeetings : buildMockImmersionMeetings(group, groupIndex);
+              const realMembers = Array.isArray(group.members) ? group.members : [];
+              const groupMembers = realMembers.length
+                ? realMembers
+                : getMockImmersionMembersForGroup(groupIndex, details.length);
+              const studentsDetails = groupMembers.map((member, index) => buildMockImmersionStudent(member, group, index, meetings));
+              const totalStudents = studentsDetails.length || Number(group.memberCount || 0);
+              const hasStudents = studentsDetails.length > 0;
               const latestMeeting = meetings.length ? meetings[meetings.length - 1].label : '-';
+              const completedMeetingsCount = meetings.filter((meeting) => String(meeting.status || '').toUpperCase() === 'COMPLETED').length;
+              const partialAverage = hasStudents ? averageMockScore(studentsDetails, 'partial') : '-';
+              const finalAverage = hasStudents ? averageMockScore(studentsDetails, 'final') : '-';
+              const attendanceAverage = hasStudents ? averageMockPercent(studentsDetails, 'attendanceRate') : '-';
+              const hasAttention = studentsDetails.some((student) => student.situation === 'Atenção');
+              const lastGradesUpdate = formatDate(classData.value?.finalEvaluationDate);
               return {
                 id: group.id,
                 name: group.projectTheme || group.name || '-',
-                status: hasStudents ? 'OK' : 'Atenção',
-                statusClass: hasStudents ? 'is-ok' : 'is-warning',
+                status: hasStudents && !hasAttention ? 'OK' : 'Atenção',
+                statusClass: hasStudents && !hasAttention ? 'is-ok' : 'is-warning',
                 mentor: group.leaderName || group.leader || '-',
                 project: group.projectTheme || group.project || '-',
                 partnerCompany: group.projectCompanyName || group.projectCompany || '',
-                lastGradesUpdate: latestMeeting,
+                lastGradesUpdate: lastGradesUpdate !== '-' ? lastGradesUpdate : latestMeeting,
                 lastMeetingDate: latestMeeting,
                 students: totalStudents,
-                partialAverage: '-',
-                finalAverage: '-',
+                partialAverage,
+                finalAverage,
+                attendanceAverage,
+                meetingsCount: meetings.length,
+                completedMeetingsCount,
                 studentsDetails,
                 meetings,
               };
@@ -4325,8 +4460,8 @@ export default {
       try {
         classData.value = await classService.getById(classId.value);
         syncApprovedRankingDefaults();
+        await loadStages();
         await Promise.all([
-          loadStages(),
           loadClassPeople(),
           loadSelectionProcessContext(),
           loadProgramOverviewItem(),
