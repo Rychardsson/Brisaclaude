@@ -611,6 +611,8 @@ import SecondStageProgramRegistrationView from './components/SecondStageProgramR
 import ThirdStageProgramRegistrationView from './components/ThirdStageProgramRegistrationView.vue';
 import RevisionProgramRegistrationView from './components/RevisionProgramRegistrationView.vue';
 import { programService } from '../../services/programService';
+import { classService } from '../../services/classService';
+import { stageService } from '../../services/stageService';
 
 export default {
   // Nome principal do componente pai que engloba toda a tela de cadastro
@@ -640,12 +642,14 @@ export default {
       stepDescs: ['Informações gerais', 'Definição do fluxo', 'Formulário e elegibilidade', 'Cursos e avaliação', 'Projetos e benefícios', 'Validar e publicar'],
        
       programService, // Importa o serviço de programa
+      classService, // Importa o serviço de classe
+      stageService, // Importa o serviço de etapa
       newPartnerName: '', // Armazena temporariamente o texto digitado no input de adicionar parceiro (Aba 1)
       emailTouched: false, // Controla se o usuário já focou no campo de e-mail para ativar a validação de erro (Aba 1)
       
       // OBJETO: Aba 1 - Informações gerais do edital
       formData: { 
-        programName: '', batchName: '', executor: '', objective: '', partners: [], location: '', supportEmail: '', officialWebsite: '', publishDate: '', startDate: '', endDate: '', inscStart: '', inscEnd: '', nivStart: '', nivEnd: '', nivExamDate: '', imerStart: '', imerEnd: '', status: 'Rascunho', observations: '' 
+        programName: '', batchName: '', executor: '', fundingEntity: '', generalCoordinator: '', programValue: '', objective: '', partners: [], location: '', supportEmail: '', officialWebsite: '', publishDate: '', startDate: '', endDate: '', inscStart: '', inscEnd: '', nivStart: '', nivEnd: '', nivExamDate: '', imerStart: '', imerEnd: '', status: 'Rascunho', observations: '' 
       },
       
       // OBJETO: Aba 3 - Configuração do formulário de inscrição, documentos e cotas
@@ -921,7 +925,8 @@ export default {
         type: this.normalizeCompactText(stage.type),
         desc: this.normalizeCompactText(stage.desc),
         modality: this.normalizeCompactText(stage.modality),
-        duration: this.normalizeCompactText(stage.duration),
+        durationValue: this.normalizeCompactText(stage.durationValue),
+        durationUnit: this.normalizeCompactText(stage.durationUnit || 'dias'),
         slots: this.normalizeCompactText(stage.slots)
       }));
     },
@@ -1139,24 +1144,27 @@ export default {
     saveNewStage() {
        const title = this.normalizeCompactText(this.newStageForm.title);
        if(!title) return; 
-       const nextId = this.stageList.length > 0 ? Math.max(...this.stageList.map(s => s.id)) + 1 : 0; // Calcula o proximo ID (Index) autoincrementável
-       const finalDuration = this.newStageForm.durationValue ? `${this.newStageForm.durationValue} ${this.newStageForm.durationUnit}` : ''; // Une input com select pra texto contínuo
+       const nextId = this.stageList.length > 0 ? Math.max(...this.stageList.map(s => s.id)) + 1 : 0;
        this.stageList.push({
          id: nextId,
          title,
          type: this.normalizeCompactText(this.newStageForm.type),
          desc: this.repairMojibake(this.newStageForm.desc).trim(),
          modality: this.normalizeCompactText(this.newStageForm.modality),
-         duration: this.normalizeCompactText(finalDuration),
+         durationValue: this.normalizeCompactText(this.newStageForm.durationValue),
+         durationUnit: this.normalizeCompactText(this.newStageForm.durationUnit || 'dias'),
          slots: this.normalizeCompactText(this.newStageForm.slots),
-         isDefault: false
+         isDefault: false,
+         isNew: true
        });
        this.closeNewStageModal();
     },
     openEditStageModal(stage) {
        this.editStageForm = this.sanitizeStructure({ ...stage }); 
-       if (stage.duration) {
-          const parts = stage.duration.split(' '); // Split reversa para jogar para a interface que tem separação Input e Select
+       // Se tiver durationValue, já está no formato correto
+       if (!this.editStageForm.durationValue && stage.duration) {
+          // Para compatibilidade com dados antigos que tinham duration como string
+          const parts = stage.duration.split(' ');
           this.editStageForm.durationValue = parts[0] || '';
           this.editStageForm.durationUnit = parts[1] || 'dias';
        }
@@ -1166,15 +1174,16 @@ export default {
     saveEditStage() {
        const index = this.stageList.findIndex(s => s.id === this.editStageForm.id);
        if (index !== -1) {
-          const finalDuration = this.editStageForm.durationValue ? `${this.editStageForm.durationValue} ${this.editStageForm.durationUnit}` : '';
           this.stageList[index] = {
             ...this.editStageForm,
             title: this.normalizeCompactText(this.editStageForm.title),
             type: this.normalizeCompactText(this.editStageForm.type),
             desc: this.repairMojibake(this.editStageForm.desc).trim(),
             modality: this.normalizeCompactText(this.editStageForm.modality),
-            duration: this.normalizeCompactText(finalDuration),
-            slots: this.normalizeCompactText(this.editStageForm.slots)
+            durationValue: this.normalizeCompactText(this.editStageForm.durationValue),
+            durationUnit: this.normalizeCompactText(this.editStageForm.durationUnit || 'dias'),
+            slots: this.normalizeCompactText(this.editStageForm.slots),
+            isNew: this.editStageForm.isNew || false
           };
        }
        this.closeEditStageModal();
@@ -1409,7 +1418,7 @@ export default {
           return;
         }
 
-        // Dados comuns para ambos os casos (criar ou editar)
+        // Dados COMPLETOS para ambos os casos (criar ou editar) - Incluindo TODOS os campos do ProgramModel
         const programData = {
           name: this.formData.programName.trim(),
           contractNumber: this.formData.batchName || this.formData.programName,
@@ -1417,7 +1426,19 @@ export default {
           endDate: this.formData.endDate,
           targetAudience: this.formData.objective || '',
           executor: this.formData.executor || '',
+          fundingEntity: this.formData.fundingEntity || '',
+          generalCoordinator: this.formData.generalCoordinator || '',
+          programValue: this.formData.programValue || null,
           location: this.formData.location || '',
+          supportEmail: this.formData.supportEmail || '',
+          officialWebsite: this.formData.officialWebsite || '',
+          observations: this.formData.observations || '',
+          mainLocality: this.formData.location || '',
+          partnerNames: JSON.stringify(this.formData.partners || []),
+          levelingModality: this.nivelamentoForm.modality || 'Remota Assíncrona',
+          levelingDuration: this.nivelamentoForm.workload || '',
+          immersionDuration: this.imersaoForm.duracaoMeses ? `${this.imersaoForm.duracaoMeses} meses` : '',
+          immersionWorkloadHours: this.imersaoForm.cargaHoraria || 0,
           quotaCriteria: JSON.stringify(this.inscriptionForm.quotas),
           evaluationCriteria: JSON.stringify(this.nivelamentoForm.grading)
         };
@@ -1437,31 +1458,91 @@ export default {
           console.log('Programa criado com ID:', programId);
         }
 
-        // PASSO 2: Criar/atualizar a classe/edital a partir do programa
+        // PASSO 2: Criar/atualizar a classe/edital a partir do programa - Incluindo TODOS os campos do DTO
         const classData = {
           nomeTurma: this.formData.batchName || this.formData.programName,
           localidade: this.imersaoForm.local || this.formData.location || '',
           qtdVagas: this.stageList.reduce((total, stage) => total + parseInt(stage.slots || 0), 0),
-          publicationDate: this.formData.publishDate,
-          applicationStartDate: this.formData.inscStart,
-          applicationEndDate: this.formData.inscEnd,
-          levelingSelectionAnnouncementDate: this.formData.publishDate,
-          levelingStartDate: this.formData.nivStart,
-          levelingEndDate: this.formData.nivEnd,
-          levelingFinalExamDate: this.formData.nivExamDate,
-          immersionStartDate: this.formData.imerStart,
-          immersionEndDate: this.formData.imerEnd,
-          partialEvaluationDate: this.formData.imerStart,
-          finalEvaluationDate: this.formData.imerEnd,
-          certificateIssueDate: this.formData.endDate
+          publicationDate: this.formData.publishDate || null,
+          applicationStartDate: this.formData.inscStart || null,
+          applicationEndDate: this.formData.inscEnd || null,
+          levelingSelectionAnnouncementDate: this.formData.publishDate || null,
+          levelingConfirmationStartDate: this.formData.nivStart || null,
+          levelingConfirmationEndDate: this.formData.nivEnd || null,
+          levelingStartDate: this.formData.nivStart || null,
+          levelingEndDate: this.formData.nivEnd || null,
+          levelingFinalExamDate: this.formData.nivExamDate || null,
+          immersionSelectionAnnouncementDate: this.formData.publishDate || null,
+          immersionConfirmationStartDate: this.formData.imerStart || null,
+          immersionConfirmationEndDate: this.formData.imerEnd || null,
+          immersionStartDate: this.formData.imerStart || null,
+          immersionEndDate: this.formData.imerEnd || null,
+          partialEvaluationDate: this.formData.imerStart || null,
+          finalEvaluationDate: this.formData.imerEnd || null,
+          certificateIssueDate: this.formData.endDate || null
         };
 
+        let classId;
         if (!this.isEditMode) {
           // Só criar nova classe se estamos criando um novo programa
           const classResponse = await this.programService.createClassFromProgram(programId, classData);
+          classId = classResponse.id;
           console.log('Edital (classe) criado com sucesso:', classResponse);
         } else {
-          console.log('Em modo de edição - classe não foi criada novamente');
+          // Em modo edição, carrega o classId da classe existente
+          const classesData = await this.classService.getByProgramId(programId);
+          if (classesData && classesData.length > 0) {
+            classId = classesData[0].id;
+          }
+          console.log('Em modo de edição - classe atualizada, classId:', classId);
+        }
+
+        // PASSO 3: Salvar/atualizar as etapas (stages)
+        if (classId && this.stageList && this.stageList.length > 0) {
+          console.log('Salvando etapas para a classe:', classId);
+          
+          // Carregar stages existentes se em modo edição
+          let existingStages = [];
+          if (this.isEditMode) {
+            try {
+              existingStages = await this.stageService.getByClassId(classId);
+            } catch (e) {
+              console.log('Nenhuma etapa existente encontrada');
+            }
+          }
+
+          // Processar cada stage
+          for (const stage of this.stageList) {
+            // Montar dados do stage com duração e vagas na descrição como JSON
+            const stageData = {
+              name: stage.title || 'Etapa sem título',
+              classId: classId,
+              description: JSON.stringify({
+                type: stage.type || '',
+                modality: stage.modality || 'Online',
+                duration: `${stage.durationValue || ''} ${stage.durationUnit || 'dias'}`.trim(),
+                slots: stage.slots || '',
+                originalDesc: stage.desc || ''
+              })
+            };
+
+            // Lógica de decisão: usar isNew flag para distinguir novo de existente
+            if (stage.isNew) {
+              // Esta é uma etapa criada no frontend, deve ser criada no backend
+              console.log('Criando nova etapa:', stageData.name);
+              await this.stageService.create(stageData);
+            } else if (this.isEditMode) {
+              // Esta é uma etapa carregada do banco, deve ser atualizada
+              // Encontrar pela ID (mais confiável que por nome)
+              const existingStage = existingStages.find(s => s.id === stage.id);
+              if (existingStage) {
+                console.log('Atualizando etapa:', existingStage.id);
+                await this.stageService.update(existingStage.id, stageData);
+              }
+            }
+          }
+          
+          console.log('Todas as etapas foram salvas com sucesso');
         }
         
         this.executeRestartRegistration(); // Limpa o formulário após publicação
@@ -1476,14 +1557,31 @@ export default {
     // Carrega os dados do programa para edição
     async loadProgramForEdit() {
       try {
+        // Carregar programa base
         const program = await this.programService.getById(this.editingProgramId);
         console.log('Programa carregado para edição:', program);
         
         // Mapear dados do programa para as estruturas de formulário
         this.mapProgramToFormData(program);
+        
+        // Carregar classes associadas ao programa
+        const classes = await this.classService.getByProgramId(this.editingProgramId);
+        if (classes && classes.length > 0) {
+          console.log('Classes carregadas:', classes);
+          // Mapear a primeira classe para as datas da inscrição, nivelamento e imersão
+          this.mapClassDataToFormData(classes[0]);
+          
+          // Carregar stages da primeira classe
+          const stages = await this.stageService.getByClassId(classes[0].id);
+          if (stages && stages.length > 0) {
+            console.log('Etapas carregadas:', stages);
+            this.mapStagesToFormData(stages);
+          }
+        }
+        
         this.normalizeRegistrationState();
         
-        // Marcar como rascunho não salvo para indicar que está carregado
+        // Marcar como rascunho salvo para indicar que está carregado
         this.isDraftSaved = true;
         this.currentStep = 1;
       } catch (error) {
@@ -1498,13 +1596,35 @@ export default {
     mapProgramToFormData(program) {
       const normalizedProgram = this.sanitizeStructure(program);
 
-      // Aba 1 - Dados gerais do programa
+      // Aba 1 - Dados gerais do programa (todos os campos disponíveis)
       this.formData.programName = normalizedProgram.name || '';
       this.formData.batchName = normalizedProgram.contractNumber || '';
       this.formData.executor = normalizedProgram.executor || normalizedProgram.executorName || '';
+      this.formData.fundingEntity = normalizedProgram.fundingEntity || '';
+      this.formData.generalCoordinator = normalizedProgram.generalCoordinator || '';
+      this.formData.programValue = normalizedProgram.programValue || '';
       this.formData.objective = normalizedProgram.targetAudience || '';
       this.formData.startDate = normalizedProgram.startDate || '';
       this.formData.endDate = normalizedProgram.endDate || '';
+      this.formData.location = normalizedProgram.location || '';
+      this.formData.supportEmail = normalizedProgram.supportEmail || '';
+      this.formData.officialWebsite = normalizedProgram.officialWebsite || '';
+      this.formData.observations = normalizedProgram.observations || '';
+      this.formData.status = normalizedProgram.status || 'Rascunho';
+      
+      // Parsear parceiros (se armazenado como string JSON)
+      if (normalizedProgram.partnerNames) {
+        try {
+          if (typeof normalizedProgram.partnerNames === 'string') {
+            this.formData.partners = JSON.parse(normalizedProgram.partnerNames);
+          } else {
+            this.formData.partners = normalizedProgram.partnerNames;
+          }
+        } catch (e) {
+          console.warn('Não foi possível parsear parceiros');
+          this.formData.partners = [];
+        }
+      }
       
       // Tentar parsear critérios de quota e avaliação
       if (normalizedProgram.quotaCriteria) {
@@ -1526,6 +1646,79 @@ export default {
       // Atualizar datas de display
       this.displayDates.startDate = this.formatDateDisplay(normalizedProgram.startDate);
       this.displayDates.endDate = this.formatDateDisplay(normalizedProgram.endDate);
+    },
+
+    // Mapeia dados da classe (com todas as datas específicas) para o formulário
+    mapClassDataToFormData(classData) {
+      if (!classData) return;
+      
+      const normalizedClass = this.sanitizeStructure(classData);
+      
+      // Preencher as datas de Aba 1 (formulário básico)
+      this.formData.publishDate = normalizedClass.publicationDate || '';
+      this.formData.inscStart = normalizedClass.applicationStartDate || '';
+      this.formData.inscEnd = normalizedClass.applicationEndDate || '';
+      this.formData.nivStart = normalizedClass.levelingStartDate || '';
+      this.formData.nivEnd = normalizedClass.levelingEndDate || '';
+      this.formData.nivExamDate = normalizedClass.levelingFinalExamDate || '';
+      this.formData.imerStart = normalizedClass.immersionStartDate || '';
+      this.formData.imerEnd = normalizedClass.immersionEndDate || '';
+      
+      // Mapear localidade da classe para imersaoForm.local (Aba 5 - Imersão)
+      this.imersaoForm.local = normalizedClass.localidade || '';
+      
+      // Atualizar datas de display
+      this.displayDates.publishDate = this.formatDateDisplay(normalizedClass.publicationDate);
+      this.displayDates.inscStart = this.formatDateDisplay(normalizedClass.applicationStartDate);
+      this.displayDates.inscEnd = this.formatDateDisplay(normalizedClass.applicationEndDate);
+      this.displayDates.nivStart = this.formatDateDisplay(normalizedClass.levelingStartDate);
+      this.displayDates.nivEnd = this.formatDateDisplay(normalizedClass.levelingEndDate);
+      this.displayDates.nivExamDate = this.formatDateDisplay(normalizedClass.levelingFinalExamDate);
+      this.displayDates.imerStart = this.formatDateDisplay(normalizedClass.immersionStartDate);
+      this.displayDates.imerEnd = this.formatDateDisplay(normalizedClass.immersionEndDate);
+    },
+
+    // Mapeia dados das etapas (stages) para o formulário
+    mapStagesToFormData(stages) {
+      if (!stages || stages.length === 0) return;
+      
+      const normalizedStages = this.sanitizeStructure(stages);
+      
+      // Converter cada stage para o formato esperado pelo stageList
+      this.stageList = normalizedStages.map((stage, index) => {
+        let stageMetadata = {};
+        
+        // Tentar fazer parse da descrição se estiver em formato JSON
+        if (stage.description && typeof stage.description === 'string') {
+          try {
+            stageMetadata = JSON.parse(stage.description);
+          } catch (e) {
+            // Se não for JSON válido, usar a descrição como está
+            console.warn('Descrição do stage não é JSON válido:', stage.description);
+          }
+        }
+        
+        // Extrair duração e unidade se estiverem na descrição
+        let durationValue = '';
+        let durationUnit = 'dias';
+        if (stageMetadata.duration) {
+          const parts = stageMetadata.duration.split(' ');
+          durationValue = parts[0] || '';
+          durationUnit = parts[1] || 'dias';
+        }
+        
+        return {
+          id: stage.id || index + 1,
+          title: stage.name || stage.title || `Etapa ${index + 1}`,
+          type: stageMetadata.type || stage.type || '',
+          modality: stageMetadata.modality || stage.modality || 'Online',
+          durationValue: durationValue,
+          durationUnit: durationUnit,
+          slots: stageMetadata.slots || stage.slots || stage.capacity || '',
+          desc: stageMetadata.originalDesc || stage.desc || '',
+          isNew: false
+        };
+      });
     }
   }
 };

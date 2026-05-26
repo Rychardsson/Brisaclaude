@@ -321,7 +321,7 @@ export default {
       checkField(this.stageList.length > 0, 'Nenhuma etapa foi criada no fluxo.', step2Errors);
       this.stageList.forEach((stage, idx) => {
          checkField(stage.title, `Etapa ${idx + 1}: Nome não preenchido.`, step2Errors);
-         checkField(stage.duration, `Etapa ${idx + 1}: Duração não definida.`, step2Errors);
+         checkField(stage.durationValue, `Etapa ${idx + 1}: Duração não definida.`, step2Errors);
          checkField(stage.slots, `Etapa ${idx + 1}: Quantidade de vagas não informada.`, step2Errors);
       });
 
@@ -347,11 +347,9 @@ export default {
       checkField(this.displayDates.nivStart, 'Data de início do nivelamento não definida.', step4Errors);
       checkField(this.displayDates.nivEnd, 'Data de fim do nivelamento não definida.', step4Errors);
       checkField(this.nivelamentoForm.workload, 'Carga horária do nivelamento não informada.', step4Errors);
-      checkField(this.nivelamentoForm.platform, 'Plataforma do curso não definida.', step4Errors);
       
       if (this.nivelamentoForm.finalExam.active) {
          checkField(this.displayDates.nivExamDate, 'Data da prova final não definida.', step4Errors);
-         checkField(this.nivelamentoForm.finalExam.time, 'Horário da prova final não definido.', step4Errors);
          checkField(this.nivelamentoForm.finalExam.duration, 'Duração da prova final não informada.', step4Errors);
       }
 
@@ -371,17 +369,10 @@ export default {
       if (this.imersaoForm.modalidade !== 'Online') {
          checkField(this.imersaoForm.local, 'Local da imersão não informado.', step5Errors);
       }
-      
-      checkField(this.imersaoForm.presenca.responsavelJustificativa, 'Responsável pela análise de justificativas não informado.', step5Errors);
 
       if (this.imersaoForm.beneficios.hasBolsa) {
         checkField(this.imersaoForm.beneficios.valorBolsa, 'Valor financeiro da bolsa não informado.', step5Errors);
         checkField(this.imersaoForm.beneficios.mesesBolsa, 'Quantidade de meses da bolsa não definida.', step5Errors);
-      }
-      
-      if (this.imersaoForm.beneficios.hasNotebook) {
-        checkField(this.imersaoForm.beneficios.modeloNotebook, 'Modelo/especificação do notebook não informado.', step5Errors);
-        checkField(this.displayDates.prazoDevolucaoNotebook, 'Prazo de devolução do equipamento não definido.', step5Errors);
       }
       
       if (this.imersaoForm.beneficios.exigirContrato) {
