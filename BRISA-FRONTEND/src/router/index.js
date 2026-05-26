@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { authService } from '@/services/authService';
 import LoginView from '@/views/LoginView.vue';
 import ResetPasswordView from '@/views/ResetPasswordView.vue';
+import SetNewPasswordView from '@/views/SetNewPasswordView.vue';
 import DashboardView from '@/views/DashboardView.vue';
 import PeopleView from '@/views/PeopleView.vue';
 import PessoaPerfilView from '@/views/PessoaPerfilView.vue';
@@ -35,6 +36,12 @@ const routes = [
     name: 'ResetPassword',
     component: ResetPasswordView,
     meta: { title: 'Redefinir Senha' }
+  },
+  {
+    path: '/reset-password/confirm',
+    name: 'SetNewPassword',
+    component: SetNewPasswordView,
+    meta: { title: 'Definir Nova Senha' }
   },
   {
     path: '/dashboard',

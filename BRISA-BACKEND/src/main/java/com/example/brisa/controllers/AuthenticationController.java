@@ -183,7 +183,7 @@ public class AuthenticationController {
             PasswordResetToken resetToken = new PasswordResetToken(token, user);
             resetTokenRepository.save(resetToken);
 
-            String resetLink = frontendUrl + "/auth/reset-password?token=" + token;
+            String resetLink = frontendUrl + "/reset-password/confirm?token=" + token;
             String htmlContent = emailService.loadResetPasswordTemplate(user.getLogin(), resetLink);
             
             emailService.sendEmail(user.getEmail(), "Redefinição de Senha", htmlContent);

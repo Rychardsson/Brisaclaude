@@ -14,6 +14,24 @@
         </div>
       </div>
 
+      <!-- Mensagem de Sucesso -->
+      <div v-if="successMessage" class="success-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>{{ successMessage }}</span>
+      </div>
+
+      <!-- Mensagem de Erro -->
+      <div v-if="errorMessage" class="error-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 8V12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="16" r="1" fill="currentColor"/>
+        </svg>
+        <span>{{ errorMessage }}</span>
+      </div>
+
       <!-- Corpo: título + campo de email + botão -->
       <div class="reset-body">
         <h2 class="reset-title">Recuperar senha</h2>
@@ -37,10 +55,12 @@
             type="email"
             placeholder="Digite seu e-mail cadastrado"
             autocomplete="email"
+            @keydown.enter="handleSubmit"
+            :disabled="loading"
           />
         </div>
 
-        <button class="btn-submit" :disabled="loading || !email">
+        <button class="btn-submit" :disabled="loading || !isValidEmail" @click="handleSubmit">
           <span v-if="!loading">Enviar e-mail de recuperação</span>
           <span v-else class="loading-text">
             <svg class="spinner" width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -68,15 +88,50 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { authService } from '@/services/authService';
 
 export default {
   name: 'ResetPasswordView',
   setup() {
     const email = ref('');
     const loading = ref(false);
+    const errorMessage = ref('');
+    const successMessage = ref('');
 
-    return { email, loading };
+    const isValidEmail = computed(() => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return email.value && emailRegex.test(email.value.trim());
+    });
+
+    const handleSubmit = async () => {
+      if (!isValidEmail.value) return;
+
+      loading.value = true;
+      errorMessage.value = '';
+      successMessage.value = '';
+
+      try {
+        await authService.forgotPassword(email.value.trim());
+        successMessage.value = 'E-mail de recuperação enviado com sucesso! Verifique sua caixa de entrada.';
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 3000);
+      } catch (error) {
+        errorMessage.value = error.response?.data || 'Erro ao enviar e-mail de recuperação. Tente novamente.';
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    return { 
+      email, 
+      loading, 
+      errorMessage, 
+      successMessage, 
+      isValidEmail,
+      handleSubmit
+    };
   }
 };
 </script>
@@ -201,6 +256,8 @@ export default {
   background: white;
   color: #333;
   outline: none;
+  pointer-events: auto;
+  cursor: text;
 }
 
 .form-group input:focus {
@@ -210,6 +267,13 @@ export default {
 
 .form-group input::placeholder {
   color: #aaa;
+}
+
+.form-group input:disabled {
+  background-color: #f5f5f5;
+  border-color: #d0d0d0;
+  cursor: not-allowed;
+  color: #999;
 }
 
 /* Botão */
@@ -273,5 +337,52 @@ export default {
 
 .back-link:hover {
   color: #1F285F;
+}
+
+/* Banners de Sucesso e Erro */
+.success-banner,
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  animation: slideDown 0.3s ease;
+}
+
+.success-banner {
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.success-banner svg {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.error-banner {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.error-banner svg {
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

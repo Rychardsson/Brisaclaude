@@ -68,8 +68,7 @@ public class EmailService {
         String htmlContent = new String(Files.readAllBytes(Path.of(resource.getURI())));
 
         return htmlContent.replace("${username}", username)
-                         .replace("${resetLink}", resetLink)
-                         .replace("${oceanBackgroundUrl}", "https://example.com/ocean-background.jpg");
+                         .replace("${resetLink}", resetLink);
     }
 
     private String resolveSenderAddress() {
